@@ -14,8 +14,6 @@ const baseBranch    = 'develop';
 const releaseBranch = 'master';
 const branchPrefix  = 'release';
 
-
-
 log.title('TAO Extension Release');
 
 // TAO ROOT
@@ -56,11 +54,11 @@ tao.isTaoRoot(cwd)
             name: result.extension,
             path: `${data.taoRoot}/${result.extension}`,
         };
-
-        log.doing('Checking extension status');
     })
 
-// Verify local changes and curren branch
+// Verify local changes and curren branchA
+
+    .then( () => log.doing('Checking extension status') )
     .then( () => git(data.extension.path).status())
     .then(status => {
         const empty = ['modified', 'renamed', 'conflicted', 'created', 'deleted'];
@@ -78,7 +76,7 @@ tao.isTaoRoot(cwd)
                 log.exit();
             }
 
-            log.doing(`Updating ${data.extension.name}`);
+            log.done(`${status.current} is clean`);
         });
     })
 
@@ -90,6 +88,8 @@ tao.isTaoRoot(cwd)
     })
 
 // Fecth and pull branchs, extract manifests
+
+    .then(()  => log.doing(`Updating ${data.extension.name}`))
 
     .then( () => git(data.extension.path).fetch(origin) )
 
@@ -108,21 +108,22 @@ tao.isTaoRoot(cwd)
         data.extension.manifest = manifest;
         data.version = manifest.version;
         data.tag = `v${manifest.version}`;
-
-        log.doing('Verify tags');
     })
 
 //5. Release exists ?
+
+    .then( () => log.doing('Check existing tags'))
     .then( () => git(data.extension.path).tags() )
     .then( tags => {
         if(tags.all.indexOf(data.tag) > -1) {
             log.exit(`The tag ${data.tag} already exists`);
         }
-
-        log.doing(`Diff ${baseBranch}..${releaseBranch}`);
     })
+    .then( () => log.done() )
 
 //5. Needs a release (diff) ?
+
+    .then( () => log.doing(`Diff ${baseBranch}..${releaseBranch}`) )
     .then( () => git(data.extension.path).raw(['diff', '--shortstat', `${baseBranch}..${releaseBranch}`]) )
     .then( result => {
         if(!result){
@@ -135,6 +136,8 @@ tao.isTaoRoot(cwd)
                     log.exit();
                 }
             });
+        } else {
+            log.done();
         }
     })
 
@@ -148,32 +151,34 @@ tao.isTaoRoot(cwd)
             if(!result.go){
                 log.exit();
             }
-
-            log.doing(`Create release branch`);
         });
     })
 
 //create the release branch
+    .then( () => log.doing('Create release branch') )
     .then( () => {
         data.releasingBranch = `${branchPrefix}-${data.version}`;
         return git(data.extension.path).checkoutLocalBranch(data.releasingBranch);
     })
+    .then( () =>  log.done(`${branchPrefix}-${data.version} created`) )
 
 //compile assets
-    .then( () => {
 
-        log.doing(`Bundle extension assets`);
-        return tao.buildAssets(data.extension.name, data.taoRoot);
+    .then( () => log.doing('Bundling extension assets') )
+    .then( () => tao.buildAssets(data.extension.name, data.taoRoot) )
+    .then( () => git(data.extension.path).diffSummary())
+    .then( results => {
+        if(results && results.files){
+            const changes = results.files.map( file => file.file);
+
+            return git(data.extension.path)
+                    .add(results.files.map( file => file.file))
+                    .commit('bundle assets')
+                    .then( () => log.info(`Commit : [bundle assets - ${changes.length} files]`) );
+        }
     })
-
-//push branch
-    .then( () => {
-
-        log.exit('assets built');
-
-        return git(data.extension.path).push(origin, data.releasingBranch);
-
-    })
+    .then( () => git(data.extension.path).push(origin, data.releasingBranch) )
+    .then( () => log.done() )
 
 //create PR
     .then( () => {
@@ -186,10 +191,12 @@ tao.isTaoRoot(cwd)
     })
 
 // Create and push the tag
+    .then( () => log.doing(`Creating tag ${data.tag}`))
     .then( () => git(data.extension.path).checkoutLocalBranch(releaseBranch) )
     .then( () => git(data.extension.path).pull(origin, releaseBranch) )
-    .then( () => git(data.extension.path).tag([data.version, `-m "version ${data.version}`]) )
+    .then( () => git(data.extension.path).tag([data.tag, `-m "version ${data.version}`]) )
     .then( () => git(data.extension.path).pushTags(origin) )
+    .then( () => log.done(`Create tag ${data.tag}`))
 
 // Update
     .then( () => git(data.extension.path).checkoutLocalBranch(baseBranch) )
@@ -198,8 +205,6 @@ tao.isTaoRoot(cwd)
     .then( () => git(data.extension.path).push(origin, baseBranch) )
 
 // End
-
-    .then( () => console.log('Done') )
 
 // Errors
 
