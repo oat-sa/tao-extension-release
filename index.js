@@ -170,10 +170,8 @@ tao.isTaoRoot(cwd)
     .then( results => {
         if(results && results.files){
             const changes = results.files.map( file => file.file);
-
             return git(data.extension.path)
-                    .add(results.files.map( file => file.file))
-                    .commit('bundle assets')
+                    .commit('bundle assets', changes)
                     .then( () => log.info(`Commit : [bundle assets - ${changes.length} files]`) );
         }
     })
@@ -192,17 +190,19 @@ tao.isTaoRoot(cwd)
 
 // Create and push the tag
     .then( () => log.doing(`Creating tag ${data.tag}`))
-    .then( () => git(data.extension.path).checkoutLocalBranch(releaseBranch) )
+    .then( () => git(data.extension.path).checkout(releaseBranch) )
     .then( () => git(data.extension.path).pull(origin, releaseBranch) )
     .then( () => git(data.extension.path).tag([data.tag, `-m "version ${data.version}`]) )
     .then( () => git(data.extension.path).pushTags(origin) )
-    .then( () => log.done(`Create tag ${data.tag}`))
+    .then( () => log.done(`${data.tag} created and pushed`))
 
 // Update
-    .then( () => git(data.extension.path).checkoutLocalBranch(baseBranch) )
+    .then( () => log.doing(`Merging master into develop`))
+    .then( () => git(data.extension.path).checkout(baseBranch) )
     .then( () => git(data.extension.path).pull(origin, baseBranch) )
     .then( () => git(data.extension.path).merge([releaseBranch]) )
     .then( () => git(data.extension.path).push(origin, baseBranch) )
+    .then( () => log.done())
 
 // End
 

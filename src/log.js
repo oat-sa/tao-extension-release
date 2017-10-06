@@ -3,7 +3,7 @@ const chalk = require('chalk');
 module.exports = {
     title(msg){
         console.log(' ');
-        console.log('✨ ' + chalk.bold.underline(msg) + '✨');
+        console.log('✨ ' + chalk.bold.underline(msg) + ' ✨');
         console.log(' ');
         return this;
     },
