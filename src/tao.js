@@ -139,6 +139,24 @@ module.exports = {
         });
     },
 
+    getRepoName(extensionName = '', taoRootPath = ''){
+        const composerPath = path.normalize(`${taoRootPath}/${extensionName}/composer.json`);
+        return new Promise( (resolve, reject) => {
+            fs.readFile(composerPath, 'utf-8', (err, data) => {
+                var fileData;
+                if(err){
+                    return reject(err);
+                }
+                try{
+                    fileData = JSON.parse(data);
+                } catch(jsonErr){
+                    return reject(jsonErr);
+                }
+                return resolve(fileData.name);
+            });
+        });
+    },
+
     buildAssets(extensionName = '', taoRootPath = ''){
         const options = {
             cwd : path.normalize(`${taoRootPath}/tao/views/build`)
