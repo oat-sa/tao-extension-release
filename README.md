@@ -4,11 +4,13 @@ This tool automate TAO extension release
 
 ## Installation
 
-Please verify installation [prerequisite](#prerequisite).
+Please verify installation [prerequisite](#prerequisite). And run : 
 
 ```sh
 npm i -g tao-extension-release
 ```
+
+> The package isn't yet published to npm. Please see the [development section)[#development].
 
 ## Release an extension
 
@@ -44,15 +46,16 @@ So the command `taoRelease` will use the sources.
 Copyright (c) 2017 Open Assessment Technologies SA;
 [GNU General Public License v2.0](https://github.com/oat-sa/tao-extension-release/blob/master/LICENSE)
 
+<hr>
 
 ## System Prerequisite
 <a name="prerequisite"></a>
 
-### node.js
+#### node.js
 
 You need a recent version of [node.js](https://nodejs.org) for your platform :
 
- - [windows installer](https://nodejs.org/dist/v8.7.0/node-v8.7.0-x86.msi)
+ - [Windows installer](https://nodejs.org/dist/v8.7.0/node-v8.7.0-x86.msi)
  - [OSX installer](https://nodejs.org/dist/v8.7.0/node-v8.7.0.pkg)
  - Linux package
 ```sh
