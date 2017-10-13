@@ -44,13 +44,15 @@ module.exports = function githubFactory(token, repository) {
          * @param {String} releasingBranch - the temp branch that contains the commits to release
          * @param {String} releaseBranch - the base branch
          * @param {String} version - the version of the release
+         * @param {String} fromVersion - the last version
          * @returns {Promise} resolves with the pull request data
          */
-        createReleasePR(releasingBranch, releaseBranch, version) {
+        createReleasePR(releasingBranch, releaseBranch, version, fromVersion) {
             const prBody = `Please check :
- - [ ] the manifest (versions and dependencies)
- - [ ] the update script
+ - [ ] the manifest (versions ${version} and dependencies)
+ - [ ] the update script (from ${fromVersion} to ${version})
  - [ ] CSS and JavaScript bundles
+ - [ ] Extension specials (version in tao-core, nested dependencies, etc.)
 `;
             return new Promise( (resolve, reject) => {
                 ghrepo.pr({

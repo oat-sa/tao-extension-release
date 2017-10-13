@@ -240,7 +240,10 @@ config.load()
 // Compile assets
     .then(() => log.doing('Bundling'))
     .then(() => log.info('Asset build started, this may take a while'))
-    .then(() => taoInstance.buildAssets(data.extension.name, false))
+    .then(() => {
+        return taoInstance.buildAssets(data.extension.name, false)
+            .catch( err => log.error(`Unable to bundle assets. ${err.message}. Continue.`));
+    })
     .then(() => git(data.extension.path).diffSummary())
     .then(results => {
         if (results && results.files) {
@@ -255,7 +258,6 @@ config.load()
 
 
 // Update translations
-/*
     .then(() => inquirer.prompt({
         type: 'confirm',
         name: 'translation',
@@ -264,6 +266,7 @@ config.load()
     .then( result => {
         if(result.translation){
             return taoInstance.updateTranslations(data.extension.name)
+                .catch( err => log.error(`Unable to update translations. ${err.message}. Continue.`))
                 .then(() => git(data.extension.path).diffSummary())
                 .then( results => {
                     const changes = results.files.map(file => file.file);
@@ -273,11 +276,11 @@ config.load()
                 });
         }
     })
-*/
+
 
 // Create PR
     .then(() => log.doing('Create the pull request'))
-    .then(() => githubClient.createReleasePR(data.releasingBranch, releaseBranch, data.version) )
+    .then(() => githubClient.createReleasePR(data.releasingBranch, releaseBranch, data.version, data.lastVersion) )
     .then( result => {
         if(result && result.state === 'open'){
             data.pr = {
@@ -341,6 +344,10 @@ config.load()
     .then( () => git(data.extension.path).push(origin, baseBranch) )
     .then( () => log.done())
 
+
+// Clean up
+    .then( () => git(data.extension.path).deleteLocalBranch(data.releasingBranch) )
+    .then( () => git(data.extension.path).push(origin, data.releasingBranch, ['--delete']) )
 
 // End
     .then( () => log.done('Good job!'))

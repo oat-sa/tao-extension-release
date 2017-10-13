@@ -1,5 +1,5 @@
 {
-  "name": "tao-extension-release",
+  "name": "@oat-sa/tao-extension-release",
   "version": "0.1.0",
   "description": "Helps you to release TAO extensions",
   "main": "index.js",

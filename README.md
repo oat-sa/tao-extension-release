@@ -7,7 +7,7 @@ This tool automate TAO extension release
 Please verify installation [prerequisite](#prerequisite). And run : 
 
 ```sh
-npm i -g tao-extension-release
+npm i -g @oat-sa/tao-extension-release
 ```
 
 > The package isn't yet published to npm. Please see the [development section)[#development].
@@ -28,7 +28,7 @@ and follow the instructions
 Remove the package if already installed globally :
 
 ```sh
-npm uninstall -g tao-extension-release
+npm uninstall -g @oat-sa/tao-extension-release
 ```
 
 Then clone the sources :
@@ -42,12 +42,6 @@ npm link
 
 So the command `taoRelease` will use the sources.
 
-## License
-
-Copyright (c) 2017 Open Assessment Technologies SA;
-[GNU General Public License v2.0](https://github.com/oat-sa/tao-extension-release/blob/master/LICENSE)
-
-<hr>
 
 ## System Prerequisite
 <a name="prerequisite"></a>
@@ -67,8 +61,24 @@ sudo apt-get install -y nodejs
 
 #### git
 
-You need to have the `git` command available in your `PATH`.
+You need to have the `git` > `1.7.0` command available in your `PATH`.
 
 #### PHP
 
 You also need the `php` command available in your `PATH`.
+
+## Known Issues
+
+### `Task foosass not found`
+
+Everything looks ok but you don't know why the `grunt` task is not found. If you have updated `node` or `npm` recently, you can fix this by : 
+
+```sh
+cd tao/views/build
+npm reinstall node-sass --force
+```
+
+## License
+
+Copyright (c) 2017 Open Assessment Technologies SA;
+[GNU General Public License v2.0](https://github.com/oat-sa/tao-extension-release/blob/master/LICENSE)

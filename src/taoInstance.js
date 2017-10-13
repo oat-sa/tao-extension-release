@@ -24,8 +24,9 @@
 
 const fs                      = require('fs');
 const { normalize, basename } = require('path');
-const { spawn }               = require('child_process');
+const { spawn, exec }         = require('child_process');
 const phpParser               = require('php-parser');
+const log                     = require('./log.js');
 
 /**
  * Get the taoInstance
@@ -216,12 +217,22 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
             if(!quiet){
                 options.stdio = 'inherit';
             }
+
+            /**
+             * run the given grunt task for the current extension :
+             * `grunt extensionNametask`
+             * @param {String} task
+             */
             const runGruntTask = task => {
                 return new Promise( (resolve, reject) => {
                     const spawned = spawn('./node_modules/.bin/grunt', [`${extensionName.toLowerCase()}${task}`], options);
                     spawned.on('close', code => code === 0 ? resolve() : reject());
                 });
             };
+
+            /**
+             * run `npm install` on the TAO build folder
+             */
             const installNpm = () => {
                 return new Promise( (resolve, reject) => {
                     fs.access(`${options.cwd}/node_modules/.bin/grunt`, err => {
@@ -234,11 +245,40 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
                     });
                 });
             };
-            return installNpm()
-                .then( () => runGruntTask('sass') )
-                .then( () => runGruntTask('bundle') );
-        },
 
+            /**
+             * run tasks in sequence
+             * @param {String[]} tasks - the list of grunt tasks
+             */
+            const runTasks = tasks =>
+                tasks.reduce(
+                    (promise, task) => promise.then(() => runGruntTask(task)),
+                    Promise.resolve()
+                );
+
+            return new Promise( resolve => {
+
+                const buildConfigPath = normalize(`${rootDir}/${extensionName}/views/build/grunt`);
+                fs.readdir(buildConfigPath, (err, files) => {
+                    const availableTasks = [];
+                    if(err){
+                        return resolve(availableTasks);
+                    }
+
+                    if(files.indexOf('sass.js') > -1){
+                        availableTasks.push('sass');
+                    }
+                    if(files.indexOf('bundle.js') > -1){
+                        availableTasks.push('bundle');
+                    }
+                    return resolve(availableTasks);
+                });
+            }).then( tasks => {
+                if(tasks.length){
+                    return installNpm().then( () => runTasks(tasks));
+                }
+            });
+        },
 
         /**
          * Update translations
@@ -247,24 +287,15 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
          * @returns {Promise} resolves once done
          */
         updateTranslations(extensionName = ''){
-            const uid = process.getuid();
             const options = {
                 cwd : rootDir
             };
-            if(!quiet){
-                options.stdio = 'inherit';
-            }
             return new Promise( (resolve, reject) => {
-                process.setuid(wwwUser);
-                const spawned = spawn('php', [
-                    'tao/scripts/taoTranslate.php',
-                    '-a=updateAll',
-                    `-e=${extensionName}`
-                ], options);
-                spawned.on('close', code => {
-                    process.setuid(uid);
-                    code === 0 ? resolve() : reject();
-                });
+                const command = `sudo -u ${wwwUser} php tao/scripts/taoTranslate.php -a=updateAll -e=${extensionName}`;
+                const execed = exec(command, options);
+                execed.stdout.pipe(process.stdout);
+                execed.stderr.pipe(process.stderr);
+                execed.on('exit', code => code === 0 ? resolve() : reject());
             });
         }
     };
