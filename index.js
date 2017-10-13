@@ -309,8 +309,7 @@ config.load()
     .then(() => git(data.extension.path).checkout(releaseBranch))
     .then(() => git(data.extension.path).merge(['--no-ff', data.releasingBranch]))
     .then(() => git(data.extension.path).push(origin, releaseBranch))
-    .then(() => githubClient.closePR(data.pr.number, true) )
-    .then(() => log.done('PR merged and closed'))
+    .then(() => log.done('PR merged'))
 
 
 // Create and push the tag
