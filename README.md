@@ -36,6 +36,7 @@ Then clone the sources :
 ```sh
 git clone git@github.com:oat-sa/tao-extension-release.git
 cd tao-extension-release
+npm install
 npm link
 ```
 

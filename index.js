@@ -255,6 +255,7 @@ config.load()
 
 
 // Update translations
+/*
     .then(() => inquirer.prompt({
         type: 'confirm',
         name: 'translation',
@@ -272,7 +273,7 @@ config.load()
                 });
         }
     })
-
+*/
 
 // Create PR
     .then(() => log.doing('Create the pull request'))
