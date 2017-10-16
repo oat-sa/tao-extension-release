@@ -347,7 +347,6 @@ config.load()
 
 // Clean up
     .then( () => git(data.extension.path).deleteLocalBranch(data.releasingBranch) )
-    .then( () => git(data.extension.path).push(origin, data.releasingBranch, ['--delete']) )
 
 // End
     .then( () => log.done('Good job!'))
