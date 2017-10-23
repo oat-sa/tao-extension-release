@@ -26,16 +26,14 @@
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
 
-const os                 = require('os');
 const path               = require('path');
 const inquirer           = require('inquirer');
-const git                = require('simple-git/promise');
 const opn                = require('opn');
 const log                = require('./src/log.js');
 const config             = require('./src/config.js')();
+const gitClientFactory   = require('./src/git.js');
 const github             = require('./src/github.js');
 const taoInstanceFactory = require('./src/taoInstance.js');
-
 
 const data          = {};
 
@@ -47,6 +45,7 @@ const branchPrefix  = 'release';
 const wwwUser       = 'www-data';
 
 var taoInstance;
+var gitClient;
 var githubClient;
 
 
@@ -55,11 +54,11 @@ log.title('TAO Extension Release');
 // Load local config
 
 config.load()
-    .then(result => Object.assign(data, result))
+    .then( result => Object.assign(data, result) )
 
 
 // Github Token
-    .then(() => {
+    .then( () => {
         if (!data.token) {
 
             setTimeout(() => opn('https://github.com/settings/tokens'), 2000);
@@ -88,12 +87,12 @@ config.load()
         name: 'taoRoot',
         message: 'Path to the TAO instance : ',
         default: data.taoRoot || process.cwd()
-    }))
-    .then(result => {
+    }) )
+    .then( result => {
         taoInstance = taoInstanceFactory(path.resolve(result.taoRoot), false, wwwUser);
         return taoInstance.isRoot();
     })
-    .then(result => {
+    .then( result => {
         if (!result.dir) {
             log.exit(`${result.dir} is not a TAO instance`);
         }
@@ -103,15 +102,15 @@ config.load()
 
 
 // Select the extension to release
-    .then(extensions => inquirer.prompt({
+    .then( extensions => inquirer.prompt({
         type: 'list',
         name: 'extension',
         message: 'Which extension you want to release ? ',
         pageSize: 12,
         choices: extensions,
         default : data.extension && data.extension.name
-    }))
-    .then(result => {
+    }) )
+    .then( result => {
         if (!result.extension) {
             log.exit('No extension.');
         }
@@ -120,85 +119,83 @@ config.load()
             path: `${data.taoRoot}/${result.extension}`,
         };
 
+        gitClient = gitClientFactory(data.extension.path, origin);
+
         return config.write(data);
     })
 
 
 // Verify local changes and current branch
-    .then(() => log.doing('Checking extension status'))
-    .then(() => git(data.extension.path).status())
-    .then(status => {
-        const empty = ['modified', 'renamed', 'conflicted', 'created', 'deleted'];
-
-        if (empty.some(value => status[value].length > 0)) {
-            log.exit(`The extension ${data.extension.name} have local changes, please clean or stash them before releasing`);
+    .then( () => log.doing('Checking extension status'))
+    .then( () => gitClient.hasLocalChanges() )
+    .then( result => {
+        if (result) {
+            log.exit(`The extension ${data.extension.name} has local changes, please clean or stash them before releasing`);
+        }
+    })
+    .then( () => inquirer.prompt({
+        type: 'confirm',
+        name: 'pull',
+        message: `Can I checkout and pull ${baseBranch} and ${releaseBranch}  ?`
+    }) )
+    .then( result => {
+        if (!result.pull) {
+            log.exit();
         }
 
-        return inquirer.prompt({
-            type: 'confirm',
-            name: 'pull',
-            message: `Can I checkout and pull ${baseBranch} and ${releaseBranch}  ?`
-        }).then(result => {
-            if (!result.pull) {
-                log.exit();
-            }
-
-            log.done(`${status.current} is clean`);
-        });
+        log.done(`${data.extension.name} is clean`);
     })
+
 
 // Sign tags (todo, not yet implemented)
-    .then(() => git(data.extension.path).raw(['config', '--list']))
-    .then(results => {
-        const configs = results.split(os.EOL).map(row => row.split('=')[0]);
-        data.signtags = configs.indexOf('user.signingkey') > 0;
-    })
+    .then( () => gitClient.hasSignKey() )
+    .then( result => data.signtags = result)
 
 
-// Fecth and pull branchs, extract manifests and repo name
-    .then(() => log.doing(`Updating ${data.extension.name}`))
+// Fetch and pull branches, extract manifests and repo name
+    .then( () => log.doing(`Updating ${data.extension.name}`) )
 
-    .then(() => git(data.extension.path).fetch(origin))
-
-    .then(() => git(data.extension.path).checkout(releaseBranch))
-    .then(() => git(data.extension.path).pull(origin, releaseBranch))
-    .then(() => taoInstance.parseManifest(`/${data.extension.path}/manifest.php`))
-    .then(manifest => {
+    .then( () => gitClient.pull(releaseBranch) )
+    .then( () => taoInstance.parseManifest(`/${data.extension.path}/manifest.php`) )
+    .then( manifest => {
         data.lastVersion = manifest.version;
-        data.lastTag = `v${manifest.version}`;
+        data.lastTag     = `v${manifest.version}`;
     })
 
-    .then(() => git(data.extension.path).checkout(baseBranch))
-    .then(() => git(data.extension.path).pull(origin, baseBranch))
-    .then(() => taoInstance.parseManifest(`/${data.extension.path}/manifest.php`))
-    .then(manifest => {
+    .then( () => gitClient.pull(baseBranch) )
+    .then( () => taoInstance.parseManifest(`/${data.extension.path}/manifest.php`) )
+    .then( manifest => {
         data.extension.manifest = manifest;
-        data.version = manifest.version;
-        data.tag = `v${manifest.version}`;
+        data.version            = manifest.version;
+        data.tag                = `v${manifest.version}`;
+        data.releasingBranch    = `${branchPrefix}-${manifest.version}`;
     })
 
-    .then( () => taoInstance.getRepoName(data.extension.name))
+    .then( () => taoInstance.getRepoName(data.extension.name) )
     .then( result => {
-        data.repo = result;
-        githubClient = github(data.token, data.repo);
+        if(result){
+            githubClient = github(data.token, result);
+        } else {
+            log.exit('Unable to find the gitbuh repository name');
+        }
     })
 
 
 //Release exists ?
-    .then(() => log.doing('Check existing tags'))
-    .then(() => git(data.extension.path).tags())
-    .then(tags => {
-        if (tags.all.indexOf(data.tag) > -1) {
+    .then( () => log.doing(`Check if tag ${data.tag} exists`))
+    .then( () => gitClient.hasTag(data.tag))
+    .then( result => {
+        if (result) {
             log.exit(`The tag ${data.tag} already exists`);
         }
     })
-    .then(() => log.done())
+    .then( () => log.done() )
 
 
 // Needs a release (diff) ?
-    .then(() => log.doing(`Diff ${baseBranch}..${releaseBranch}`))
-    .then(() => git(data.extension.path).raw(['diff', '--shortstat', `${baseBranch}..${releaseBranch}`]))
-    .then(result => {
+    .then( () => log.doing(`Diff ${baseBranch}..${releaseBranch}`) )
+    .then( () => gitClient.hasDiff(baseBranch, releaseBranch) )
+    .then( result => {
         if (!result) {
             return inquirer.prompt({
                 type: 'confirm',
@@ -214,73 +211,67 @@ config.load()
         }
     })
 
+
 // Last confirmation
-    .then(() => {
-        return inquirer.prompt({
-            type: 'confirm',
-            name: 'go',
-            message: `Let's release version ${data.extension.name}@${data.version} 🚀 ?`
-        }).then(result => {
-            if (!result.go) {
-                log.exit();
-            }
-        });
+    .then( () => inquirer.prompt({
+        type: 'confirm',
+        name: 'go',
+        message: `Let's release version ${data.extension.name}@${data.version} 🚀 ?`
+    }) )
+    .then( result => {
+        if (!result.go) {
+            log.exit();
+        }
     })
 
 
 // Create the release branch
-    .then(() => log.doing('Create release branch'))
-    .then(() => {
-        data.releasingBranch = `${branchPrefix}-${data.version}`;
-        return git(data.extension.path).checkoutLocalBranch(data.releasingBranch);
-    })
-    .then(() => log.done(`${branchPrefix}-${data.version} created`))
+    .then( () => log.doing('Create release branch') )
+    .then( () => gitClient.localBranch(data.releasingBranch) )
+    .then( () => log.done(`${branchPrefix}-${data.version} created`) )
 
 
 // Compile assets
-    .then(() => log.doing('Bundling'))
-    .then(() => log.info('Asset build started, this may take a while'))
-    .then(() => {
+    .then( () => log.doing('Bundling') )
+    .then( () => log.info('Asset build started, this may take a while') )
+    .then( () => {
         return taoInstance.buildAssets(data.extension.name, false)
-            .catch( err => log.error(`Unable to bundle assets. ${err.message}. Continue.`));
+            .catch( err => log.error(`Unable to bundle assets. ${err.message}. Continue.`) );
     })
-    .then(() => git(data.extension.path).diffSummary())
-    .then(results => {
-        if (results && results.files) {
-            const changes = results.files.map(file => file.file);
-            return git(data.extension.path)
-                .commit('bundle assets', changes)
-                .then(() => log.info(`Commit : [bundle assets - ${changes.length} files]`));
+    .then( () => gitClient.commitAndPush(data.releasingBranch, 'bundle assets') )
+    .then( changes => {
+        if(changes && changes.length){
+            log.info(`Commit : [bundle assets - ${changes.length} files]`);
+            changes.forEach( file => log.info(`  - ${file}`) );
         }
     })
-    .then(() => git(data.extension.path).push(origin, data.releasingBranch))
-    .then(() => log.done())
+    .then( () => log.done() )
 
 
 // Update translations
-    .then(() => inquirer.prompt({
+    .then( () => inquirer.prompt({
         type: 'confirm',
         name: 'translation',
         message: `${data.extension.name} needs updated translations ? `,
-    }))
+    }) )
     .then( result => {
         if(result.translation){
             return taoInstance.updateTranslations(data.extension.name)
                 .catch( err => log.error(`Unable to update translations. ${err.message}. Continue.`))
-                .then(() => git(data.extension.path).diffSummary())
-                .then( results => {
-                    const changes = results.files.map(file => file.file);
-                    return git(data.extension.path)
-                            .commit('update translations', changes)
-                            .then(() => log.info(`Commit : [update translations - ${changes.length} files]`));
+                .then(() => gitClient.commitAndPush(data.releasingBranch, 'update translations'))
+                .then( changes => {
+                    if(changes && changes.length){
+                        log.info(`Commit : [update translations - ${changes.length} files]`);
+                        changes.forEach( file => log.info(`  - ${file}`) );
+                    }
                 });
         }
     })
 
 
 // Create PR
-    .then(() => log.doing('Create the pull request'))
-    .then(() => githubClient.createReleasePR(data.releasingBranch, releaseBranch, data.version, data.lastVersion) )
+    .then( () => log.doing('Create the pull request') )
+    .then( () => githubClient.createReleasePR(data.releasingBranch, releaseBranch, data.version, data.lastVersion) )
     .then( result => {
         if(result && result.state === 'open'){
             data.pr = {
@@ -297,59 +288,52 @@ config.load()
     })
 
 // Merge PR
-    .then(() => {
-        setTimeout(() => opn(data.pr.url), 2000);
-        return inquirer.prompt({
-            type: 'confirm',
-            name: 'pr',
-            message: 'Please review the release PR (you can make the last changes now). Can I merge it now ?',
-        }).then(result => {
-            if (!result.pr) {
-                log.exit();
-            }
-        });
+    .then( () => setTimeout(() => opn(data.pr.url), 2000) )
+    .then( () => inquirer.prompt({
+        type: 'confirm',
+        name: 'pr',
+        message: 'Please review the release PR (you can make the last changes now). Can I merge it now ?',
+    }))
+    .then( result => {
+        if (!result.pr) {
+            log.exit();
+        }
     })
-    .then( () => log.doing('Merging the pull request'))
-    .then(() => git(data.extension.path).checkout(releaseBranch))
-    .then(() => git(data.extension.path).merge(['--no-ff', data.releasingBranch]))
-    .then(() => git(data.extension.path).push(origin, releaseBranch))
-    .then(() => log.done('PR merged'))
+    .then( () => log.doing('Merging the pull request') )
+    .then( () => gitClient.mergePr(releaseBranch, data.releasingBranch) )
+    .then( () => log.done('PR merged') )
 
 
 // Create and push the tag
-    .then(() => log.doing(`Add and push tag ${data.tag}`))
-    .then(() => git(data.extension.path).checkout(releaseBranch))
-    .then(() => git(data.extension.path).pull(origin, releaseBranch))
-    .then(() => git(data.extension.path).tag([data.tag, `-m "version ${data.version}`]))
-    .then(() => git(data.extension.path).pushTags(origin))
-    .then(() => log.done())
+    .then( () => log.doing(`Add and push tag ${data.tag}`) )
+    .then( () => gitClient.tag(releaseBranch, data.tag, `version ${data.version}`) )
+    .then( () => log.done() )
 
 
 // GH release
-    .then(() => log.doing(`Creating github release ${data.version}`))
-    .then(() => inquirer.prompt({
+    .then( () => log.doing(`Creating github release ${data.version}`) )
+    .then( () => inquirer.prompt({
         type: 'input',
         name: 'comment',
         message: 'Any comment on the release ?',
-    }))
+    }) )
     .then( result => githubClient.release(data.tag, result.comment) )
-    .then(() => log.done())
+    .then( () => log.done() )
 
 
-// Update
-    .then( () => log.doing('Merging back master into develop'))
-    .then( () => git(data.extension.path).checkout(baseBranch) )
-    .then( () => git(data.extension.path).pull(origin, baseBranch) )
-    .then( () => git(data.extension.path).merge([releaseBranch]) )
-    .then( () => git(data.extension.path).push(origin, baseBranch) )
+// Merge Back
+    .then( () => log.doing('Merging back master into develop') )
+    .then( () => gitClient.mergeBack(baseBranch, releaseBranch) )
     .then( () => log.done())
 
 
 // Clean up
-    .then( () => git(data.extension.path).deleteLocalBranch(data.releasingBranch) )
+    .then( () => log.doing('Clean up the place') )
+    .then( () => gitClient.deleteBranch(data.releasingBranch) )
+    .then( () => log.done())
 
 // End
-    .then( () => log.done('Good job!'))
+    .then( () => log.done('Good job!') )
 
 
 // Errors
