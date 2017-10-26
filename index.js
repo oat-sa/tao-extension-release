@@ -97,11 +97,16 @@ config.load()
             log.exit(`${result.dir} is not a TAO instance`);
         }
         data.taoRoot = result.dir;
-        return taoInstance.getExtensions();
+    })
+    .then( () => taoInstance.isInstalled() )
+    .then( result => {
+        if (!result) {
+            log.exit('It looks like the given TAO instance is not installed.');
+        }
     })
 
-
 // Select the extension to release
+    .then( () => taoInstance.getExtensions())
     .then( extensions => inquirer.prompt({
         type: 'list',
         name: 'extension',

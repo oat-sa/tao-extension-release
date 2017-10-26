@@ -26,7 +26,6 @@ const fs                      = require('fs');
 const { normalize, basename } = require('path');
 const { spawn, exec }         = require('child_process');
 const phpParser               = require('php-parser');
-const log                     = require('./log.js');
 
 /**
  * Get the taoInstance
@@ -70,6 +69,23 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
                             files.indexOf('config') > -1;
                         resolve(result);
                     });
+                });
+            });
+        },
+
+        /**
+         * Check if the given TAO instance is installed
+         * @returns {Promise<Boolean>}
+         */
+        isInstalled(){
+            const installFile =  normalize(`${rootDir}/tao/views/locales/en-US/messages.json`);
+
+            return new Promise( resolve => {
+                fs.access(installFile, fs.constants.R_OK, err => {
+                    if (err) {
+                        return resolve(false);
+                    }
+                    return resolve(true);
                 });
             });
         },
@@ -132,9 +148,9 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
         },
 
         /**
-        * Parse tao manifest and extract most of it's info
+        * Parse TAO manifest and extract most of it's info
         * @param {String} manifestPath - the path to the extension manifest
-        * @return {Promise} resolves with an object that retprsents the manifest
+        * @return {Promise} resolves with an object that represents the manifest
         */
         parseManifest(manifestPath = '') {
             //reducer AST to JSON for arrays
@@ -181,7 +197,7 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
         },
 
         /**
-         * Extract the repository name from the exntesion composer
+         * Extract the repository name from the extension composer
          * @param {String} extensionName - the name of the extension
          * @returns {Promise} resolves with the repo name
          */
@@ -217,6 +233,31 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
             if(!quiet){
                 options.stdio = 'inherit';
             }
+
+            /**
+             * Touch the mathjax fallback if needed to prevent build to fail
+             * @returns {Promise}
+             */
+            const mathJaxFallback = () => {
+                const touchFile = normalize(`${rootDir}/taoQtiItem/views/js/mathjax/MathJax.js`);
+                return new Promise( (resolve, reject) => {
+                    fs.open(touchFile, 'wx', (openErr, fd) => {
+                        if(openErr){
+                            //the file exists we are fine with that
+                            if( openErr.code !== 'EEXISTS'){
+                                return resolve();
+                            }
+                            return reject(openErr);
+                        }
+                        fs.close(fd, closeErr => {
+                            if(closeErr){
+                                return reject(closeErr);
+                            }
+                            return resolve();
+                        });
+                    });
+                });
+            };
 
             /**
              * run the given grunt task for the current extension :
@@ -275,7 +316,9 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
                 });
             }).then( tasks => {
                 if(tasks.length){
-                    return installNpm().then( () => runTasks(tasks));
+                    return mathJaxFallback()
+                        .then( () => installNpm() )
+                        .then( () => runTasks(tasks));
                 }
             });
         },
