@@ -10,8 +10,6 @@ Please verify installation [prerequisite](#prerequisite). And run :
 npm i -g @oat-sa/tao-extension-release
 ```
 
-> The package isn't yet published to npm. Please see the [development section)[#development].
-
 ## Release an extension
 
 Run :
