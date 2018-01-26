@@ -76,6 +76,7 @@ module.exports = function githubFactory(token, repository) {
          */
         getReleaseNotes(id) {
             const mergePrExp = /^Merge pull request #\d+ from oat-sa\//i;
+            const ticketExp  = /[A-Z]{2,4}-\d{1,5}/;
             return new Promise( (resolve, reject) => {
                 const ghpr = client.pr(repository, id);
                 ghpr.commits( (err, data) => {
@@ -89,10 +90,11 @@ module.exports = function githubFactory(token, repository) {
                                 const noteData = commit.commit.message.replace(mergePrExp, '').split(/\n+/);
                                 if(noteData.length === 2){
                                     let branchData = noteData[0].split('/');
+                                    let ticketData = noteData[0].match(ticketExp);
                                     notes.push({
                                         sha : commit.sha,
                                         type : branchData[0],
-                                        ticket : branchData[1].replace(/[/_].*/, ''),
+                                        ticket : ticketData[0],
                                         message : noteData[1]
                                     });
                                 } else {
@@ -110,8 +112,11 @@ module.exports = function githubFactory(token, repository) {
             .then( notes  => {
                 return  notes.reduce( (acc, note) => {
                     acc += '-';
-                    if(note.type && note.ticket){
-                        acc+= ` [${note.type}] [${note.ticket}](https://oat-sa.atlassian.net/browse/${note.ticket}) `;
+                    if(note.type){
+                        acc+= ` [${note.type}]`;
+                    }
+                    if(note.ticket){
+                        acc += ` [${note.ticket}](https://oat-sa.atlassian.net/browse/${note.ticket}) `;
                     }
                     acc += ` ${note.message} ([commit](https://github.com/${repository}/commit/${note.sha}))\n`;
                     return acc;
