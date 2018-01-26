@@ -70,6 +70,56 @@ module.exports = function githubFactory(token, repository) {
         },
 
         /**
+         * Try to extract the release notes from a release PR
+         * @param {Number} id - the PR id
+         * @returns {Promise<String>} resolves with the list of release notes
+         */
+        getReleaseNotes(id) {
+            const mergePrExp = /^Merge pull request #\d+ from oat-sa\//i;
+            return new Promise( (resolve, reject) => {
+                const ghpr = client.pr(repository, id);
+                ghpr.commits( (err, data) => {
+                    const notes = [];
+                    if(err){
+                        return reject(err);
+                    }
+                    if(data && data.length){
+                        data.filter( commit => commit.sha && commit.commit && mergePrExp.test(commit.commit.message))
+                            .forEach( commit => {
+                                const noteData = commit.commit.message.replace(mergePrExp, '').split(/\n+/);
+                                if(noteData.length === 2){
+                                    let branchData = noteData[0].split('/');
+                                    notes.push({
+                                        sha : commit.sha,
+                                        type : branchData[0],
+                                        ticket : branchData[1].replace(/[/_].*/, ''),
+                                        message : noteData[1]
+                                    });
+                                } else {
+                                    notes.push({
+                                        sha : commit.sha,
+                                        message : noteData.join(' ')
+                                    });
+                                }
+                            });
+                    }
+
+                    return resolve(notes);
+                });
+            })
+            .then( notes  => {
+                return  notes.reduce( (acc, note) => {
+                    acc += '-';
+                    if(note.type && note.ticket){
+                        acc+= ` [${note.type}] [${note.ticket}](https://oat-sa.atlassian.net/browse/${note.ticket}) `;
+                    }
+                    acc += ` ${note.message} ([commit](https://github.com/${repository}/commit/${note.sha}))\n`;
+                    return acc;
+                }, '');
+            });
+        },
+
+        /**
          * Close a pull request
          * @param {Number|String} id - the pull request id
          * @param {Boolean} [forceMerge = false] - do we merge the PR if not yet done ?

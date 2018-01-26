@@ -152,6 +152,7 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
             return git(repository).raw(['diff', '--shortstat', `${aBranch}..${anotherBranch}`]);
         },
 
+
         /**
          * Merge and push branches in a Pull Request style layout
          * @param {String} baseBranch - the branch that receive the feature
