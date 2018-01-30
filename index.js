@@ -32,7 +32,7 @@ const opn                = require('opn');
 const log                = require('./src/log.js');
 const config             = require('./src/config.js')();
 const gitClientFactory   = require('./src/git.js');
-const github             = require('./src/github.js');
+const githubHelper       = require('./src/github.js');
 const taoInstanceFactory = require('./src/taoInstance.js');
 
 const data          = {};
@@ -46,8 +46,9 @@ const wwwUser       = 'www-data';
 
 var taoInstance;
 var gitClient;
-var githubClient;
-
+var githubClient;   // Github API helper (octonode)
+var githubRepo;     // Repository of the released extension
+var githubRepoClient;     // Repository of the released extension
 
 log.title('TAO Extension Release');
 
@@ -179,9 +180,11 @@ config.load()
     .then( () => taoInstance.getRepoName(data.extension.name) )
     .then( result => {
         if(result){
-            githubClient = github(data.token, result);
+            githubRepo = result;
+            githubClient = require('octonode').client(data.token);
+            githubRepoClient = githubClient.repo(githubRepo);
         } else {
-            log.exit('Unable to find the gitbuh repository name');
+            log.exit('Unable to find the github repository name');
         }
     })
 
@@ -276,7 +279,13 @@ config.load()
 
 // Create PR
     .then( () => log.doing('Create the pull request') )
-    .then( () => githubClient.createReleasePR(data.releasingBranch, releaseBranch, data.version, data.lastVersion) )
+    .then( () => githubHelper.createReleasePR({
+        ghrepo: githubRepoClient,
+        releasingBranch: data.releasingBranch,
+        releaseBranch: releaseBranch,
+        version: data.version,
+        fromVersion: data.lastVersion
+    }))
     .then( result => {
         if(result && result.state === 'open'){
             data.pr = {
@@ -295,7 +304,11 @@ config.load()
 //Extract release nptes
 
     .then( () => log.doing('Extract release notes') )
-    .then( () =>  githubClient.getReleaseNotes(data.pr.number) )
+    .then( () =>  githubHelper.getReleaseNotes({
+        client: githubClient,
+        repository: githubRepo,
+        id: data.pr.number
+    }) )
     .then( notes => {
         if(notes && notes.length){
             data.releaseNotes = notes;
@@ -332,7 +345,7 @@ config.load()
     .then( () => inquirer.prompt({
         type: 'input',
         name: 'comment',
-        message: 'Any comment on the release ?',
+        message: 'Any comment on the release ?'
     }) )
     .then( result => {
         let releaseComment = result.comment;
@@ -340,7 +353,11 @@ config.load()
             releaseComment += '\n';
             releaseComment += data.releaseNotes;
         }
-        return githubClient.release(data.tag, releaseComment);
+        return githubHelper.release({
+            ghrepo: githubRepoClient,
+            tag: data.tag,
+            comment: releaseComment
+        });
     })
     .then( () => log.done() )
 

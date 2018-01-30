@@ -24,91 +24,85 @@
 
 
 /**
- * Creates a github client helper
- * @param {String} token - the github token, with permissions to manage the repo
- * @param {String} repository - the github repository name
- * @returns {githubClient} the client
+ * Github client helper
  */
-module.exports = function githubFactory(token, repository) {
-
-    const client = require('octonode').client(token);
-    const ghrepo = client.repo(repository);
+module.exports = {
 
     /**
-     * @typedef {Object} githubClient
+     * Create the release pull request
+     * @param {Object} options
+     * @param {Object} options.ghrepo - a github repository client
+     * @param {String} options.releasingBranch - the temp branch that contains the commits to release
+     * @param {String} options.releaseBranch - the base branch
+     * @param {String} options.version - the version of the release
+     * @param {String} options.fromVersion - the last version
+     * @returns {Promise} resolves with the pull request data
      */
-    return {
-
-        /**
-         * Create the release pull request
-         * @param {String} releasingBranch - the temp branch that contains the commits to release
-         * @param {String} releaseBranch - the base branch
-         * @param {String} version - the version of the release
-         * @param {String} fromVersion - the last version
-         * @returns {Promise} resolves with the pull request data
-         */
-        createReleasePR(releasingBranch, releaseBranch, version, fromVersion) {
-            const prBody = `Please check :
+    createReleasePR({ ghrepo, releasingBranch, releaseBranch, version, fromVersion }) {
+        const prBody = `Please check :
  - [ ] the manifest (versions ${version} and dependencies)
  - [ ] the update script (from ${fromVersion} to ${version})
  - [ ] CSS and JavaScript bundles
  - [ ] Extension specials (version in tao-core, nested dependencies, etc.)
 `;
-            return new Promise( (resolve, reject) => {
-                ghrepo.pr({
-                    title: `Release ${version}`,
-                    body : prBody,
-                    head: releasingBranch,
-                    base: releaseBranch
-                }, (err, data)  => {
-                    if(err){
-                        return reject(err);
-                    }
-                    return resolve(data);
-                });
+        return new Promise( (resolve, reject) => {
+            ghrepo.pr({
+                title: `Release ${version}`,
+                body : prBody,
+                head: releasingBranch,
+                base: releaseBranch
+            }, (err, data)  => {
+                if(err){
+                    return reject(err);
+                }
+                return resolve(data);
             });
-        },
+        });
+    },
 
-        /**
-         * Try to extract the release notes from a release PR
-         * @param {Number} id - the PR id
-         * @returns {Promise<String>} resolves with the list of release notes
-         */
-        getReleaseNotes(id) {
-            const mergePrExp = /^Merge pull request #\d+ from oat-sa\//i;
-            const ticketExp  = /[A-Z]{2,4}-\d{1,5}/;
-            return new Promise( (resolve, reject) => {
-                const ghpr = client.pr(repository, id);
-                ghpr.commits( (err, data) => {
-                    const notes = [];
-                    if(err){
-                        return reject(err);
-                    }
-                    if(data && data.length){
-                        data.filter( commit => commit.sha && commit.commit && mergePrExp.test(commit.commit.message))
-                            .forEach( commit => {
-                                const noteData = commit.commit.message.replace(mergePrExp, '').split(/\n+/);
-                                if(noteData.length === 2){
-                                    let branchData = noteData[0].split('/');
-                                    let ticketData = noteData[0].match(ticketExp);
-                                    notes.push({
-                                        sha : commit.sha,
-                                        type : branchData[0],
-                                        ticket : ticketData[0],
-                                        message : noteData[1]
-                                    });
-                                } else {
-                                    notes.push({
-                                        sha : commit.sha,
-                                        message : noteData.join(' ')
-                                    });
-                                }
-                            });
-                    }
+    /**
+     * Try to extract the release notes from a release PR
+     * @param {Object} options
+     * @param {Object} options.client - github client
+     * @param {Object} options.repository - the repository name
+     * @param {Number} options.id - the PR id
+     * @returns {Promise<String>} resolves with the list of release notes
+     */
+    getReleaseNotes({ client, repository, id }) {
+        const mergePrExp = /^Merge pull request #\d+ from oat-sa\//i;
+        const ticketExp  = /[A-Z]{2,4}-\d{1,5}/;
+        return new Promise( (resolve, reject) => {
+            const ghpr = client.pr(repository, id);
+            ghpr.commits( (err, data) => {
+                const notes = [];
+                if(err){
+                    return reject(err);
+                }
+                if(data && data.length){
+                    data.filter( commit => commit.sha && commit.commit && mergePrExp.test(commit.commit.message))
+                        .forEach( commit => {
+                            const noteData = commit.commit.message.replace(mergePrExp, '').split(/\n+/);
+                            if(noteData.length === 2){
+                                let branchData = noteData[0].split('/');
+                                let ticketData = noteData[0].match(ticketExp);
+                                notes.push({
+                                    sha : commit.sha,
+                                    type : branchData[0],
+                                    ticket : ticketData[0],
+                                    message : noteData[1]
+                                });
+                            } else {
+                                notes.push({
+                                    sha : commit.sha,
+                                    message : noteData.join(' ')
+                                });
+                            }
+                        });
+                }
 
-                    return resolve(notes);
-                });
-            })
+                return resolve(notes);
+            });
+        })
             .then( notes  => {
                 return  notes.reduce( (acc, note) => {
                     acc += '-';
@@ -122,67 +116,71 @@ module.exports = function githubFactory(token, repository) {
                     return acc;
                 }, '');
             });
-        },
+    },
 
-        /**
-         * Close a pull request
-         * @param {Number|String} id - the pull request id
-         * @param {Boolean} [forceMerge = false] - do we merge the PR if not yet done ?
-         * @returns {Promise}
-         */
-        closePR(id, forceMerge = false){
-            return new Promise( (resolve, reject) => {
+    /**
+     * Close a pull request
+     * @param {Object} options
+     * @param {Object} options.client - github client
+     * @param {Object} options.repository - the repository name
+     * @param {Number|String} options.id - the pull request id
+     * @param {Boolean} [options.forceMerge = false] - do we merge the PR if not yet done ?
+     * @returns {Promise}
+     */
+    closePR({ client, repository, id, forceMerge = false }){
+        return new Promise( (resolve, reject) => {
 
-                const ghpr = client.pr(repository, id);
-                const doClose = () => {
-                    ghpr.close( closeErr => {
-                        if(closeErr){
-                            return reject(closeErr);
-                        }
-                        return resolve(true);
-                    });
-                };
-                ghpr.merged( (err, merged) => {
-                    if(err){
-                        return reject(err);
+            const ghpr = client.pr(repository, id);
+            const doClose = () => {
+                ghpr.close( closeErr => {
+                    if(closeErr){
+                        return reject(closeErr);
                     }
-                    if(!merged){
-                        if(forceMerge){
-                            return ghpr.merge('Forced merged', mergeErr => {
-                                if(mergeErr){
-                                    return reject(mergeErr);
-                                }
-                                return doClose();
-                            });
-                        } else {
-                            return reject(new Error('I do not close an open PR'));
-                        }
-                    }
-                    return doClose();
+                    return resolve(true);
                 });
-            });
-        },
-
-        /**
-         * Creates a Github release from a tag
-         * @param {String} tag - the tag to release
-         * @param {String} [comment] - comment the release
-         * @returns {Promise}
-         */
-        release(tag, comment = ''){
-            return new Promise( (resolve, reject) => {
-                ghrepo.release({
-                    tag_name : tag,
-                    name : tag,
-                    body : comment
-                }, (err, released) => {
-                    if(err){
-                        return reject(err);
+            };
+            ghpr.merged( (err, merged) => {
+                if(err){
+                    return reject(err);
+                }
+                if(!merged){
+                    if(forceMerge){
+                        return ghpr.merge('Forced merged', mergeErr => {
+                            if(mergeErr){
+                                return reject(mergeErr);
+                            }
+                            return doClose();
+                        });
+                    } else {
+                        return reject(new Error('I do not close an open PR'));
                     }
-                    return resolve(released);
-                });
+                }
+                return doClose();
             });
+        });
+    },
 
-        }
-    };
+    /**
+     * Creates a Github release from a tag
+     * @param {Object} options
+     * @param {Object} options.ghrepo - a github repository client
+     * @param {String} options.tag - the tag to release
+     * @param {String} [options.comment] - comment the release
+     * @returns {Promise}
+     */
+    release({ ghrepo, tag, comment = ''}){
+        return new Promise( (resolve, reject) => {
+            ghrepo.release({
+                tag_name : tag,
+                name : tag,
+                body : comment
+            }, (err, released) => {
+                if(err){
+                    return reject(err);
+                }
+                return resolve(released);
+            });
+        });
+
+    }
 };
