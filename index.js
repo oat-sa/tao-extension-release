@@ -46,9 +46,9 @@ const wwwUser       = 'www-data';
 
 var taoInstance;
 var gitClient;
-var githubClient;   // Github API helper (octonode)
-var githubRepo;     // Repository of the released extension
-var githubRepoClient;     // Repository of the released extension
+var githubClient;       // Github API helper (octonode)
+var githubRepo;         // Repository name
+var githubRepoClient;   // Repository client
 
 log.title('TAO Extension Release');
 
