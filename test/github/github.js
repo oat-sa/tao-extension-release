@@ -20,12 +20,12 @@ context('Github helpers', () => {
         });
 
         // mock the github client
-        let commitsStub = [];
-        const clientMock = {
+        let commitsData = [];
+        const clientStub = {
             pr() {
                 return {
                     commits: cb => {
-                        cb(null, commitsStub);
+                        cb(null, commitsData);
                     }
                 };
             }
@@ -47,8 +47,8 @@ context('Github helpers', () => {
 
         testCases.forEach(testCase => {
             it(testCase.title, () => {
-                commitsStub = testCase.commits;
-                return githubHelper.getReleaseNotes({ client: clientMock, repository: 'repo', id: 69 })
+                commitsData = testCase.commits;
+                return githubHelper.getReleaseNotes({ client: clientStub, repository: 'repo', id: 69 })
                     .then(notes => {
                         assert.equal(notes, testCase.expected);
                     });
