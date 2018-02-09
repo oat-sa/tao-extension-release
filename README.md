@@ -76,6 +76,10 @@ cd tao/views/build
 npm reinstall node-sass --force
 ```
 
+## Release notes
+
+See the [history](HISTORY.md)
+
 ## License
 
 Copyright (c) 2017 Open Assessment Technologies SA;

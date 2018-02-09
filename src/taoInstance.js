@@ -26,6 +26,8 @@ const fs                      = require('fs');
 const { normalize, basename } = require('path');
 const { spawn, exec }         = require('child_process');
 const phpParser               = require('php-parser');
+const crossSpawn              = require('cross-spawn');
+const isWin = /^win/.test(process.platform);
 
 /**
  * Get the taoInstance
@@ -266,7 +268,7 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
              */
             const runGruntTask = task => {
                 return new Promise( (resolve, reject) => {
-                    const spawned = spawn('./node_modules/.bin/grunt', [`${extensionName.toLowerCase()}${task}`], options);
+                    const spawned = crossSpawn(normalize(`${options.cwd}/node_modules/.bin/grunt`), [`${extensionName.toLowerCase()}${task}`], options);
                     spawned.on('close', code => code === 0 ? resolve() : reject());
                 });
             };
@@ -276,12 +278,12 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
              */
             const installNpm = () => {
                 return new Promise( (resolve, reject) => {
-                    fs.access(`${options.cwd}/node_modules/.bin/grunt`, err => {
+                    fs.access(normalize(`${options.cwd}/node_modules/.bin/grunt`), err => {
                         if(!err){
                             //file exists
-                            resolve();
+                            return resolve();
                         }
-                        const spawned = spawn('npm', ['install'], options);
+                        const spawned = crossSpawn('npm', ['install'], options);
                         spawned.on('close', code => code === 0 ? resolve() : reject());
                     });
                 });
@@ -334,7 +336,7 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
                 cwd : rootDir
             };
             return new Promise( (resolve, reject) => {
-                const command = `sudo -u ${wwwUser} php tao/scripts/taoTranslate.php -a=updateAll -e=${extensionName}`;
+                const command = (isWin ? '' : `sudo -u ${wwwUser} `) + `php tao/scripts/taoTranslate.php -a=updateAll -e=${extensionName}`;
                 const execed = exec(command, options);
                 execed.stdout.pipe(process.stdout);
                 execed.stderr.pipe(process.stderr);

@@ -29,6 +29,8 @@
 const path               = require('path');
 const inquirer           = require('inquirer');
 const opn                = require('opn');
+const updateNotifier     = require('update-notifier');
+const pkg                = require('./package.json');
 const log                = require('./src/log.js');
 const config             = require('./src/config.js')();
 const gitClientFactory   = require('./src/git.js');
@@ -50,6 +52,11 @@ var githubClient;
 
 
 log.title('TAO Extension Release');
+
+// check for updates
+
+updateNotifier({pkg}).notify();
+
 
 // Load local config
 
@@ -161,14 +168,14 @@ config.load()
     .then( () => log.doing(`Updating ${data.extension.name}`) )
 
     .then( () => gitClient.pull(releaseBranch) )
-    .then( () => taoInstance.parseManifest(`/${data.extension.path}/manifest.php`) )
+    .then( () => taoInstance.parseManifest(`${data.extension.path}/manifest.php`) )
     .then( manifest => {
         data.lastVersion = manifest.version;
         data.lastTag     = `v${manifest.version}`;
     })
 
     .then( () => gitClient.pull(baseBranch) )
-    .then( () => taoInstance.parseManifest(`/${data.extension.path}/manifest.php`) )
+    .then( () => taoInstance.parseManifest(`${data.extension.path}/manifest.php`) )
     .then( manifest => {
         data.extension.manifest = manifest;
         data.version            = manifest.version;
@@ -243,7 +250,9 @@ config.load()
         return taoInstance.buildAssets(data.extension.name, false)
             .catch( err => log.error(`Unable to bundle assets. ${err.message}. Continue.`) );
     })
-    .then( () => gitClient.commitAndPush(data.releasingBranch, 'bundle assets') )
+    .then( () => {
+        return gitClient.commitAndPush(data.releasingBranch, 'bundle assets').catch( err => log.error(`Unable to bundle assets. ${err.message}. Continue.`) );
+    })
     .then( changes => {
         if(changes && changes.length){
             log.info(`Commit : [bundle assets - ${changes.length} files]`);
