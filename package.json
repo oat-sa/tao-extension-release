@@ -1,6 +1,6 @@
 {
   "name": "@oat-sa/tao-extension-release",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Helps you to release TAO extensions",
   "main": "index.js",
   "scripts": {
@@ -22,12 +22,13 @@
   "dependencies": {
     "chalk": "^2.1.0",
     "commander": "^2.11.0",
+    "cross-spawn": "^6.0.3",
     "inquirer": "^3.3.0",
     "octonode": "^0.8.0",
     "opn": "^5.1.0",
     "php-parser": "^2.0.7",
     "simple-git": "^1.77.0",
-    "cross-spawn": "^6.0.3"
+    "update-notifier": "^2.3.0"
   },
   "engine": {
     "node": ">=6.5.0"

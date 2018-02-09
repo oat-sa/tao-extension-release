@@ -29,6 +29,8 @@
 const path               = require('path');
 const inquirer           = require('inquirer');
 const opn                = require('opn');
+const updateNotifier     = require('update-notifier');
+const pkg                = require('./package.json');
 const log                = require('./src/log.js');
 const config             = require('./src/config.js')();
 const gitClientFactory   = require('./src/git.js');
@@ -50,6 +52,11 @@ var githubClient;
 
 
 log.title('TAO Extension Release');
+
+// check for updates
+
+updateNotifier({pkg}).notify();
+
 
 // Load local config
 
