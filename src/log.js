@@ -24,6 +24,12 @@
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
 const chalk = require('chalk');
+const marked = require('marked');
+const TerminalRenderer = require('marked-terminal');
+
+marked.setOptions({
+    renderer: new TerminalRenderer()
+});
 
 module.exports = {
     title(msg){
@@ -44,6 +50,10 @@ module.exports = {
 
     info(msg){
         console.log(chalk.blue(msg));
+        return this;
+    },
+    md(msg){
+        console.log(marked(msg));
         return this;
     },
     error(err){

@@ -301,6 +301,18 @@ config.load()
         }
     })
 
+//Extract release nptes
+
+    .then( () => log.doing('Extract release notes') )
+    .then( () =>  githubClient.getReleaseNotes(data.pr.number) )
+    .then( notes => {
+        if(notes && notes.length){
+            data.releaseNotes = notes;
+            log.md( notes );
+        }
+        log.done();
+    })
+
 // Merge PR
     .then( () => setTimeout(() => opn(data.pr.url), 2000) )
     .then( () => inquirer.prompt({
@@ -331,7 +343,14 @@ config.load()
         name: 'comment',
         message: 'Any comment on the release ?',
     }) )
-    .then( result => githubClient.release(data.tag, result.comment) )
+    .then( result => {
+        let releaseComment = result.comment;
+        if(data.releaseNotes){
+            releaseComment += '\n';
+            releaseComment += data.releaseNotes;
+        }
+        return githubClient.release(data.tag, releaseComment);
+    })
     .then( () => log.done() )
 
 
