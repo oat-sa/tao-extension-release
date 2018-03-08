@@ -57,5 +57,4 @@ module.exports = {
         console.log(msg || 'Good bye');
         process.exit();
     }
-
 };

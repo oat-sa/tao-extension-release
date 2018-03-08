@@ -192,8 +192,9 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
                 .then(results => {
                     if (results && results.files) {
                         changes = results.files.map(file => file.file);
-                        return git(repository).commit(comment, changes)
-                                .then(() => git(repository).push(origin, branchName));
+                        return git(repository)
+                            .commit(comment, changes)
+                            .then( () => git(repository).push(origin, branchName));
                     }
                 })
                 .then(() => changes);
