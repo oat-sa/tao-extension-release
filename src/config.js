@@ -20,7 +20,7 @@
  * This module let's you manage local configuration
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
-const fs = require('fs');
+const fs = require('fs-extra');
 const path = require('path');
 
 /**
@@ -44,19 +44,11 @@ module.exports = function configFactory(dir = process.env.HOME, fileName = '.tao
          * @returns {Promise} always resolves with the config object
          */
         load(){
-            return new Promise( resolve => {
-                fs.readFile(configFile, 'utf-8', (err, data) => {
-                    if(!err){
-                        try {
-                            return resolve(JSON.parse(data));
-                        } catch(jsonErr){
-                            //ignore
-                        }
-                    }
-                    return resolve({});
-                });
-            });
+            return fs
+                .readJSON(configFile)
+                .catch( () => ({}) );
         },
+
 
         /**
          * Writes the config
@@ -64,14 +56,7 @@ module.exports = function configFactory(dir = process.env.HOME, fileName = '.tao
          * @returns {Promise} resolves once written
          */
         write(data = {}){
-            return new Promise( (resolve, reject) => {
-                fs.writeFile(configFile, JSON.stringify(data, null, 2), err => {
-                    if(err){
-                        return reject(err);
-                    }
-                    return resolve(true);
-                });
-            });
+            return fs.writeJson(configFile, data, { spaces : 2 });
         }
     };
 };
