@@ -11,3 +11,9 @@
 
  - windows support
  - update notification
+
+
+## [Version 0.2.1](https://github.com/oat-sa/tao-extension-release/releases/tag/0.2.1)
+
+ - fix windows home path
+ - library update
