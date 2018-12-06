@@ -43,7 +43,7 @@ module.exports = {
     },
     warn(msg){
         msg = msg || 'ok';
-        console.log(chalk.orange(`⚠ ${msg}`));
+        console.log(chalk.yellow(`⚠ ${msg}`));
         return this;
     },
     info(msg){
