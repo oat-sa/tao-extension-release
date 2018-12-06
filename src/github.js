@@ -96,7 +96,7 @@ module.exports = function githubFactory(token, repository) {
             if(typeof extensionPRChecks[repository] !== 'undefined'){
                 checks.push(extensionPRChecks[repository]);
             }
-            return `Please verify the following points :\n${checks.map( c => '\n- [] ' + c)}`;
+            return `Please verify the following points :\n${checks.map( c => '\n- [ ] ' + c)}`;
         },
 
         /**
