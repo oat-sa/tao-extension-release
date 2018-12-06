@@ -304,6 +304,19 @@ config.load()
         }
     })
 
+// Extract release notes
+    .then( () => log.doing('Extract release notes') )
+    .then( () => githubClient.extractReleaseNotesFromReleasePR(data.pr.number) )
+    .then( result => {
+        if(result){
+            data.pr.notes = result;
+            console.log(data.pr.notes );
+            log.done();
+        } else {
+            log.exit('Unable to create the release notes');
+        }
+    })
+
 // Merge PR
     .then( () => setTimeout(() => opn(data.pr.url), 2000) )
     .then( () => inquirer.prompt({

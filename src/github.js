@@ -108,7 +108,7 @@ module.exports = function githubFactory(token, repository) {
         closePR(prNumber, forceMerge = false){
             return new Promise( (resolve, reject) => {
 
-                validate.check(prNumber);
+                validate.prNumber(prNumber);
 
                 const ghpr = client.pr(repository, prNumber);
                 const doClose = () => {
@@ -169,7 +169,8 @@ module.exports = function githubFactory(token, repository) {
         getPRCommitShas(prNumber){
             return new Promise( (resolve, reject) => {
 
-                validate.check(prNumber);
+                validate.prNumber(prNumber);
+                console.log(prNumber, 'is valid');
 
                 client
                     .pr(repository, prNumber)
@@ -177,7 +178,7 @@ module.exports = function githubFactory(token, repository) {
                         if(err){
                             return reject(err);
                         }
-                        return commits.map( commit => commit.sha);
+                        return resolve(commits.map( commit => commit.sha.slice(0, 8) ));
                     });
             });
         },
@@ -192,17 +193,16 @@ module.exports = function githubFactory(token, repository) {
          */
         searchIssues(searchOptions = {q : '', sort : 'created', order : 'asc'}){
             return new Promise( (resolve, reject) => {
-                client
-                    .search()
-                    .issues(searchOptions, (searchErr, results) => {
-                        if(searchErr){
-                            return reject(searchErr);
-                        }
-                        if(results && results.items && results.items.length){
-                            return resolve(results.items);
-                        }
-                        return resolve([]);
-                    });
+                const ghsearch = client.search();
+                ghsearch.issues(searchOptions, (searchErr, results) => {
+                    if(searchErr){
+                        return reject(searchErr);
+                    }
+                    if(results && results.items && results.items.length){
+                        return resolve(results.items);
+                    }
+                    return resolve([]);
+                });
             });
         },
 
@@ -214,7 +214,7 @@ module.exports = function githubFactory(token, repository) {
         getPRData(prNumber){
             return new Promise( (resolve, reject) => {
 
-                validate.check(prNumber);
+                validate.prNumber(prNumber);
 
                 client
                     .pr(repository, prNumber)
@@ -346,7 +346,8 @@ module.exports = function githubFactory(token, repository) {
             return this.getPRCommitShas(prNumber)
                 .then( commits => {
                     if(commits && commits.length){
-
+                        //TODO search by batch
+                        console.log('Q: ',  `${commits.join(' ')}+repo:${repository}+type:pr+base:develop+is:merged`);
                         // we filter out PR inside those commits
                         // (github considers pr as issues)
                         return this.searchIssues({
@@ -357,6 +358,7 @@ module.exports = function githubFactory(token, repository) {
                     }
                 })
                 .then( issues => {
+                    console.log('issues' , issues);
                     if(issues && issues.length) {
                         //we load the full description from all of them (for the head branch mostly)
                         return Promise.all(
