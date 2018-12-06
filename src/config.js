@@ -22,6 +22,7 @@
  */
 const fs = require('fs-extra');
 const path = require('path');
+const os = require('os');
 
 /**
  * Get the config object
@@ -29,8 +30,7 @@ const path = require('path');
  * @param {String} [fileName = .tao-extension-release] - the config file
  * @returns {config} the config manager
  */
-module.exports = function configFactory(dir = process.env.HOME, fileName = '.tao-extension-release'){
-
+module.exports = function configFactory(dir = os.homedir(), fileName = '.tao-extension-release'){
     const configFile = path.normalize(`${dir}/${fileName}`);
 
     /**
