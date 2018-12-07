@@ -170,7 +170,6 @@ module.exports = function githubFactory(token, repository) {
             return new Promise( (resolve, reject) => {
 
                 validate.prNumber(prNumber);
-                console.log(prNumber, 'is valid');
 
                 client
                     .pr(repository, prNumber)
@@ -222,7 +221,7 @@ module.exports = function githubFactory(token, repository) {
                         if(err){
                             return reject(err);
                         }
-                        return data;
+                        return resolve(data);
                     });
             });
         },
@@ -301,7 +300,7 @@ module.exports = function githubFactory(token, repository) {
                     note.push(`_${type}_`);
                 }
                 if(jiraId){
-                    note.push(`[https://oat-sa.atlassian.net/browse/${jiraId}](${jiraId})`);
+                    note.push(`[${jiraId}](https://oat-sa.atlassian.net/browse/${jiraId})`);
                 }
                 if(note.length){
                     note.push(':');
@@ -317,14 +316,14 @@ module.exports = function githubFactory(token, repository) {
                     );
                 }
                 if(noteData.number && noteData.url){
-                    note.push(`[${noteData.url}](#${noteData.number})`);
+                    note.push(`[#${noteData.number}](${noteData.url})`);
                 }
 
                 if(noteData.user && noteData.assignee){
                     note.push('(');
-                    note.push(`by [https://github.com/${noteData.user}](${noteData.user})`);
+                    note.push(`by [${noteData.user}](https://github.com/${noteData.user})`);
                     note.push('-');
-                    note.push(`validated by [https://github.com/${noteData.assignee}](${noteData.assignee})`);
+                    note.push(`validated by [${noteData.assignee}](https://github.com/${noteData.assignee})`);
                     note.push(')');
                 }
             }
@@ -346,8 +345,6 @@ module.exports = function githubFactory(token, repository) {
             return this.getPRCommitShas(prNumber)
                 .then( commits => {
                     if(commits && commits.length){
-                        //TODO search by batch
-                        console.log('Q: ',  `${commits.join(' ')}+repo:${repository}+type:pr+base:develop+is:merged`);
                         // we filter out PR inside those commits
                         // (github considers pr as issues)
                         return this.searchIssues({
@@ -358,7 +355,6 @@ module.exports = function githubFactory(token, repository) {
                     }
                 })
                 .then( issues => {
-                    console.log('issues' , issues);
                     if(issues && issues.length) {
                         //we load the full description from all of them (for the head branch mostly)
                         return Promise.all(
@@ -389,7 +385,7 @@ module.exports = function githubFactory(token, repository) {
                     //extract the IDs and format the notes
                     if(notesData && notesData.length){
                         return notesData
-                            .map( noteData => this.formatRealseNote(noteData) )
+                            .map( noteData => this.formatReleaseNote(noteData) )
                             .reduce( (acc, note) => {
                                 if(note){
                                     acc += `- ${note}\n`;

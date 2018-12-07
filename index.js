@@ -347,7 +347,10 @@ config.load()
         name: 'comment',
         message: 'Any comment on the release ?',
     }) )
-    .then( result => githubClient.release(data.tag, result.comment) )
+    .then( result => {
+        const releaseComment = `${result.comment}\n\n**Release notes :**\n${data.pr.notes}`;
+        return githubClient.release(data.tag, releaseComment);
+    })
     .then( () => log.done() )
 
 
