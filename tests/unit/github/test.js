@@ -96,18 +96,18 @@ test('the method getReleasePRComment', t => {
 
     t.equal(ghclient.getReleasePRComment(), `Please verify the following points :
 
-- [] the manifest (versions ?.?.? and dependencies),
-- [] the update script (from ?.?.? to ?.?.?),
-- [] CSS and JavaScript bundles`);
+- [ ] the manifest (versions ?.?.? and dependencies),
+- [ ] the update script (from ?.?.? to ?.?.?),
+- [ ] CSS and JavaScript bundles`);
 
     ghclient = github(token, 'oat-sa/tao-core');
 
     t.equal(ghclient.getReleasePRComment('18.7.3', '18.6.0'), `Please verify the following points :
 
-- [] the manifest (versions 18.7.3 and dependencies),
-- [] the update script (from 18.6.0 to 18.7.3),
-- [] CSS and JavaScript bundles,
-- [] Increase TAO-VERSION in \`manifest.php\``);
+- [ ] the manifest (versions 18.7.3 and dependencies),
+- [ ] the update script (from 18.6.0 to 18.7.3),
+- [ ] CSS and JavaScript bundles,
+- [ ] Increase TAO-VERSION in \`manifest.php\``);
 
     t.end();
 });
@@ -131,14 +131,14 @@ test('the method formatReleaseNote', t => {
         commit:   '123456a',
         body:     'Please enable to brain driver protocol in the browser first',
         branch:   'feature/TAO-9986_human-brain-UI-driver'
-    }), '_Feature_ [https://oat-sa.atlassian.net/browse/TAO-9986](TAO-9986) : human brain UI driver [https://github.com/oat-sa/tao-core/pull/12001](#12001) ( by [https://github.com/johndoe](johndoe) - validated by [https://github.com/janedoe](janedoe) )');
+    }), '_Feature_ [TAO-9986](https://oat-sa.atlassian.net/browse/TAO-9986) : human brain UI driver [#12001](https://github.com/oat-sa/tao-core/pull/12001) ( by [johndoe](https://github.com/johndoe) - validated by [janedoe](https://github.com/janedoe) )');
 
     t.equal(ghclient.formatReleaseNote({
         title:    'feature/tao 9986 human brain UI driver',
         number:   '12001',
         url:      'https://github.com/oat-sa/tao-core/pull/12001',
         commit:   '123456a',
-    }), '_Feature_ [https://oat-sa.atlassian.net/browse/TAO-9986](TAO-9986) : human brain UI driver [https://github.com/oat-sa/tao-core/pull/12001](#12001)');
+    }), '_Feature_ [TAO-9986](https://oat-sa.atlassian.net/browse/TAO-9986) : human brain UI driver [#12001](https://github.com/oat-sa/tao-core/pull/12001)');
 
     t.equal(ghclient.formatReleaseNote({
         title:    'backport/fix/tao 1984 fix big brother backdoor',
@@ -149,7 +149,7 @@ test('the method formatReleaseNote', t => {
         commit:   '654987a',
         body:     '',
         branch:   'backport/fix/TAO-1984_fix-big-brother-backdoor'
-    }), '_Fix_ [https://oat-sa.atlassian.net/browse/TAO-1984](TAO-1984) : backport fix big brother backdoor [https://github.com/oat-sa/tao-core/pull/109084](#109084) ( by [https://github.com/winston](winston) - validated by [https://github.com/julia](julia) )');
+    }), '_Fix_ [TAO-1984](https://oat-sa.atlassian.net/browse/TAO-1984) : backport fix big brother backdoor [#109084](https://github.com/oat-sa/tao-core/pull/109084) ( by [winston](https://github.com/winston) - validated by [julia](https://github.com/julia) )');
 
     t.end();
 });
