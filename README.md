@@ -40,6 +40,13 @@ npm link
 
 So the command `taoRelease` will use the sources.
 
+Useful commands : 
+
+ - `npm test` runs the test suite
+ - `npm run test:cov` runs the test suite with code coverage
+ - `npm run test:dev` runs the test suite in watch mode
+ - `npm run lint` verifies the sources complies with the code style guide
+
 
 ## System Prerequisite
 <a name="prerequisite"></a>
