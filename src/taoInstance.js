@@ -24,7 +24,7 @@
 
 const fs                      = require('fs');
 const { normalize, basename } = require('path');
-const { spawn, exec }         = require('child_process');
+const { exec }                = require('child_process');
 const phpParser               = require('php-parser');
 const crossSpawn              = require('cross-spawn');
 const isWin = /^win/.test(process.platform);
