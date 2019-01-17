@@ -264,10 +264,13 @@ config.load()
 
 
 // Update translations
+    .then( () => log.doing('Translations') )
+    .then( () => log.warn('Update translations during a release only if you know what you are doing') )
     .then( () => inquirer.prompt({
         type: 'confirm',
         name: 'translation',
         message: `${data.extension.name} needs updated translations ? `,
+        default : false
     }) )
     .then( result => {
         if(result.translation){

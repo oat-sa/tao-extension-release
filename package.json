@@ -1,13 +1,21 @@
 {
   "name": "@oat-sa/tao-extension-release",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Helps you to release TAO extensions",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test:dev": "nodemon -e js --watch tests --watch src --delay 1 --exec 'npm run test'",
+    "test:cov": "nyc npm test",
+    "test": "tape 'tests/**/test.js' | tap-diff || true",
+    "lint": "eslint index.js src/*.js tests/**/test.js"
   },
   "bin": {
     "taoRelease": "./index.js"
+  },
+  "nyc": {
+    "exclude": [
+      "tests"
+    ]
   },
   "repository": {
     "type": "git",
@@ -23,6 +31,7 @@
     "chalk": "^2.1.0",
     "commander": "^2.11.0",
     "cross-spawn": "^6.0.3",
+    "fs-extra": "^5.0.0",
     "inquirer": "^3.3.0",
     "octonode": "^0.9.4",
     "opn": "^5.1.0",
@@ -32,5 +41,14 @@
   },
   "engine": {
     "node": ">=6.5.0"
+  },
+  "devDependencies": {
+    "eslint": "^4.18.2",
+    "nodemon": "^1.17.2",
+    "nyc": "^11.8.0",
+    "proxyquire": "^2.0.0",
+    "sinon": "^4.4.5",
+    "tap-diff": "^0.1.1",
+    "tape": "^4.9.0"
   }
 }
