@@ -4,7 +4,7 @@ This tool automate TAO extension release
 
 ## Installation
 
-Please verify installation [prerequisite](#prerequisite). And run : 
+Please verify installation [prerequisite](#prerequisite). And run :
 
 ```sh
 npm i -g @oat-sa/tao-extension-release
@@ -20,6 +20,15 @@ taoRelease
 
 and follow the instructions
 
+## Commandline arguments
+
+Commandline arguments:
+
+`--base-branch` - branch to release from. 'develop' by default
+`--branch-prefix` - releasing branch prefix. 'release' by default
+`--origin` - git repository origin. 'origin' by default
+`--release-branch` - branch to release to. 'master' by default
+`--www-userz` - www user. 'www-data' by default
 
 ## Development
 
@@ -40,7 +49,7 @@ npm link
 
 So the command `taoRelease` will use the sources.
 
-Useful commands : 
+Useful commands :
 
  - `npm test` runs the test suite
  - `npm run test:cov` runs the test suite with code coverage
@@ -76,7 +85,7 @@ You also need the `php` command available in your `PATH`.
 
 ### `Task foosass not found`
 
-Everything looks ok but you don't know why the `grunt` task is not found. If you have updated `node` or `npm` recently, you can fix this by : 
+Everything looks ok but you don't know why the `grunt` task is not found. If you have updated `node` or `npm` recently, you can fix this by :
 
 ```sh
 cd tao/views/build
