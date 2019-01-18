@@ -24,11 +24,11 @@ and follow the instructions
 
 Commandline arguments:
 
-`--base-branch` - branch to release from. 'develop' by default
-`--branch-prefix` - releasing branch prefix. 'release' by default
-`--origin` - git repository origin. 'origin' by default
-`--release-branch` - branch to release to. 'master' by default
-`--www-userz` - www user. 'www-data' by default
+ - `--base-branch` - branch to release from. 'develop' by default
+ - `--branch-prefix` - releasing branch prefix. 'release' by default
+ - `--origin` - git repository origin. 'origin' by default
+ - `--release-branch` - branch to release to. 'master' by default
+ - `--www-userz` - www user. 'www-data' by default
 
 ## Development
 
