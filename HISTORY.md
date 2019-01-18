@@ -17,3 +17,11 @@
 
  - fix windows home path
  - library update
+
+## [Version 0.3.0](https://github.com/oat-sa/tao-extension-release/releases/tag/0.3.1)
+
+ - Add unit and integration tests
+ - Add Eslint
+ - Translations are false by default
+ - `wwwUser` can be defined in the config file
+

@@ -24,7 +24,7 @@
 
 const fs                      = require('fs');
 const { normalize, basename } = require('path');
-const { spawn, exec }         = require('child_process');
+const { exec }                = require('child_process');
 const phpParser               = require('php-parser');
 const crossSpawn              = require('cross-spawn');
 const isWin = /^win/.test(process.platform);
@@ -340,7 +340,7 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
                 const execed = exec(command, options);
                 execed.stdout.pipe(process.stdout);
                 execed.stderr.pipe(process.stderr);
-                execed.on('exit', code => code === 0 ? resolve() : reject());
+                execed.on('exit', code => code === 0 ? resolve() : reject( new Error('Something went wrong in the translation generation')));
             });
         }
     };

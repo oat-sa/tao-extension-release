@@ -41,14 +41,18 @@ module.exports = {
         console.log(chalk.green(` ✅ ${msg}`));
         return this;
     },
-
+    warn(msg){
+        msg = msg || 'ok';
+        console.log(chalk.yellow(`⚠ ${msg}`));
+        return this;
+    },
     info(msg){
         console.log(chalk.blue(msg));
         return this;
     },
     error(err){
         if(err.message){
-            console.log(chalk.red(`⚠ ${err.message}`));
+            console.log(chalk.red(`❎ ${err.message}`));
         }
         console.error(err);
         return this;
@@ -57,5 +61,4 @@ module.exports = {
         console.log(msg || 'Good bye');
         process.exit();
     }
-
 };
