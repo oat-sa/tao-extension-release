@@ -340,7 +340,7 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
                 const execed = exec(command, options);
                 execed.stdout.pipe(process.stdout);
                 execed.stderr.pipe(process.stderr);
-                execed.on('exit', code => code === 0 ? resolve() : reject());
+                execed.on('exit', code => code === 0 ? resolve() : reject( new Error('Something went wrong in the translation generation')));
             });
         }
     };

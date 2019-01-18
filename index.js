@@ -37,14 +37,15 @@ const gitClientFactory   = require('./src/git.js');
 const github             = require('./src/github.js');
 const taoInstanceFactory = require('./src/taoInstance.js');
 
-const data          = {};
+const data          = {
+    wwwUser : 'www-data'
+};
 
 //TODO CLI params
 const origin        = 'origin';
 const baseBranch    = 'develop';
 const releaseBranch = 'master';
 const branchPrefix  = 'release';
-const wwwUser       = 'www-data';
 
 var taoInstance;
 var gitClient;
@@ -96,7 +97,7 @@ config.load()
         default: data.taoRoot || process.cwd()
     }) )
     .then( result => {
-        taoInstance = taoInstanceFactory(path.resolve(result.taoRoot), false, wwwUser);
+        taoInstance = taoInstanceFactory(path.resolve(result.taoRoot), false, data.wwwUser);
         return taoInstance.isRoot();
     })
     .then( result => {
