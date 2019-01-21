@@ -22,8 +22,6 @@
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
 
-const util = require('util');
-
 const githubApiClientFactory = require('./githubApiClient');
 const validate = require('./validate.js');
 
