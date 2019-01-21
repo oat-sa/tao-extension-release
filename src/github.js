@@ -23,8 +23,8 @@
  */
 
 const util = require('util');
-const { GraphQLClient } = require('graphql-request');
 
+const githubApiClientFactory = require('./githubApiClient');
 const validate = require('./validate.js');
 
 /**
@@ -42,14 +42,7 @@ module.exports = function githubFactory(token, repository) {
 
     const client = require('octonode').client(token);
     const ghrepo = client.repo(repository);
-    const graphQLClient = new GraphQLClient(
-        'https://api.github.com/graphql',
-        {
-            headers: {
-                Authorization: `token ${token}`
-            }
-        }
-    );
+    const githubApiClient = githubApiClientFactory(token);
 
     /**
      * Add the checks to display in a release PR for a given repository
@@ -185,26 +178,6 @@ module.exports = function githubFactory(token, repository) {
             let nextPageCursor = '';
 
             while (hasNextPage) {
-                const query = `
-                {
-                    repository(owner: "${owner}", name: "${name}") {
-                        pullRequest(number: ${prNumber}) {
-                            commits(first: 250, after: "${nextPageCursor}") {
-                                pageInfo {
-                                    endCursor,
-                                    hasNextPage,
-                                }
-                                nodes {
-                                    commit {
-                                        oid
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                `;
-
                 const {
                     repository: {
                         pullRequest: {
@@ -214,9 +187,9 @@ module.exports = function githubFactory(token, repository) {
                             }
                         }
                     }
-                } = await graphQLClient.request(query);
+                } = await githubApiClient.getPRCommits(prNumber, name, owner, nextPageCursor);
 
-                commits.push(...(await nodes)
+                commits.push(...nodes
                     .map(({ commit: { oid } }) => oid.slice(0, 8))
                 );
 
@@ -225,48 +198,6 @@ module.exports = function githubFactory(token, repository) {
             }
 
             return commits;
-        },
-
-        /**
-         * Search issues
-         * @param {Object} [searchOptions] - search parameters
-         * @param {String} [searchOptions.q] - the github search query
-         * @param {String} [searchOptions.sort = created] - how to sort the issues
-         * @param {String} [searchOptions.order = asc] - the sort order
-         * @returns {Promise<Object[]>} resolves with the list issues
-         */
-        async searchIssues(searchOptions = { q: '', sort: 'created', order: 'asc' }) {
-            const ghsearch = client.search();
-            const promisifiedIssuesSearch = util.promisify(ghsearch.issues);
-
-            const issues = await promisifiedIssuesSearch.call(ghsearch, searchOptions);
-
-            if (issues && issues.items && issues.items.length) {
-                return issues.items;
-            }
-
-            return [];
-        },
-
-        /**
-         * Load all info about a Pull Request
-         * @param {String|Number} prNumber - the pull request number
-         * @returns {Promise<Object>} resolves with the pull request data
-         */
-        getPRData(prNumber) {
-            return new Promise((resolve, reject) => {
-
-                validate.prNumber(prNumber);
-
-                client
-                    .pr(repository, prNumber)
-                    .info((err, data) => {
-                        if (err) {
-                            return reject(err);
-                        }
-                        return resolve(data);
-                    });
-            });
         },
 
         /**
@@ -387,47 +318,31 @@ module.exports = function githubFactory(token, repository) {
 
             const issues = [];
             while (commits.length) {
-                issues.push(...(
-                    await this.searchIssues({
-                        q: `${commits.splice(0, 28).join('+')}+repo:${repository}+type:pr+base:develop+is:merged`,
-                        sort: 'closed',
-                        order: 'asc'
-                    })
-                ));
+                issues.push(...(await githubApiClient.searchPullRequests(
+                    `${commits.splice(0, 28).join(' ')} repo:${repository} type:pr base:develop is:merged`,
+                )).search.nodes);
             }
 
             // Remove dublicates
             const uniqIssue = issues.filter((issue, index, self) =>
                 index === self.findIndex((d) => (
-                    d.id === issue.id
+                    d.number === issue.number
                 ))
             );
 
-            const issuesDetails = [];
-
-            for (const issue of uniqIssue) {
-                issuesDetails.push(await this.getPRData(issue.number));
-            }
-
-            return issuesDetails
-                .map(result => {
-                    return this.formatReleaseNote({
-                        title: result.title,
-                        number: result.number,
-                        url: result.html_url,
-                        user: result.user && result.user.login,
-                        assignee: result.assignee && result.assignee.login,
-                        commit: result.merge_commit_sha,
-                        body: result.body,
-                        branch: result.head && result.head.ref
-                    });
+            return uniqIssue
+                .map(issue => ({
+                    ...issue,
+                    assignee: issue.assignee.nodes[0].login,
+                    commit: issue.commit.oid,
+                    user: issue.user.login,
+                    closedAt: new Date(issue.closedAt).getTime(),
+                }))
+                .sort(({ closedAt: a }, { closedAt: b }) => {
+                    return a - b;
                 })
-                .reduce((acc, note) => {
-                    if (note) {
-                        acc += `- ${note}\n`;
-                    }
-                    return acc;
-                }, '');
+                .map(this.formatReleaseNote)
+                .reduce((acc, note) => note ? `${acc} - ${note}\n` : acc, '');
         }
     };
 };
