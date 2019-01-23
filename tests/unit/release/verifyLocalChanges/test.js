@@ -90,13 +90,13 @@ test('should log exit message if there is local changes', async (t) => {
     await release.selectTaoInstance();
     await release.selectExtension();
 
-    sandbox.stub(gitClientInstance, 'hasLocalChanges').returns(false);
-    sandbox.stub(log, 'done');
+    sandbox.stub(gitClientInstance, 'hasLocalChanges').returns(true);
+    sandbox.stub(log, 'exit');
 
     await release.verifyLocalChanges();
 
-    t.equal(log.done.callCount, 1, 'Notify about local changes');
-    t.ok(log.done.calledWith(`${extension} is clean`), `The extension ${extension} has local changes, please clean or stash them before releasing`);
+    t.equal(log.exit.callCount, 1, 'Notify about local changes');
+    t.ok(log.exit.calledWith(`The extension ${extension} has local changes, please clean or stash them before releasing`), `The extension ${extension} has local changes, please clean or stash them before releasing`);
 
     sandbox.restore();
     t.end();

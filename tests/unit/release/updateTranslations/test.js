@@ -95,6 +95,30 @@ test('should log warn message', async (t) => {
     t.end();
 });
 
+test('should prompt to update translations', async (t) => {
+    t.plan(5);
+
+    await release.selectTaoInstance();
+    await release.selectExtension();
+    await release.verifyBranches();
+
+    sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message, default: defaultValue }) => {
+        t.equal(type, 'confirm', 'The type should be "confirm"');
+        t.equal(name, 'translation', 'The param name should be translation');
+        t.equal(message, `${extension} needs updated translations ? `, 'Should disaplay appropriate message');
+        t.equal(defaultValue, false, 'Default value should be false');
+
+        return { translation: false };
+    });
+
+    await release.updateTranslations();
+
+    t.equal(inquirer.prompt.callCount, 1, 'Prompt has been initialised');
+
+    sandbox.restore();
+    t.end();
+});
+
 test('should update translitions', async (t) => {
     t.plan(2);
 
