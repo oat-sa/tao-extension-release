@@ -331,7 +331,7 @@ module.exports = function githubFactory(token, repository) {
             return uniqIssue
                 .map(issue => ({
                     ...issue,
-                    assignee: issue.assignee.nodes[0].login,
+                    assignee: issue.assignee.nodes[0] && issue.assignee.nodes[0].login,
                     commit: issue.commit.oid,
                     user: issue.user.login,
                     closedAt: new Date(issue.closedAt).getTime(),
