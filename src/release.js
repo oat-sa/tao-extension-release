@@ -191,7 +191,7 @@ module.exports = function taoExtensionReleaseFactory(baseBranch, branchPrefix, o
         /**
          * Check if release exists
          */
-        async isReleaseExists() {
+        async doesReleaseExists() {
             log.doing(`Check if tag ${data.tag} exists`);
 
             if (await gitClient.hasTag(data.tag)) {
@@ -377,6 +377,8 @@ module.exports = function taoExtensionReleaseFactory(baseBranch, branchPrefix, o
                     log.error(`Unable to update translations. ${error.message}. Continue.`);
                 }
             }
+
+            log.done();
         },
 
         /**
