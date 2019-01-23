@@ -57,6 +57,16 @@ Useful commands :
  - `npm run lint` verifies the sources complies with the code style guide
 
 
+## Configuration
+
+A file named `.tao-extension-release` is created in the user directory.
+The following values can be defined in this file :
+
+ - `token` : your Github auth token
+ - `taoRoot` : the path to the root of TAO
+ - `wwwUser` : the system user used to launch PHP commands (`www-data`)
+
+
 ## System Prerequisite
 <a name="prerequisite"></a>
 
@@ -80,6 +90,11 @@ You need to have the `git` > `1.7.0` command available in your `PATH`.
 #### PHP
 
 You also need the `php` command available in your `PATH`.
+
+#### sudo (linux and OSX)
+
+You also need the `sudo` command available in your `PATH`.
+
 
 ## Known Issues
 
