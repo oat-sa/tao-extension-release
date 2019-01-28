@@ -26,7 +26,12 @@
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
 
+const updateNotifier = require('update-notifier');
+
 const log = require('./src/log.js');
+const pkg = require('./package.json');
+
+updateNotifier({pkg}).notify();
 
 const argv = require('minimist')(process.argv.slice(2));
 

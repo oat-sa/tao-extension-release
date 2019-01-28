@@ -23,11 +23,11 @@ const taoInstance = {
     isInstalled: () => ({}),
     isRoot: () => ({}),
 };
-const taoINstanceFactory = sandbox.stub().callsFake(() => taoInstance);
+const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
 const wwwUser = 'testwwwUser';
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './log.js': log,
-    './taoInstance.js': taoINstanceFactory,
+    './taoInstance.js': taoInstanceFactory,
     inquirer,
 })(null, null, null, null, wwwUser);
 
@@ -65,12 +65,12 @@ test('should initialise taoInstance', async (t) => {
     const taoRoot = 'testRoot';
 
     sandbox.stub(inquirer, 'prompt').returns({ taoRoot });
-    taoINstanceFactory.resetHistory();
+    taoInstanceFactory.resetHistory();
 
     await release.selectTaoInstance();
 
-    t.equal(taoINstanceFactory.callCount, 1, 'Instance has been initialised');
-    t.ok(taoINstanceFactory.calledWith(path.resolve(taoRoot), false, wwwUser), 'Instance has been initialised with proper args');
+    t.equal(taoInstanceFactory.callCount, 1, 'Instance has been initialised');
+    t.ok(taoInstanceFactory.calledWith(path.resolve(taoRoot), false, wwwUser), 'Instance has been initialised with proper args');
 
     sandbox.restore();
     t.end();

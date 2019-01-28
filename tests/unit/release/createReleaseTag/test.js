@@ -38,12 +38,12 @@ const taoInstance = {
     isRoot: () => ({ root: true, dir: taoRoot }),
     parseManifest: () => ({ version })
 };
-const taoINstanceFactory = sandbox.stub().callsFake(() => taoInstance);
+const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './config.js': () => config,
     './git.js': gitClientFactory,
     './log.js': log,
-    './taoInstance.js': taoINstanceFactory,
+    './taoInstance.js': taoInstanceFactory,
     inquirer,
 })(null, null, null, releaseBranch);
 

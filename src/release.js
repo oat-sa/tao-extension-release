@@ -184,7 +184,7 @@ module.exports = function taoExtensionReleaseFactory(baseBranch, branchPrefix, o
             if (repoName) {
                 githubClient = github(data.token, repoName);
             } else {
-                log.exit('Unable to find the gitbuh repository name');
+                log.exit('Unable to find the github repository name');
             }
         },
 

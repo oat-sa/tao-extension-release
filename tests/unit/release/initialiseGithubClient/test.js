@@ -33,13 +33,13 @@ const taoInstance = {
     isInstalled: () => true,
     isRoot: () => ({ root: true, dir: taoRoot }),
 };
-const taoINstanceFactory = sandbox.stub().callsFake(() => taoInstance);
+const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './config.js': () => config,
     './git.js': gitClientFactory,
     './github.js': githubFactory,
     './log.js': log,
-    './taoInstance.js': taoINstanceFactory,
+    './taoInstance.js': taoInstanceFactory,
     inquirer,
 })();
 
@@ -97,7 +97,7 @@ test('should log exit message if can not get repository name', async (t) => {
     await release.initialiseGithubClient();
 
     t.equal(log.exit.callCount, 1, 'Exit has been logged');
-    t.ok(log.exit.calledWith('Unable to find the gitbuh repository name'), 'Exit has been logged with apropriate message');
+    t.ok(log.exit.calledWith('Unable to find the github repository name'), 'Exit has been logged with apropriate message');
 
     sandbox.restore();
     t.end();

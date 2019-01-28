@@ -42,12 +42,12 @@ const taoInstance = {
     parseManifest: () => ({ version, name: extension }),
     updateTranslations: () => { },
 };
-const taoINstanceFactory = sandbox.stub().callsFake(() => taoInstance);
+const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './config.js': () => config,
     './git.js': gitClientFactory,
     './log.js': log,
-    './taoInstance.js': taoINstanceFactory,
+    './taoInstance.js': taoInstanceFactory,
     inquirer,
 })(null, branchPrefix);
 

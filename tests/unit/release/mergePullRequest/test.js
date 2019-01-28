@@ -45,14 +45,14 @@ const taoInstance = {
     isRoot: () => ({ root: true, dir: taoRoot }),
     parseManifest: () => ({ version })
 };
-const taoINstanceFactory = sandbox.stub().callsFake(() => taoInstance);
+const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
 const opn = sandbox.spy();
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './config.js': () => config,
     './git.js': gitClientFactory,
     './github.js': githubFactory,
     './log.js': log,
-    './taoInstance.js': taoINstanceFactory,
+    './taoInstance.js': taoInstanceFactory,
     inquirer,
     opn,
 })(null, branchPrefix, null, releaseBranch);

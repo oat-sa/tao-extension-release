@@ -41,12 +41,12 @@ const taoInstance = {
     isRoot: () => ({ root: true, dir: taoRoot }),
     parseManifest: () => ({ version, name: extension })
 };
-const taoINstanceFactory = sandbox.stub().callsFake(() => taoInstance);
+const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './config.js': () => config,
     './git.js': gitClientFactory,
     './log.js': log,
-    './taoInstance.js': taoINstanceFactory,
+    './taoInstance.js': taoInstanceFactory,
     inquirer,
 })(null, branchPrefix);
 
@@ -105,7 +105,7 @@ test('should build assets', async (t) => {
 
     await release.compileAssets();
 
-    t.equal(taoInstance.buildAssets.callCount, 1, 'Assets has been builded');
+    t.equal(taoInstance.buildAssets.callCount, 1, 'Assets has been built');
     t.ok(taoInstance.buildAssets.calledWith(extension, false), 'Assets of apropriate extension has been builded');
 
     sandbox.restore();

@@ -38,6 +38,12 @@ module.exports = function githubFactory(token, repository) {
         .githubToken(token)
         .githubRepository(repository);
 
+    /* TODO: Since github v4 api does not support all required functionality at the moment of integration,
+       currently mixed approach is used:
+            - Github v4 api is used to fetch data.
+            - octonode package is used for creating pull request and release.
+       Once github v4 api add support for missing functionality, the application should be fully migrated to the v4 api
+    */
     const client = require('octonode').client(token);
     const ghrepo = client.repo(repository);
     const githubApiClient = githubApiClientFactory(token);
@@ -313,11 +319,12 @@ module.exports = function githubFactory(token, repository) {
          */
         async extractReleaseNotesFromReleasePR(prNumber) {
             const commits = await this.getPRCommitShas(prNumber) || [];
+            const chunkSize = 28;
 
             const issues = [];
-            while (commits.length) {
+            for (let i = 0; i < commits.length; i += chunkSize) {
                 issues.push(...(await githubApiClient.searchPullRequests(
-                    `${commits.splice(0, 28).join(' ')} repo:${repository} type:pr base:develop is:merged`,
+                    `${commits.slice(i, i + chunkSize).join(' ')} repo:${repository} type:pr base:develop is:merged`,
                 )).search.nodes);
             }
 
