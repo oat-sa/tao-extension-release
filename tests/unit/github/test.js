@@ -8,12 +8,21 @@
 
 const test       = require('tape');
 const proxyquire = require('proxyquire');
+const sinon = require('sinon');
 
 const token = 'ffaaffe5a8';
 const repo  = 'foo-sa/bar-project';
 
+const sandbox = sinon.sandbox.create();
+
+const githubApiClientInstance = {
+    getPRCommits: () => {},
+    searchPullRequests: () => {},
+};
+const githubApiClientFactory = sandbox.stub().callsFake(() => githubApiClientInstance);
+
 //load the tested module and mock octonode
-const github = proxyquire('../../../src/github.js', {
+const github = proxyquire.noCallThru().load('../../../src/github.js', {
     octonode : {
         client(){
             return {
@@ -25,9 +34,9 @@ const github = proxyquire('../../../src/github.js', {
                     };
                 }
             };
-        },
-        '@noCallThru': true
-    }
+        }
+    },
+    './githubApiClient': githubApiClientFactory,
 });
 
 test('the module api', t => {
@@ -154,4 +163,94 @@ test('the method formatReleaseNote', t => {
     t.end();
 });
 
+test('the getPRCommitShas method', async (t) => {
+    t.plan(4);
 
+    const [owner, name] = repo.split('/');
+    const prNumber = 1234;
+
+    const ghclient = github(token, repo);
+
+    t.equal(typeof ghclient.getPRCommitShas, 'function', 'The client exposes the method formatReleaseNote');
+
+    const commits = {
+        repository: {
+            pullRequest: {
+                commits: {
+                    nodes: [
+                        { commit: { oid: '1' } },
+                        { commit: { oid: '2' } },
+                    ],
+                    pageInfo: {
+                        hasNextPage: false,
+                    },
+                },
+            },
+        },
+    };
+
+    sandbox.stub(githubApiClientInstance, 'getPRCommits').returns(commits);
+
+    const actual = await ghclient.getPRCommitShas(prNumber);
+
+    t.equal(githubApiClientInstance.getPRCommits.callCount, 1, 'Commits have been requested');
+    t.ok(
+        githubApiClientInstance.getPRCommits.calledWith(
+            prNumber,
+            name,
+            owner,
+            ''
+        ),
+        'Commits have been requested with apropriate arguments'
+    );
+    t.deepEqual(
+        actual,
+        commits.repository.pullRequest.commits.nodes.map(({ commit: { oid } }) => oid.slice(0, 8)),
+        'Commits have been returned'
+    );
+
+    sandbox.restore();
+    t.end();
+});
+
+test('the extractReleaseNotesFromReleasePR method', async (t) => {
+    t.plan(3);
+
+    const prNumber = 1234;
+
+    const ghclient = github(token, repo);
+
+    t.equal(typeof ghclient.extractReleaseNotesFromReleasePR, 'function', 'The client exposes the method formatReleaseNote');
+
+    const commits = {
+        repository: {
+            pullRequest: {
+                commits: {
+                    nodes: [
+                        { commit: { oid: '1' } },
+                        { commit: { oid: '2' } },
+                    ],
+                    pageInfo: {
+                        hasNextPage: false,
+                    },
+                },
+            },
+        },
+    };
+
+    sandbox.stub(githubApiClientInstance, 'getPRCommits').returns(commits);
+    sandbox.stub(githubApiClientInstance, 'searchPullRequests').returns({ search: { nodes: [] } });
+
+    await ghclient.extractReleaseNotesFromReleasePR(prNumber);
+
+    t.equal(githubApiClientInstance.searchPullRequests.callCount, 1, 'Commits have been requested');
+    t.ok(
+        githubApiClientInstance.searchPullRequests.calledWith(
+            '1 2 repo:foo-sa/bar-project type:pr base:develop is:merged',
+        ),
+        'Commits have been requested with apropriate arguments'
+    );
+
+    sandbox.restore();
+    t.end();
+});
