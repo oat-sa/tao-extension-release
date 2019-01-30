@@ -22,6 +22,7 @@
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
 
+const githubApiClientFactory = require('./githubApiClient');
 const validate = require('./validate.js');
 
 /**
@@ -37,15 +38,22 @@ module.exports = function githubFactory(token, repository) {
         .githubToken(token)
         .githubRepository(repository);
 
+    /* TODO: Since github v4 api does not support all required functionality at the moment of integration,
+       currently mixed approach is used:
+            - Github v4 api is used to fetch data.
+            - octonode package is used for creating pull request and release.
+       Once github v4 api add support for missing functionality, the application should be fully migrated to the v4 api
+    */
     const client = require('octonode').client(token);
     const ghrepo = client.repo(repository);
+    const githubApiClient = githubApiClientFactory(token);
 
     /**
      * Add the checks to display in a release PR for a given repository
      */
     const extensionPRChecks = {
-        'oat-sa/tao-core' : 'Increase TAO-VERSION in `manifest.php`',
-        'oat-sa/extension-tao-delivery-rdf' : 'Do not forget to update the dependency and release oat-sa/extension-tao-community'
+        'oat-sa/tao-core': 'Increase TAO-VERSION in `manifest.php`',
+        'oat-sa/extension-tao-delivery-rdf': 'Do not forget to update the dependency and release oat-sa/extension-tao-community'
     };
 
     /**
@@ -62,17 +70,17 @@ module.exports = function githubFactory(token, repository) {
          * @returns {Promise<Object>} resolves with the pull request data
          */
         createReleasePR(releasingBranch, releaseBranch, version = '?.?.?', fromVersion = '?.?.?') {
-            if(!releasingBranch || !releaseBranch) {
+            if (!releasingBranch || !releaseBranch) {
                 return Promise.reject(new TypeError('Unable to create a release pull request when the branches are not defined'));
             }
-            return new Promise( (resolve, reject) => {
+            return new Promise((resolve, reject) => {
                 ghrepo.pr({
                     title: `Release ${version}`,
-                    body : this.getReleasePRComment(version, fromVersion),
+                    body: this.getReleasePRComment(version, fromVersion),
                     head: releasingBranch,
                     base: releaseBranch
-                }, (err, data)  => {
-                    if(err){
+                }, (err, data) => {
+                    if (err) {
                         return reject(err);
                     }
                     return resolve(data);
@@ -93,10 +101,10 @@ module.exports = function githubFactory(token, repository) {
                 'CSS and JavaScript bundles'
             ];
 
-            if(typeof extensionPRChecks[repository] !== 'undefined'){
+            if (typeof extensionPRChecks[repository] !== 'undefined') {
                 checks.push(extensionPRChecks[repository]);
             }
-            return `Please verify the following points :\n${checks.map( c => '\n- [ ] ' + c)}`;
+            return `Please verify the following points :\n${checks.map(c => '\n- [ ] ' + c)}`;
         },
 
         /**
@@ -105,28 +113,28 @@ module.exports = function githubFactory(token, repository) {
          * @param {Boolean} [forceMerge = false] - do we merge the PR if not yet done ?
          * @returns {Promise}
          */
-        closePR(prNumber, forceMerge = false){
-            return new Promise( (resolve, reject) => {
+        closePR(prNumber, forceMerge = false) {
+            return new Promise((resolve, reject) => {
 
                 validate.prNumber(prNumber);
 
                 const ghpr = client.pr(repository, prNumber);
                 const doClose = () => {
-                    ghpr.close( closeErr => {
-                        if(closeErr){
+                    ghpr.close(closeErr => {
+                        if (closeErr) {
                             return reject(closeErr);
                         }
                         return resolve(true);
                     });
                 };
-                ghpr.merged( (err, merged) => {
-                    if(err){
+                ghpr.merged((err, merged) => {
+                    if (err) {
                         return reject(err);
                     }
-                    if(!merged){
-                        if(forceMerge){
+                    if (!merged) {
+                        if (forceMerge) {
                             return ghpr.merge('Forced merged', mergeErr => {
-                                if(mergeErr){
+                                if (mergeErr) {
                                     return reject(mergeErr);
                                 }
                                 return doClose();
@@ -146,14 +154,14 @@ module.exports = function githubFactory(token, repository) {
          * @param {String} [comment] - comment the release
          * @returns {Promise}
          */
-        release(tag, comment = ''){
-            return new Promise( (resolve, reject) => {
+        release(tag, comment = '') {
+            return new Promise((resolve, reject) => {
                 ghrepo.release({
-                    tag_name : tag,
-                    name : tag,
-                    body : comment
+                    tag_name: tag,
+                    name: tag,
+                    body: comment
                 }, (err, released) => {
-                    if(err){
+                    if (err) {
                         return reject(err);
                     }
                     return resolve(released);
@@ -166,64 +174,34 @@ module.exports = function githubFactory(token, repository) {
          * @param {String|Number} prNumber - the pull request number
          * @returns {Promise<String[]>} resolves with the list of SHAs
          */
-        getPRCommitShas(prNumber){
-            return new Promise( (resolve, reject) => {
+        async getPRCommitShas(prNumber) {
+            const commits = [];
+            const [owner, name] = repository.split('/');
 
-                validate.prNumber(prNumber);
+            let hasNextPage = true;
+            let nextPageCursor = '';
 
-                client
-                    .pr(repository, prNumber)
-                    .commits( (err, commits) => {
-                        if(err){
-                            return reject(err);
+            while (hasNextPage) {
+                const {
+                    repository: {
+                        pullRequest: {
+                            commits: {
+                                nodes,
+                                pageInfo
+                            }
                         }
-                        return resolve(commits.map( commit => commit.sha.slice(0, 8) ));
-                    });
-            });
-        },
-
-        /**
-         * Search issues
-         * @param {Object} [searchOptions] - search parameters
-         * @param {String} [searchOptions.q] - the github search query
-         * @param {String} [searchOptions.sort = created] - how to sort the issues
-         * @param {String} [searchOptions.order = asc] - the sort order
-         * @returns {Promise<Object[]>} resolves with the list issues
-         */
-        searchIssues(searchOptions = {q : '', sort : 'created', order : 'asc'}){
-            return new Promise( (resolve, reject) => {
-                const ghsearch = client.search();
-                ghsearch.issues(searchOptions, (searchErr, results) => {
-                    if(searchErr){
-                        return reject(searchErr);
                     }
-                    if(results && results.items && results.items.length){
-                        return resolve(results.items);
-                    }
-                    return resolve([]);
-                });
-            });
-        },
+                } = await githubApiClient.getPRCommits(prNumber, name, owner, nextPageCursor);
 
-        /**
-         * Load all info about a Pull Request
-         * @param {String|Number} prNumber - the pull request number
-         * @returns {Promise<Object>} resolves with the pull request data
-         */
-        getPRData(prNumber){
-            return new Promise( (resolve, reject) => {
+                commits.push(...nodes
+                    .map(({ commit: { oid } }) => oid.slice(0, 8))
+                );
 
-                validate.prNumber(prNumber);
+                hasNextPage = pageInfo.hasNextPage;
+                nextPageCursor = pageInfo.endCursor;
+            }
 
-                client
-                    .pr(repository, prNumber)
-                    .info( (err, data) => {
-                        if(err){
-                            return reject(err);
-                        }
-                        return resolve(data);
-                    });
-            });
+            return commits;
         },
 
         /**
@@ -239,31 +217,31 @@ module.exports = function githubFactory(token, repository) {
          * @param {String} [noteData.branch] - the name of the merged branch
          * @returns {String} the release note description
          */
-        formatReleaseNote(noteData){
-            const note      = [];
-            const typeExp   = /(fix|feature|breaking)/i;
+        formatReleaseNote(noteData) {
+            const note = [];
+            const typeExp = /(fix|feature|breaking)/i;
             const jiraIdExp = /[A-Z]{2,6}[- ]{1}[0-9]{1,6}/i;
 
             //internal extraction helper
             const extract = (string = '', exp) => {
                 let match = string.match(exp);
-                if(match !== null && match.index > -1){
+                if (match !== null && match.index > -1) {
                     return match[0];
                 }
                 return false;
             };
 
             //extract the type of change
-            const extractType   = () => {
+            const extractType = () => {
                 var type;
 
-                if(noteData.branch){
+                if (noteData.branch) {
                     type = extract(noteData.branch, typeExp);
                 }
-                if(!type && noteData.title){
+                if (!type && noteData.title) {
                     type = extract(noteData.title, typeExp);
                 }
-                if(type){
+                if (type) {
                     type = type.trim();
                     type = type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
                 }
@@ -274,16 +252,16 @@ module.exports = function githubFactory(token, repository) {
             const extractJiraId = () => {
                 var jiraId;
 
-                if(noteData.branch){
+                if (noteData.branch) {
                     jiraId = extract(noteData.branch, jiraIdExp);
                 }
-                if(!jiraId && noteData.title){
+                if (!jiraId && noteData.title) {
                     jiraId = extract(noteData.title, jiraIdExp);
                 }
-                if(!jiraId && noteData.body){
+                if (!jiraId && noteData.body) {
                     jiraId = extract(noteData.body, jiraIdExp);
                 }
-                if(jiraId){
+                if (jiraId) {
                     jiraId = jiraId
                         .trim()
                         .replace(/\s/, '-')
@@ -292,20 +270,20 @@ module.exports = function githubFactory(token, repository) {
                 return jiraId;
             };
 
-            if(noteData){
+            if (noteData) {
                 const type = extractType();
                 const jiraId = extractJiraId();
 
-                if(type){
+                if (type) {
                     note.push(`_${type}_`);
                 }
-                if(jiraId){
+                if (jiraId) {
                     note.push(`[${jiraId}](https://oat-sa.atlassian.net/browse/${jiraId})`);
                 }
-                if(note.length){
+                if (note.length) {
                     note.push(':');
                 }
-                if(noteData.title){
+                if (noteData.title) {
                     note.push(
                         noteData.title
                             .replace(typeExp, '')
@@ -315,11 +293,11 @@ module.exports = function githubFactory(token, repository) {
                             .trim()
                     );
                 }
-                if(noteData.number && noteData.url){
+                if (noteData.number && noteData.url) {
                     note.push(`[#${noteData.number}](${noteData.url})`);
                 }
 
-                if(noteData.user && noteData.assignee){
+                if (noteData.user && noteData.assignee) {
                     note.push('(');
                     note.push(`by [${noteData.user}](https://github.com/${noteData.user})`);
                     note.push('-');
@@ -339,61 +317,37 @@ module.exports = function githubFactory(token, repository) {
          * @param {String|Number} prNumber - the number of the release pull request
          * @returns {Promise<String>} resolves with the release note description
          */
-        extractReleaseNotesFromReleasePR(prNumber) {
+        async extractReleaseNotesFromReleasePR(prNumber) {
+            const commits = await this.getPRCommitShas(prNumber) || [];
+            const chunkSize = 28;
 
-            //1. Get all commits from the release PR
-            return this.getPRCommitShas(prNumber)
-                .then( commits => {
-                    if(commits && commits.length){
-                        // we filter out PR inside those commits
-                        // (github considers pr as issues)
-                        return this.searchIssues({
-                            q : `${commits.join('+')}+repo:${repository}+type:pr+base:develop+is:merged`,
-                            sort: 'closed',
-                            order: 'asc'
-                        });
-                    }
+            const issues = [];
+            for (let i = 0; i < commits.length; i += chunkSize) {
+                issues.push(...(await githubApiClient.searchPullRequests(
+                    `${commits.slice(i, i + chunkSize).join(' ')} repo:${repository} type:pr base:develop is:merged`,
+                )).search.nodes);
+            }
+
+            // Remove dublicates
+            const uniqIssue = issues.filter((issue, index, self) =>
+                index === self.findIndex((d) => (
+                    d.number === issue.number
+                ))
+            );
+
+            return uniqIssue
+                .map(issue => ({
+                    ...issue,
+                    assignee: issue.assignee.nodes[0] && issue.assignee.nodes[0].login,
+                    commit: issue.commit.oid,
+                    user: issue.user.login,
+                    closedAt: new Date(issue.closedAt).getTime(),
+                }))
+                .sort(({ closedAt: a }, { closedAt: b }) => {
+                    return a - b;
                 })
-                .then( issues => {
-                    if(issues && issues.length) {
-                        //we load the full description from all of them (for the head branch mostly)
-                        return Promise.all(
-                            issues.map( issue => this.getPRData(issue.number) )
-                        );
-                    }
-                    return [];
-                })
-                .then( mergedPrResults => {
-                    //extract only useful data
-                    if(mergedPrResults && mergedPrResults.length){
-                        return mergedPrResults.map( result => {
-                            return {
-                                title : result.title,
-                                number : result.number,
-                                url : result.html_url,
-                                user : result.user && result.user.login,
-                                assignee : result.assignee && result.assignee.login,
-                                commit: result.merge_commit_sha,
-                                body : result.body,
-                                branch : result.head && result.head.ref
-                            };
-                        });
-                    }
-                    return [];
-                })
-                .then( notesData => {
-                    //extract the IDs and format the notes
-                    if(notesData && notesData.length){
-                        return notesData
-                            .map( noteData => this.formatReleaseNote(noteData) )
-                            .reduce( (acc, note) => {
-                                if(note){
-                                    acc += `- ${note}\n`;
-                                }
-                                return acc;
-                            }, '');
-                    }
-                });
+                .map(this.formatReleaseNote)
+                .reduce((acc, note) => note ? `${acc} - ${note}\n` : acc, '');
         }
     };
 };

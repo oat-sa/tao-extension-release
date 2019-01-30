@@ -25,3 +25,10 @@
  - Translations are false by default
  - `wwwUser` can be defined in the config file
 
+ ## [Version 0.4.0](https://github.com/oat-sa/tao-extension-release/releases/tag/0.4.0)
+
+ - Refactor release functionality into separate module
+ - Partially migrate application to use github v4 api
+ - Extract release notes from github pull requests
+ - Introduce `base-branch`, `branch-prefix`, `origin`, `release-branch`, `www-user`  command line arguments
+ - Cover changes with unit tests
