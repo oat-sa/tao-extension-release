@@ -32,3 +32,8 @@
  - Extract release notes from github pull requests
  - Introduce `base-branch`, `branch-prefix`, `origin`, `release-branch`, `www-user`  command line arguments
  - Cover changes with unit tests
+
+
+ ## [Version 0.4.1](https://github.com/oat-sa/tao-extension-release/releases/tag/0.4.1)
+
+ - Enforce npm install 
