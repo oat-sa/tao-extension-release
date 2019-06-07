@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2017 Open Assessment Technologies SA;
+ * Copyright (c) 2017-2019 Open Assessment Technologies SA;
  */
 
 /**
@@ -27,6 +27,7 @@ const { normalize, basename } = require('path');
 const { exec }                = require('child_process');
 const phpParser               = require('php-parser');
 const crossSpawn              = require('cross-spawn');
+
 const isWin = /^win/.test(process.platform);
 
 /**
@@ -274,18 +275,12 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
             };
 
             /**
-             * run `npm install` on the TAO build folder
+             * run `npm install` on the TAO build folder at least once
              */
             const installNpm = () => {
                 return new Promise( (resolve, reject) => {
-                    fs.access(normalize(`${options.cwd}/node_modules/.bin/grunt`), err => {
-                        if(!err){
-                            //file exists
-                            return resolve();
-                        }
-                        const spawned = crossSpawn('npm', ['install'], options);
-                        spawned.on('close', code => code === 0 ? resolve() : reject());
-                    });
+                    const spawned = crossSpawn('npm', ['install'], options);
+                    spawned.on('close', code => code === 0 ? resolve() : reject());
                 });
             };
 
