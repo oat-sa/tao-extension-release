@@ -19,11 +19,11 @@ const config = {
 const inquirer = {
     prompt: () => ({}),
 };
-const opn = sandbox.spy();
+const open = sandbox.spy();
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './config.js': () => config,
     inquirer,
-    opn,
+    open,
 })();
 
 test('should define loadConfig method on release instance', (t) => {
@@ -58,8 +58,8 @@ test('should open github token settings if there is no token in the config', asy
 
     clock.tick(2000);
 
-    t.equal(opn.callCount, 1, 'Config has been loaded');
-    t.ok(opn.calledWith('https://github.com/settings/tokens'));
+    t.equal(open.callCount, 1, 'Config has been loaded');
+    t.ok(open.calledWith('https://github.com/settings/tokens'));
 
     clock.restore();
     sandbox.restore();

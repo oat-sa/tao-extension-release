@@ -23,7 +23,7 @@
  */
 
 const inquirer = require('inquirer');
-const opn = require('opn');
+const open = require('open');
 const path = require('path');
 
 const config = require('./config.js')();
@@ -230,7 +230,7 @@ module.exports = function taoExtensionReleaseFactory(baseBranch, branchPrefix, o
 
             // Request github token if necessary
             if (!data.token) {
-                setTimeout(() => opn('https://github.com/settings/tokens'), 2000);
+                setTimeout(() => open('https://github.com/settings/tokens'), 2000);
 
                 const { token } = await inquirer.prompt({
                     type: 'input',
@@ -261,7 +261,7 @@ module.exports = function taoExtensionReleaseFactory(baseBranch, branchPrefix, o
          * Merge release pull request
          */
         async mergePullRequest() {
-            setTimeout(() => opn(data.pr.url), 2000);
+            setTimeout(() => open(data.pr.url), 2000);
 
             const { pr } = await inquirer.prompt({
                 type: 'confirm',

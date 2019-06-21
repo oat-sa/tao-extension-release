@@ -46,7 +46,7 @@ const taoInstance = {
     parseManifest: () => ({ version })
 };
 const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
-const opn = sandbox.spy();
+const open = sandbox.spy();
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './config.js': () => config,
     './git.js': gitClientFactory,
@@ -54,7 +54,7 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './log.js': log,
     './taoInstance.js': taoInstanceFactory,
     inquirer,
-    opn,
+    open,
 })(null, branchPrefix, null, releaseBranch);
 
 test('should define mergePullRequest method on release instance', (t) => {
@@ -76,13 +76,13 @@ test('should open pull request in browser', async (t) => {
     await release.initialiseGithubClient();
     await release.createPullRequest();
 
-    opn.resetHistory();
+    open.resetHistory();
 
     await release.mergePullRequest();
 
     clock.tick(2000);
 
-    t.equal(opn.callCount, 1, 'Browser has been opened');
+    t.equal(open.callCount, 1, 'Browser has been opened');
 
     clock.restore();
     t.end();
