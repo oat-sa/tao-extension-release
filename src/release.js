@@ -326,8 +326,9 @@ module.exports = function taoExtensionReleaseFactory(baseBranch, branchPrefix, o
                 message: 'Path to the TAO instance : ',
                 default: data.taoRoot || process.cwd()
             });
+            let user = data.wwwUser || wwwUser;
 
-            taoInstance = taoInstanceFactory(path.resolve(taoRoot), false, wwwUser);
+            taoInstance = taoInstanceFactory(path.resolve(taoRoot), false, user);
 
             const { dir, root } = await taoInstance.isRoot();
 
