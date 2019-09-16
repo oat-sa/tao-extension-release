@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2017 Open Assessment Technologies SA;
+ * Copyright (c) 2017-2019 Open Assessment Technologies SA;
  */
 
 /**
@@ -33,13 +33,23 @@ const pkg = require('./package.json');
 
 updateNotifier({pkg}).notify();
 
-const argv = require('minimist')(process.argv.slice(2));
+const commander = require('commander');
+const program = new commander.Command();
+program.version('0.5.0');
 
-const baseBranch = argv['base-branch'] || 'develop';
-const branchPrefix = argv['branch-prefix'] || 'release';
-const origin = argv['origin'] || 'origin';
-const releaseBranch = argv['release-branch'] || 'master';
-const wwwUser = argv['www-user'] || 'www-data';
+program
+    .option('-d, --debug', 'output extra debugging')
+    .option('-b, --base-branch <branch>', 'the source branch for the release', 'develop')
+    .option('-p, --branch-prefix <prefix>', 'the prefix of the branch created for releasing', 'release')
+    .option('-o, --origin <remotename>', 'the name of the remote repo', 'origin')
+    .option('-r, --release-branch <branch>', 'the target branch for the release PR', 'master')
+    .option('-u, --www-user <user>', 'the user who runs php commands', 'www-data');
+
+program.parse(process.argv);
+
+if (program.debug) console.log(program.opts());
+
+const { baseBranch, branchPrefix, origin, releaseBranch, wwwUser } = program;
 
 const release = require('./src/release')(baseBranch, branchPrefix, origin, releaseBranch, wwwUser);
 
