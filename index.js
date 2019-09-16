@@ -28,60 +28,22 @@
 
 const updateNotifier = require('update-notifier');
 
-const log = require('./src/log.js');
 const pkg = require('./package.json');
 
 updateNotifier({pkg}).notify();
 
 const commander = require('commander');
 const program = new commander.Command();
-program.version('0.5.0');
 
 program
-    .option('-d, --debug', 'output extra debugging')
-    .option('-b, --base-branch <branch>', 'the source branch for the release', 'develop')
-    .option('-p, --branch-prefix <prefix>', 'the prefix of the branch created for releasing', 'release')
-    .option('-o, --origin <remotename>', 'the name of the remote repo', 'origin')
-    .option('-r, --release-branch <branch>', 'the target branch for the release PR', 'master')
-    .option('-u, --www-user <user>', 'the user who runs php commands', 'www-data');
-
-program.parse(process.argv);
-
-if (program.debug) console.log(program.opts());
-
-const { baseBranch, branchPrefix, origin, releaseBranch, wwwUser } = program;
-
-const release = require('./src/release')(baseBranch, branchPrefix, origin, releaseBranch, wwwUser);
-
-async function releaseExtension() {
-    try {
-        log.title('TAO Extension Release');
-
-        await release.loadConfig();
-        await release.selectTaoInstance();
-        await release.selectExtension();
-        await release.verifyLocalChanges();
-        await release.signTags();
-        await release.verifyBranches();
-        await release.initialiseGithubClient();
-        await release.doesReleaseExists();
-        await release.isReleaseRequired();
-        await release.confirmRelease();
-        await release.createReleasingBranch();
-        await release.compileAssets();
-        await release.updateTranslations();
-        await release.createPullRequest();
-        await release.extractReleaseNotes();
-        await release.mergePullRequest();
-        await release.createReleaseTag();
-        await release.createGithubRelease();
-        await release.mergeBack();
-        await release.removeReleasingBranch();
-
-        log.done('Good job!');
-    } catch (error) {
-        log.error(error);
-    }
-}
-
-releaseExtension();
+    .version('0.5.0')
+    .command('prepareRelease', 'prepare an extension release in a local branch', {
+        executableFile: './src/commands/prepareRelease'
+    })
+    .command('createRelease', 'push a local release branch to its remote and finish the release', {
+        executableFile: './src/commands/createRelease'
+    })
+    .command('oldWayRelease', '[deprecated] run the whole release process from start to finish',  {
+        executableFile: './src/commands/oldWayRelease'
+    })
+    .parse(process.argv);
