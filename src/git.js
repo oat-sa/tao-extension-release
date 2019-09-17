@@ -177,7 +177,25 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
             return git(repository).checkout(baseBranch)
                 .then( () => git(repository).pull(origin, baseBranch) )
                 .then( () => git(repository).merge([releaseBranch]) )
-                .then( () => git(repository).push(origin, baseBranch) );
+                .then( () => git(repository).push(origin, baseBranch) )
+                .catch( err => {
+                    if (err && err.failed && err.conflicts) {
+                        log.info(err.conflicts);
+                        log.error(`There were conflicts preventing the merge of ${releaseBranch} back into ${baseBranch}.`);
+                        log.warn(`Please resolve the conflicts and complete the merge manually.`);
+                        const { mergeDone } = await inquirer.prompt({
+                            type: 'confirm',
+                            name: 'mergeDone',
+                            message: `Has the merge been completed manually? I need to push ${baseBranch} back to ${origin}.`
+                        });
+                        if (mergeDone) {
+                            return git(repository).push(origin, baseBranch);
+                        }
+                        else {
+                            log.exit();
+                        }
+                    }
+                });
         },
 
         /**
