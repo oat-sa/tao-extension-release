@@ -24,6 +24,8 @@ const commander = require('commander');
 const program = new commander.Command();
 
 program
+    .name("taoRelease createRelease")
+    .usage("[options]")
     .option('-d, --debug', 'output extra debugging')
     // options with defaults
     .option('--branch-prefix <prefix>', 'the prefix of the branch created for releasing', 'release')

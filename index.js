@@ -35,6 +35,8 @@ const program = new commander.Command();
 
 program
     .version('0.5.0')
+    .name("taoRelease")
+    .usage("command [options]")
     .command('prepareRelease', 'prepare an extension release in a local branch', {
         executableFile: './src/commands/prepareRelease'
     })
