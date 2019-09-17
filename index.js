@@ -21,8 +21,6 @@
 /**
  * CLI script entry point
  *
- * Long but linear process.
- *
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
 

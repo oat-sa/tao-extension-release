@@ -20,21 +20,20 @@
 
 const log = require('../log.js');
 
-// var program = require('../..');
 const commander = require('commander');
 const program = new commander.Command();
 
 program
     .option('-d, --debug', 'output extra debugging')
     // options with defaults
-    .option('-b, --base-branch <branch>', 'the source branch for the release', 'develop')
-    .option('-p, --branch-prefix <prefix>', 'the prefix of the branch created for releasing', 'release')
-    .option('-o, --origin <remotename>', 'the name of the remote repo', 'origin')
-    .option('-r, --release-branch <branch>', 'the target branch for the release PR', 'master')
-    .option('-u, --www-user <user>', 'the user who runs php commands', 'www-data')
-    // options which fall back to user prompt if undefined
+    .option('--base-branch <branch>', 'the source branch for the release', 'develop')
+    .option('--branch-prefix <prefix>', 'the prefix of the branch created for releasing', 'release')
+    .option('--origin <remotename>', 'the name of the remote repo', 'origin')
+    .option('--release-branch <branch>', 'the target branch for the release PR', 'master')
+    .option('--www-user <user>', 'the user who runs php commands', 'www-data')
+    // options which fall back to user prompts if undefined
     .option('--tao-instance <path>', 'path to local TAO instance')
-    .option('--extension-to-release <extension>', 'name of the extension to release')
+    .option('--extension-to-release <extension>', 'camelCase name of the extension to release')
     .option('--update-translations', 'indicates if we need to update translations')
     .option('--release-comment <comment>', 'comment to add to github release')
     .parse(process.argv);
