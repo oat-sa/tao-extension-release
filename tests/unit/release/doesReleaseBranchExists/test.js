@@ -1,9 +1,8 @@
 /**
  *
- * Unit test the doesReleaseExists method of module src/release.js
+ * Unit test the doesReleaseBranchExists method of module src/release.js
  *
  * @copyright 2019 Open Assessment Technologies SA;
- * @author Anton Tsymuk <anton@taotesting.com>
  */
 
 const proxyquire = require('proxyquire');
@@ -18,7 +17,7 @@ const config = {
 const extension = 'testExtension';
 const gitClientInstance = {
     pull: () => { },
-    hasTag: () => false
+    hasBranch: () => false
 };
 const gitClientFactory = sandbox.stub().callsFake(() => gitClientInstance);
 const log = {
@@ -30,6 +29,7 @@ const taoRoot = 'testRoot';
 const inquirer = {
     prompt: () => ({ extension, taoRoot }),
 };
+const branchPrefix = 'release';
 const version = '1.1.1';
 const taoInstance = {
     getExtensions: () => [],
@@ -44,12 +44,12 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './log.js': log,
     './taoInstance.js': taoInstanceFactory,
     inquirer,
-})();
+})(null, branchPrefix);
 
-test('should define doesReleaseExists method on release instance', (t) => {
+test('should define doesReleaseBranchExists method on release instance', (t) => {
     t.plan(1);
 
-    t.ok(typeof release.doesReleaseExists === 'function', 'The release instance has doesReleaseExists method');
+    t.ok(typeof release.doesReleaseBranchExists === 'function', 'The release instance has doesReleaseBranchExists method');
 
     t.end();
 });
@@ -63,34 +63,34 @@ test('should log doing message', async (t) => {
 
     sandbox.stub(log, 'doing');
 
-    await release.doesReleaseExists();
+    await release.doesReleaseBranchExists();
 
     t.equal(log.doing.callCount, 1, 'Doing has been logged');
-    t.ok(log.doing.calledWith(`Check if tag v${version} exists`), 'Doing has been logged with apropriate message');
+    t.ok(log.doing.calledWith(`Check if branch ${branchPrefix}-${version} exists`), 'Doing has been logged with appropriate message');
 
     sandbox.restore();
     t.end();
 });
 
-test('should check if release exists', async (t) => {
+test('should check if release branch exists', async (t) => {
     t.plan(2);
 
     await release.selectTaoInstance();
     await release.selectExtension();
     await release.verifyBranches();
 
-    sandbox.stub(gitClientInstance, 'hasTag');
+    sandbox.stub(gitClientInstance, 'hasBranch');
 
-    await release.doesReleaseExists();
+    await release.doesReleaseBranchExists();
 
-    t.equal(gitClientInstance.hasTag.callCount, 1, 'Release has been checked');
-    t.ok(gitClientInstance.hasTag.calledWith(`v${version}`), 'Apropriated release has been checked');
+    t.equal(gitClientInstance.hasBranch.callCount, 1, 'Release has been checked');
+    t.ok(gitClientInstance.hasBranch.calledWith(`${branchPrefix}-${version}`), 'Appropriate release has been checked');
 
     sandbox.restore();
     t.end();
 });
 
-test('should log exit if release exists', async (t) => {
+test('should log exit if release branch exists', async (t) => {
     t.plan(2);
 
     await release.selectTaoInstance();
@@ -98,12 +98,12 @@ test('should log exit if release exists', async (t) => {
     await release.verifyBranches();
 
     sandbox.stub(log, 'exit');
-    sandbox.stub(gitClientInstance, 'hasTag').returns(true);
+    sandbox.stub(gitClientInstance, 'hasBranch').returns(true);
 
-    await release.doesReleaseExists();
+    await release.doesReleaseBranchExists();
 
     t.equal(log.exit.callCount, 1, 'Exit has been logged');
-    t.ok(log.exit.calledWith(`The tag v${version} already exists`), 'Exit has been logged with apropriate message');
+    t.ok(log.exit.calledWith(`The branch ${branchPrefix}-${version} already exists`), 'Exit has been logged with appropriate message');
 
     sandbox.restore();
     t.end();
@@ -118,7 +118,7 @@ test('should log done message', async (t) => {
 
     sandbox.stub(log, 'done');
 
-    await release.doesReleaseExists();
+    await release.doesReleaseBranchExists();
 
     t.equal(log.done.callCount, 1, 'Done has been logged');
 

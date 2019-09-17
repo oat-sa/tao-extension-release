@@ -218,10 +218,10 @@ module.exports = function taoExtensionReleaseFactory(baseBranch, branchPrefix, o
          * Check if release branch exists
          */
         async doesReleaseBranchExists() {
-            log.doing(`Check if branch ${data.releaseBranch} exists`);
+            log.doing(`Check if branch ${data.releasingBranch} exists`);
 
-            if (await gitClient.hasBranch(data.releaseBranch)) {
-                log.exit(`The branch ${data.releaseBranch} already exists`);
+            if (await gitClient.hasBranch(data.releasingBranch)) {
+                log.exit(`The branch ${data.releasingBranch} already exists`);
             }
 
             log.done();

@@ -1,6 +1,6 @@
 /**
  *
- * Unit test the doesReleaseExists method of module src/release.js
+ * Unit test the doesTagExists method of module src/release.js
  *
  * @copyright 2019 Open Assessment Technologies SA;
  * @author Anton Tsymuk <anton@taotesting.com>
@@ -46,10 +46,10 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     inquirer,
 })();
 
-test('should define doesReleaseExists method on release instance', (t) => {
+test('should define doesTagExists method on release instance', (t) => {
     t.plan(1);
 
-    t.ok(typeof release.doesReleaseExists === 'function', 'The release instance has doesReleaseExists method');
+    t.ok(typeof release.doesTagExists === 'function', 'The release instance has doesTagExists method');
 
     t.end();
 });
@@ -63,16 +63,16 @@ test('should log doing message', async (t) => {
 
     sandbox.stub(log, 'doing');
 
-    await release.doesReleaseExists();
+    await release.doesTagExists();
 
     t.equal(log.doing.callCount, 1, 'Doing has been logged');
-    t.ok(log.doing.calledWith(`Check if tag v${version} exists`), 'Doing has been logged with apropriate message');
+    t.ok(log.doing.calledWith(`Check if tag v${version} exists`), 'Doing has been logged with appropriate message');
 
     sandbox.restore();
     t.end();
 });
 
-test('should check if release exists', async (t) => {
+test('should check if tag exists', async (t) => {
     t.plan(2);
 
     await release.selectTaoInstance();
@@ -81,16 +81,16 @@ test('should check if release exists', async (t) => {
 
     sandbox.stub(gitClientInstance, 'hasTag');
 
-    await release.doesReleaseExists();
+    await release.doesTagExists();
 
-    t.equal(gitClientInstance.hasTag.callCount, 1, 'Release has been checked');
-    t.ok(gitClientInstance.hasTag.calledWith(`v${version}`), 'Apropriated release has been checked');
+    t.equal(gitClientInstance.hasTag.callCount, 1, 'Tag has been checked');
+    t.ok(gitClientInstance.hasTag.calledWith(`v${version}`), 'Appropriate tag has been checked');
 
     sandbox.restore();
     t.end();
 });
 
-test('should log exit if release exists', async (t) => {
+test('should log exit if tag exists', async (t) => {
     t.plan(2);
 
     await release.selectTaoInstance();
@@ -100,10 +100,10 @@ test('should log exit if release exists', async (t) => {
     sandbox.stub(log, 'exit');
     sandbox.stub(gitClientInstance, 'hasTag').returns(true);
 
-    await release.doesReleaseExists();
+    await release.doesTagExists();
 
     t.equal(log.exit.callCount, 1, 'Exit has been logged');
-    t.ok(log.exit.calledWith(`The tag v${version} already exists`), 'Exit has been logged with apropriate message');
+    t.ok(log.exit.calledWith(`The tag v${version} already exists`), 'Exit has been logged with appropriate message');
 
     sandbox.restore();
     t.end();
@@ -118,7 +118,7 @@ test('should log done message', async (t) => {
 
     sandbox.stub(log, 'done');
 
-    await release.doesReleaseExists();
+    await release.doesTagExists();
 
     t.equal(log.done.callCount, 1, 'Done has been logged');
 
