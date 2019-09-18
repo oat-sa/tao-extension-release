@@ -103,15 +103,19 @@ module.exports = function taoExtensionReleaseFactory(params) {
         async createGithubRelease() {
             log.doing(`Creating github release ${data.version}`);
 
-            const { comment } = await inquirer.prompt({
-                type: 'input',
-                name: 'comment',
-                message: 'Any comment on the release ?',
-            });
+            // Start with CLI option
+            let comment = releaseComment;
 
-            const releaseComment = `${comment}\n\n**Release notes :**\n${data.pr.notes}`;
+            if (!comment || !comment.length) {
+                comment = await inquirer.prompt({
+                    type: 'input',
+                    name: 'comment',
+                    message: 'Any comment on the release ?',
+                }).comment;
+            }
+            const fullReleaseComment = `${comment}\n\n**Release notes :**\n${data.pr.notes}`;
 
-            await githubClient.release(data.tag, releaseComment);
+            await githubClient.release(data.tag, fullReleaseComment);
 
             log.done();
         },
@@ -318,16 +322,24 @@ module.exports = function taoExtensionReleaseFactory(params) {
          * Select and initialise the extension to release
          */
         async selectExtension() {
+            // Start with CLI option
+            let extension = extensionToRelease;
             const availableExtensions = await taoInstance.getExtensions();
 
-            const { extension } = await inquirer.prompt({
-                type: 'list',
-                name: 'extension',
-                message: 'Which extension you want to release ? ',
-                pageSize: 12,
-                choices: availableExtensions,
-                default: data.extension && data.extension.name,
-            });
+            if (extension && !availableExtensions.includes(extension)) {
+                log.error(`Specified extension ${extension} not found in ${pathToTao}`);
+                log.exit();
+            }
+            else if (!extension) {
+                extension = await inquirer.prompt({
+                    type: 'list',
+                    name: 'extension',
+                    message: 'Which extension you want to release ? ',
+                    pageSize: 12,
+                    choices: availableExtensions,
+                    default: data.extension && data.extension.name,
+                }).extension;
+            }
 
             gitClient = gitClientFactory(`${data.taoRoot}/${extension}`, origin, extension);
 
@@ -343,12 +355,17 @@ module.exports = function taoExtensionReleaseFactory(params) {
          * Select and initialise tao instance
          */
         async selectTaoInstance() {
-            const { taoRoot } = await inquirer.prompt({
-                type: 'input',
-                name: 'taoRoot',
-                message: 'Path to the TAO instance : ',
-                default: data.taoRoot || process.cwd()
-            });
+            // start with CLI option
+            let taoRoot = pathToTao;
+
+            if (!taoRoot) {
+                taoRoot = await inquirer.prompt({
+                    type: 'input',
+                    name: 'taoRoot',
+                    message: 'Path to the TAO instance : ',
+                    default: data.taoRoot || process.cwd()
+                }).taoRoot;
+            }
 
             taoInstance = taoInstanceFactory(path.resolve(taoRoot), false, wwwUser);
 
@@ -377,14 +394,20 @@ module.exports = function taoExtensionReleaseFactory(params) {
          */
         async updateTranslations() {
             log.doing('Translations');
-            log.warn('Update translations during a release only if you know what you are doing');
 
-            const { translation } = await inquirer.prompt({
-                type: 'confirm',
-                name: 'translation',
-                message: `${data.extension.name} needs updated translations ? `,
-                default: false
-            });
+            // Start with CLI option
+            let translation = updateTranslations;
+
+            if (!translation) {
+                log.warn('Update translations during a release only if you know what you are doing');
+
+                translation = await inquirer.prompt({
+                    type: 'confirm',
+                    name: 'translation',
+                    message: `${data.extension.name} needs updated translations ? `,
+                    default: false
+                }).translation;
+            }
 
             if (translation) {
                 try {
