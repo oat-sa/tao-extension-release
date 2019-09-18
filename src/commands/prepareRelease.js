@@ -40,3 +40,30 @@ program
     .parse(process.argv);
 
 if (program.debug) console.log(program.opts());
+
+const release = require('../release')(program.opts());
+
+async function releaseExtension() {
+    try {
+        log.title('TAO Extension Release: prepareRelease');
+
+        await release.loadConfig();
+        await release.selectTaoInstance();
+        await release.selectExtension();
+        await release.verifyLocalChanges();
+        await release.signTags();
+        await release.verifyBranches();
+        await release.doesTagExists();
+        await release.doesReleaseBranchExists();
+        await release.isReleaseRequired();
+        await release.createReleasingBranch();
+        await release.compileAssets();
+        await release.updateTranslations();
+
+        log.done('Release branch prepared, and pushed to remote. Bye!');
+    } catch (error) {
+        log.error(error);
+    }
+}
+
+releaseExtension();

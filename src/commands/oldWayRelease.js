@@ -46,15 +46,15 @@ const release = require('../release')(program.opts());
 
 async function releaseExtension() {
     try {
-        log.title('TAO Extension Release');
+        log.title('TAO Extension Release: oldWayRelease');
 
+        // TODO: warnAboutDeprecation();
         await release.loadConfig();
         await release.selectTaoInstance();
         await release.selectExtension();
         await release.verifyLocalChanges();
         await release.signTags();
         await release.verifyBranches();
-        await release.initialiseGithubClient();
         await release.doesTagExists();
         await release.doesReleaseBranchExists();
         await release.isReleaseRequired();
@@ -62,6 +62,7 @@ async function releaseExtension() {
         await release.createReleasingBranch();
         await release.compileAssets();
         await release.updateTranslations();
+        await release.initialiseGithubClient();
         await release.createPullRequest();
         await release.extractReleaseNotes();
         await release.mergePullRequest();

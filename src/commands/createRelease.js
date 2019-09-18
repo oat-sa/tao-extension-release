@@ -41,3 +41,35 @@ program
     .parse(process.argv);
 
 if (program.debug) console.log(program.opts());
+
+const release = require('../release')(program.opts());
+
+async function releaseExtension() {
+    try {
+        log.title('TAO Extension Release: createRelease');
+
+        await release.loadConfig();
+        await release.selectTaoInstance();
+        await release.selectExtension();
+        await release.verifyLocalChanges();
+        await release.signTags();
+        // TODO: selectReleasingBranch();
+        // TODO: verifyReleasingBranch();
+        // TODO: mergeWithReleaseBranch();
+        await release.compileAssets();
+        await release.initialiseGithubClient();
+        await release.createPullRequest();
+        await release.extractReleaseNotes();
+        await release.mergePullRequest();
+        await release.createReleaseTag();
+        await release.createGithubRelease();
+        await release.mergeBack();
+        await release.removeReleasingBranch();
+
+        log.done('Good job!');
+    } catch (error) {
+        log.error(error);
+    }
+}
+
+releaseExtension();
