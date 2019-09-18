@@ -35,18 +35,26 @@ const taoInstanceFactory = require('./taoInstance.js');
 /**
  * Get the taoExtensionRelease
  *
- * @param {String} baseBranch - branch to release from
- * @param {String} branchPrefix - releasing branch prefix
- * @param {String} origin - git repository origin
- * @param {String} releaseBranch - branch to release to
- * @param {String} wwwUser - name of the www user
+ * @param {Object} params
+ * @param {String} [params.baseBranch] - branch to release from
+ * @param {String} [params.branchPrefix] - releasing branch prefix
+ * @param {String} [params.origin] - git repository origin
+ * @param {String} [params.releaseBranch] - branch to release to
+ * @param {String} [params.wwwUser] - name of the www user
+ * @param {String} [params.taoInstance] - path to the instance root
+ * @param {String} [params.extensionToRelease] - name of the extension
+ * @param {String} [params.versionToRelease] - version in xx.x.x format
+ * @param {Boolean} [params.updateTranslations] - should translations be included?
+ * @param {String} [params.releaseComment] - the release author's comment
  * @return {Object} - instance of taoExtensionRelease
  */
-module.exports = function taoExtensionReleaseFactory(baseBranch, branchPrefix, origin, releaseBranch, wwwUser) {
+module.exports = function taoExtensionReleaseFactory(params) {
+    const { baseBranch, branchPrefix, origin, releaseBranch, wwwUser, taoInstance,
+        extensionToRelease, versionToRelease, updateTranslations, releaseComment } = params;
+
     let data = {};
     let gitClient;
     let githubClient;
-    let taoInstance;
 
     return {
         /**

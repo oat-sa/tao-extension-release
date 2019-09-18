@@ -42,9 +42,7 @@ program
 
 if (program.debug) console.log(program.opts());
 
-const { baseBranch, branchPrefix, origin, releaseBranch, wwwUser } = program;
-
-const release = require('../release')(baseBranch, branchPrefix, origin, releaseBranch, wwwUser);
+const release = require('../release')(program.opts());
 
 async function releaseExtension() {
     try {
