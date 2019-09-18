@@ -129,6 +129,16 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
         },
 
         /**
+         * Does the given branch exists
+         * @param {String} branchName
+         * @returns {Promise<Boolean>}
+         */
+        hasBranch(branchName){
+            return git(repository).branch()
+                .then(branches => branches && branches.all && branches.all.indexOf(branchName) > -1);
+        },
+
+        /**
          * Create and push the given tag
          * @param {String} tagBranch - the branch to create the tag from
          * @param {String} tagName - the name of the tag to create and push

@@ -57,7 +57,8 @@ async function releaseExtension() {
         await release.signTags();
         await release.verifyBranches();
         await release.initialiseGithubClient();
-        await release.doesReleaseExists();
+        await release.doesTagExists();
+        await release.doesReleaseBranchExists();
         await release.isReleaseRequired();
         await release.confirmRelease();
         await release.createReleasingBranch();
