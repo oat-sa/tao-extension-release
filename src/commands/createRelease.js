@@ -33,7 +33,7 @@ program
     .option('--release-branch <branch>', 'the target branch for the release PR', 'master')
     .option('--www-user <user>', 'the user who runs php commands', 'www-data')
     // options which fall back to user prompts if undefined
-    .option('--tao-instance <path>', 'path to local TAO instance')
+    .option('--path-to-tao <path>', 'path to local TAO instance')
     .option('--extension-to-release <extension>', 'camelCase name of the extension to release')
     .option('--version-to-release <version>', 'version of the extension to release')
     .option('--update-translations', 'indicates if we need to update translations')

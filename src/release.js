@@ -49,12 +49,14 @@ const taoInstanceFactory = require('./taoInstance.js');
  * @return {Object} - instance of taoExtensionRelease
  */
 module.exports = function taoExtensionReleaseFactory(params) {
-    const { baseBranch, branchPrefix, origin, releaseBranch, wwwUser, taoInstance,
-        extensionToRelease, versionToRelease, updateTranslations, releaseComment } = params;
+    const { baseBranch, branchPrefix, origin, releaseBranch, wwwUser,
+        extensionToRelease, versionToRelease, updateTranslations } = params;
+    let { pathToTao, releaseComment } = params;
 
     let data = {};
     let gitClient;
     let githubClient;
+    let taoInstance;
 
     return {
         /**
