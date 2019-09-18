@@ -25,6 +25,7 @@
 const inquirer = require('inquirer');
 const opn = require('opn');
 const path = require('path');
+const semverCmp = require('semver-compare');
 
 const config = require('./config.js')();
 const gitClientFactory = require('./git.js');
@@ -40,9 +41,10 @@ const taoInstanceFactory = require('./taoInstance.js');
  * @param {String} origin - git repository origin
  * @param {String} releaseBranch - branch to release to
  * @param {String} wwwUser - name of the www user
+ * @param {String} versionToRelease - the version to release in format xx.x.x.
  * @return {Object} - instance of taoExtensionRelease
  */
-module.exports = function taoExtensionReleaseFactory(baseBranch, branchPrefix, origin, releaseBranch, wwwUser) {
+module.exports = function taoExtensionReleaseFactory(baseBranch, branchPrefix, origin, releaseBranch, wwwUser, versionToRelease) {
     let data = {};
     let gitClient;
     let githubClient;
@@ -438,5 +440,65 @@ module.exports = function taoExtensionReleaseFactory(baseBranch, branchPrefix, o
 
             log.done(`${data.extension.name} is clean`);
         },
+
+        /**
+         * Select releasing branch
+         * - picking version-to-release CLI option and find branch with version on it
+         * - or find the biggest version and find branch with version on it
+         */
+        async selectReleasingBranch() {
+            let versionToReleaseFound = '0.0.0';
+            let releasingBranch = null;
+
+            // Filter all branches to the ones that have release in the name
+            const allBranches = await gitClient.getLocalBranches();
+            const possibleBranches = allBranches.filter(branch =>
+                (branch.includes('origin') && !branch.includes('remotes') && branch.includes('release'))
+            );
+
+            if (versionToRelease) {
+                log.doing(`Selecting releasing branch for '${versionToRelease}' version to release.`);
+
+                versionToReleaseFound = versionToRelease.toString();
+
+                const branchesFound = possibleBranches.filter(branch => branch.includes(versionToReleaseFound));
+
+                if (branchesFound.length === 1) {
+                    releasingBranch = branchesFound[0];
+                } else {
+                    log.error(`Found more than 1 possible branch that can match to '${versionToRelease}' version.`);
+                    log.exit();
+                }
+            } else {
+                log.doing('Selecting releasing branch from the biggest version found in branches.');
+
+                const semVerRegex = /(?:(\d+)\.)?(?:(\d+)\.)?(?:(\d+)\.\d+)/g;
+
+                possibleBranches
+                    .filter(branch => branch.match(semVerRegex))
+                    .map(branch => {
+                        const branchVersion = branch.match(semVerRegex).toString();
+                        if (semverCmp(branchVersion, versionToReleaseFound) === 0) {
+                            log.error(`Found more than 1 possible branch that can match to '${versionToRelease}' version.`);
+                            log.exit();
+                        } else if (semverCmp(branchVersion, versionToReleaseFound) === 1) {
+                            releasingBranch = branch;
+                            versionToReleaseFound = branchVersion.toString();
+                        }
+                    });
+            }
+
+            // Cross check biggest version found with version inside manifest
+            await gitClient.checkout(releasingBranch);
+            const manifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
+
+            if (manifest.version === versionToReleaseFound) {
+                data.releasingBranch = releasingBranch;
+                log.done(`Branch ${releasingBranch} is selected.`);
+            } else {
+                log.error(`Mismatch versions found between branch '${releasingBranch}' name and manifest version '${manifest.version}'.`);
+                log.exit();
+            }
+        }
     };
 };
