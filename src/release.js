@@ -107,11 +107,11 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             let comment = releaseComment;
 
             if (!comment || !comment.length) {
-                comment = await inquirer.prompt({
+                ( { comment } = await inquirer.prompt({
                     type: 'input',
                     name: 'comment',
                     message: 'Any comment on the release ?',
-                }).comment;
+                }) );
             }
             const fullReleaseComment = `${comment}\n\n**Release notes :**\n${data.pr.notes}`;
 
@@ -330,14 +330,14 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 log.exit(`Specified extension ${extension} not found in ${data.taoRoot}`);
             }
             else if (!extension) {
-                extension = await inquirer.prompt({
+                ( { extension } = await inquirer.prompt({
                     type: 'list',
                     name: 'extension',
                     message: 'Which extension you want to release ? ',
                     pageSize: 12,
                     choices: availableExtensions,
                     default: data.extension && data.extension.name,
-                }).extension;
+                }) );
             }
 
             gitClient = gitClientFactory(`${data.taoRoot}/${extension}`, origin, extension);
@@ -358,12 +358,12 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             let taoRoot = pathToTao;
 
             if (!taoRoot) {
-                taoRoot = await inquirer.prompt({
+                ( { taoRoot } = await inquirer.prompt({
                     type: 'input',
                     name: 'taoRoot',
                     message: 'Path to the TAO instance : ',
                     default: data.taoRoot || process.cwd()
-                }).taoRoot;
+                }) );
             }
 
             taoInstance = taoInstanceFactory(path.resolve(taoRoot), false, wwwUser);
@@ -400,12 +400,12 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             if (!translation) {
                 log.warn('Update translations during a release only if you know what you are doing');
 
-                translation = await inquirer.prompt({
+                ( { translation } = await inquirer.prompt({
                     type: 'confirm',
                     name: 'translation',
                     message: `${data.extension.name} needs updated translations ? `,
                     default: false
-                }).translation;
+                }) );
             }
 
             if (translation) {
