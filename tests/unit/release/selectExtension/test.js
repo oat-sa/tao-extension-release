@@ -15,6 +15,12 @@ const sandbox = sinon.sandbox.create();
 const config = {
     write: () => { },
 };
+const log = {
+    exit: () => { },
+    doing: () => { },
+    done: () => { },
+    info: () => { },
+};
 const gitClientFactory = sandbox.stub();
 const origin = 'testOrigin';
 const taoRoot = 'testRoot';
@@ -30,6 +36,7 @@ const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './config.js': () => config,
     './git.js': gitClientFactory,
+    './log.js': log,
     './taoInstance.js': taoInstanceFactory,
     inquirer,
 })({ origin });
@@ -124,7 +131,55 @@ test('should save selected extension to config', async (t) => {
             name: extension,
         },
         taoRoot,
-    }), 'Extesion has been saved to config');
+    }), 'Extension has been saved to config');
+
+    sandbox.restore();
+    t.end();
+});
+
+const releaseWithCliOption = proxyquire.noCallThru().load('../../../../src/release.js', {
+    './config.js': () => config,
+    './git.js': gitClientFactory,
+    './log.js': log,
+    './taoInstance.js': taoInstanceFactory,
+    inquirer,
+})({ origin, extensionToRelease: 'testExtensionFoo' });
+
+test('should use CLI extension instead of prompting', async (t) => {
+    t.plan(3);
+
+    const availableExtensions = ['testExtensionFoo', 'testExtensionBar'];
+
+    await releaseWithCliOption.selectTaoInstance();
+
+    sandbox.stub(inquirer, 'prompt');
+    sandbox.stub(taoInstance, 'getExtensions').returns(availableExtensions);
+    gitClientFactory.resetHistory();
+
+    await releaseWithCliOption.selectExtension();
+
+    t.ok(inquirer.prompt.notCalled, 'No prompt shown');
+    t.equal(gitClientFactory.callCount, 1, 'gitClient instance has been created');
+    t.ok(gitClientFactory.calledWith(`${taoRoot}/testExtensionFoo`, origin, 'testExtensionFoo'), 'gitClient instance has been passed CLI extension');
+
+    sandbox.restore();
+    t.end();
+});
+
+test('should log exit message when bad CLI extension provided', async (t) => {
+    t.plan(2);
+
+    const availableExtensions = ['testExtensionBaz', 'testExtensionBar'];
+
+    await releaseWithCliOption.selectTaoInstance();
+
+    sandbox.stub(taoInstance, 'getExtensions').returns(availableExtensions);
+    sandbox.stub(log, 'exit');
+
+    await releaseWithCliOption.selectExtension();
+
+    t.equal(log.exit.callCount, 1, 'Exit has been logged');
+    t.ok(log.exit.calledWith(`Specified extension testExtensionFoo not found in testRoot`), 'Error has been logged with apropriate message');
 
     sandbox.restore();
     t.end();

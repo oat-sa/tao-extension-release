@@ -327,8 +327,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             const availableExtensions = await taoInstance.getExtensions();
 
             if (extension && !availableExtensions.includes(extension)) {
-                log.error(`Specified extension ${extension} not found in ${pathToTao}`);
-                log.exit();
+                log.exit(`Specified extension ${extension} not found in ${data.taoRoot}`);
             }
             else if (!extension) {
                 extension = await inquirer.prompt({
