@@ -83,7 +83,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
-         * Prompt user to confrim release
+         * Prompt user to confirm release
          */
         async confirmRelease() {
             const { go } = await inquirer.prompt({

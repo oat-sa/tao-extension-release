@@ -48,7 +48,7 @@ async function releaseExtension() {
     try {
         log.title('TAO Extension Release: oldWayRelease');
 
-        // TODO: warnAboutDeprecation();
+        // TODO: await release.warnAboutDeprecation();
         await release.loadConfig();
         await release.selectTaoInstance();
         await release.selectExtension();
