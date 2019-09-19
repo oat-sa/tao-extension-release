@@ -448,55 +448,70 @@ module.exports = function taoExtensionReleaseFactory(baseBranch, branchPrefix, o
          */
         async selectReleasingBranch() {
             let versionToReleaseFound = '0.0.0';
-            let releasingBranch = null;
+            let branchToRelease = null;
 
             // Filter all branches to the ones that have release in the name
+            await gitClient.fetch({'--prune': true});
             const allBranches = await gitClient.getLocalBranches();
-            const possibleBranches = allBranches.filter(branch =>
-                (branch.includes('origin') && !branch.includes('remotes') && branch.includes('release'))
-            );
+
+            // Only get branches from remote
+            const possibleBranches = allBranches.filter(branch => (branch.includes('remotes') && branch.includes('origin') && branch.includes('release')));
+            // console.log('possibleBranches', possibleBranches);
 
             if (versionToRelease) {
                 log.doing(`Selecting releasing branch for '${versionToRelease}' version to release.`);
 
-                versionToReleaseFound = versionToRelease.toString();
-
+                // Filter possible branches with version-to-release
+                versionToReleaseFound = versionToRelease;
                 const branchesFound = possibleBranches.filter(branch => branch.includes(versionToReleaseFound));
 
-                if (branchesFound.length === 1) {
-                    releasingBranch = branchesFound[0];
+                if (branchesFound.length) {
+                    if (branchesFound.length === 1) {
+                        branchToRelease = branchesFound[0];
+                    } else {
+                        //TODO: list all branches found and get user to choose
+                        log.error(`Found more than 1 possible branch that can match to '${versionToRelease}' version.`);
+                        log.exit();
+                    }
                 } else {
-                    log.error(`Found more than 1 possible branch that can match to '${versionToRelease}' version.`);
+                    //TODO: ask user if we want to do a search for the biggest version
+                    log.error(`Cannot find any branch for '${versionToRelease}' version.`);
                     log.exit();
                 }
             } else {
                 log.doing('Selecting releasing branch from the biggest version found in branches.');
 
                 const semVerRegex = /(?:(\d+)\.)?(?:(\d+)\.)?(?:(\d+)\.\d+)/g;
+                const versionedBranches = possibleBranches.filter(branch => branch.match(semVerRegex));
 
-                possibleBranches
-                    .filter(branch => branch.match(semVerRegex))
-                    .map(branch => {
-                        const branchVersion = branch.match(semVerRegex).toString();
-                        if (semverCmp(branchVersion, versionToReleaseFound) === 0) {
-                            log.error(`Found more than 1 possible branch that can match to '${versionToRelease}' version.`);
-                            log.exit();
-                        } else if (semverCmp(branchVersion, versionToReleaseFound) === 1) {
-                            releasingBranch = branch;
-                            versionToReleaseFound = branchVersion.toString();
-                        }
-                    });
+                versionedBranches.map(branch => {
+                    const branchVersion = branch.match(semVerRegex).toString();
+                    if (semverCmp(branchVersion, versionToReleaseFound) === 0) {
+                        //TODO: list all branches found and get user to choose
+                        log.error(`Found more than 1 possible branch that can match to '${versionToReleaseFound}' version.`);
+                        log.exit();
+                    } else if (semverCmp(branchVersion, versionToReleaseFound) === 1) {
+                        branchToRelease = branch;
+                        versionToReleaseFound = branchVersion.toString();
+                    }
+                });
             }
 
-            // Cross check biggest version found with version inside manifest
-            await gitClient.checkout(releasingBranch);
-            const manifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
+            if (branchToRelease) {
+                // Cross check biggest version found with version inside manifest
+                await gitClient.checkout(branchToRelease);
+                const manifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
 
-            if (manifest.version === versionToReleaseFound) {
-                data.releasingBranch = releasingBranch;
-                log.done(`Branch ${releasingBranch} is selected.`);
+                if (manifest.version === versionToReleaseFound) {
+                    data.releasingBranch = branchToRelease;
+                    data.version = versionToReleaseFound;
+                    log.done(`Branch ${branchToRelease} is selected.`);
+                } else {
+                    log.error(`Mismatch versions found between branch '${branchToRelease}' name and manifest version '${manifest.version}'.`);
+                    log.exit();
+                }
             } else {
-                log.error(`Mismatch versions found between branch '${releasingBranch}' name and manifest version '${manifest.version}'.`);
+                log.error('Cannot find any branch for with a valid \'X.X.X.X\' semVer version.');
                 log.exit();
             }
         }
