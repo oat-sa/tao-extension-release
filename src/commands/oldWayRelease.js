@@ -71,7 +71,7 @@ async function releaseExtension() {
         await release.mergeBack();
         await release.removeReleasingBranch();
 
-        log.done('Good job!');
+        log.done('Good job!').exit();
     } catch (error) {
         log.error(error);
     }
