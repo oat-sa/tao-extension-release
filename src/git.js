@@ -99,12 +99,20 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
         },
 
         /**
-         * Checks out the supplied tag, revision or branch. 
+         * Checks out the supplied tag, revision or branch.
          * @param {String} branchName - the branch name
          * @returns {Promise}
          */
         checkout(branchName){
             return git(repository).checkout(branchName);
+        },
+
+        /**
+         * Gets any new commits, references (like tags), branches and files from a remote repository
+         * @param {*} options
+         */
+        fetch(options) {
+            return git(repository).fetch(options);
         },
 
         /**
