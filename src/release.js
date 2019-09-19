@@ -25,7 +25,7 @@
 const inquirer = require('inquirer');
 const opn = require('opn');
 const path = require('path');
-const semverCmp = require('semver-compare');
+const compareVersions = require('compare-versions');
 
 const config = require('./config.js')();
 const gitClientFactory = require('./git.js');
@@ -447,73 +447,102 @@ module.exports = function taoExtensionReleaseFactory(baseBranch, branchPrefix, o
          * - or find the biggest version and find branch with version on it
          */
         async selectReleasingBranch() {
-            let versionToReleaseFound = '0.0.0';
-            let branchToRelease = null;
+            let version;
+            let branchToRelease;
 
             // Filter all branches to the ones that have release in the name
             await gitClient.fetch({'--prune': true});
             const allBranches = await gitClient.getLocalBranches();
-
-            // Only get branches from remote
             const possibleBranches = allBranches.filter(branch => (branch.includes('remotes') && branch.includes('origin') && branch.includes('release')));
-            // console.log('possibleBranches', possibleBranches);
 
             if (versionToRelease) {
-                log.doing(`Selecting releasing branch for '${versionToRelease}' version to release.`);
-
-                // Filter possible branches with version-to-release
-                versionToReleaseFound = versionToRelease;
-                const branchesFound = possibleBranches.filter(branch => branch.includes(versionToReleaseFound));
-
-                if (branchesFound.length) {
-                    if (branchesFound.length === 1) {
-                        branchToRelease = branchesFound[0];
-                    } else {
-                        //TODO: list all branches found and get user to choose
-                        log.error(`Found more than 1 possible branch that can match to '${versionToRelease}' version.`);
-                        log.exit();
-                    }
-                } else {
-                    //TODO: ask user if we want to do a search for the biggest version
-                    log.error(`Cannot find any branch for '${versionToRelease}' version.`);
-                    log.exit();
-                }
+                version = versionToRelease;
+                branchToRelease = this.getBranchWithVersion(possibleBranches, versionToRelease);
             } else {
-                log.doing('Selecting releasing branch from the biggest version found in branches.');
-
-                const semVerRegex = /(?:(\d+)\.)?(?:(\d+)\.)?(?:(\d+)\.\d+)/g;
-                const versionedBranches = possibleBranches.filter(branch => branch.match(semVerRegex));
-
-                versionedBranches.map(branch => {
-                    const branchVersion = branch.match(semVerRegex).toString();
-                    if (semverCmp(branchVersion, versionToReleaseFound) === 0) {
-                        //TODO: list all branches found and get user to choose
-                        log.error(`Found more than 1 possible branch that can match to '${versionToReleaseFound}' version.`);
-                        log.exit();
-                    } else if (semverCmp(branchVersion, versionToReleaseFound) === 1) {
-                        branchToRelease = branch;
-                        versionToReleaseFound = branchVersion.toString();
-                    }
-                });
+                const highestVersionBranch = this.getHighestVersionBranch(possibleBranches);
+                branchToRelease = highestVersionBranch.branch;
+                version = highestVersionBranch.version;
             }
 
+            // Cross check branch version with manifest version
             if (branchToRelease) {
-                // Cross check biggest version found with version inside manifest
                 await gitClient.checkout(branchToRelease);
                 const manifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
 
-                if (manifest.version === versionToReleaseFound) {
+                if (manifest.version === version) {
                     data.releasingBranch = branchToRelease;
-                    data.version = versionToReleaseFound;
+                    data.version = version;
                     log.done(`Branch ${branchToRelease} is selected.`);
                 } else {
-                    log.error(`Mismatch versions found between branch '${branchToRelease}' name and manifest version '${manifest.version}'.`);
+                    //TODO: ask user to cross check and then decide if he want to continue
+                    log.error(`Mismatch versions found between branch '${branchToRelease}' and manifest version '${manifest.version}'.`);
                     log.exit();
                 }
             } else {
-                log.error('Cannot find any branch for with a valid \'X.X.X.X\' semVer version.');
+                log.error('Cannot find any branch with a valid \'X.X.X.X\' semVer version.');
                 log.exit();
             }
+        },
+
+        // Private methods
+
+        /**
+         * Get the branch with the highest semver version in the name
+         * @param {Array.<String>} possibleBranches - array of branches
+         * @returns {{branch: *, version: *}}
+         */
+        getHighestVersionBranch(possibleBranches = []) {
+            log.doing('Selecting releasing branch from the biggest version found in branches.');
+
+            const semVerRegex = /(?:(\d+)\.)?(?:(\d+)\.)?(?:(\d+)\.\d+)/g;
+            const versionedBranches = possibleBranches.filter(branch => branch.match(semVerRegex));
+
+            let version = '0.0.0';
+            let branch;
+
+            versionedBranches.map(b => {
+                const branchVersion = b.match(semVerRegex).toString();
+                if (compareVersions(branchVersion, version) === 0) {
+                    //TODO: list all branches found and get user to choose
+                    log.error(`Found more than 1 possible branch that can match to '${version}' version.`);
+                    log.exit();
+                } else if (compareVersions(branchVersion, version) === 1) {
+                    branch = b;
+                    version = branchVersion.toString();
+                }
+            });
+
+            return { branch, version };
+        },
+
+        /**
+         * Get the branch with the provided semver version in the name
+         * @param {Array.<String>} possibleBranches - array of branches
+         * @param {String} versionToFind - semVer version X.X.X.X
+         * @returns {*}
+         */
+        getBranchWithVersion(possibleBranches = [], versionToFind) {
+            log.doing(`Selecting releasing branch for '${versionToFind}' version to release.`);
+
+            // Filter possible branches with version-to-release
+            const branchesFound = possibleBranches.filter(branch => branch.includes(versionToFind));
+            let branch;
+
+            if (branchesFound.length) {
+                if (branchesFound.length === 1) {
+                    branch = branchesFound[0];
+                } else {
+                    //TODO: list all branches and get user to choose
+                    log.error(`Found more than 1 possible branch that can match to '${versionToFind}' version.`);
+                    log.exit();
+                }
+            } else {
+                //TODO: ask user if we want to do a search for the biggest version
+                log.error(`Cannot find any branch for '${versionToFind}' version.`);
+                log.exit();
+            }
+
+            return branch;
         }
     };
 };
