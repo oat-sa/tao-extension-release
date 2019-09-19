@@ -109,7 +109,8 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
 
         /**
          * Gets any new commits, references (like tags), branches and files from a remote repository
-         * @param {*} options
+         * @param options
+         * @returns {Promise>}
          */
         fetch(options) {
             return git(repository).fetch(options);
