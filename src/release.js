@@ -41,7 +41,7 @@ const taoInstanceFactory = require('./taoInstance.js');
  * @param {String} [params.origin] - git repository origin
  * @param {String} [params.releaseBranch] - branch to release to
  * @param {String} [params.wwwUser] - name of the www user
- * @param {String} [params.taoInstance] - path to the instance root
+ * @param {String} [params.pathToTao] - path to the instance root
  * @param {String} [params.extensionToRelease] - name of the extension
  * @param {String} [params.versionToRelease] - version in xx.x.x format
  * @param {Boolean} [params.updateTranslations] - should translations be included?
@@ -103,7 +103,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         async createGithubRelease() {
             log.doing(`Creating github release ${data.version}`);
 
-            // Start with CLI option
+            // Start with CLI option, if it's missing we'll prompt user
             let comment = releaseComment;
 
             if (!comment || !comment.length) {
@@ -322,7 +322,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Select and initialise the extension to release
          */
         async selectExtension() {
-            // Start with CLI option
+            // Start with CLI option, if it's missing we'll prompt user
             let extension = extensionToRelease;
             const availableExtensions = await taoInstance.getExtensions();
 
@@ -355,7 +355,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Select and initialise tao instance
          */
         async selectTaoInstance() {
-            // start with CLI option
+            // Start with CLI option, if it's missing we'll prompt user
             let taoRoot = pathToTao;
 
             if (!taoRoot) {
@@ -395,7 +395,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         async updateTranslations() {
             log.doing('Translations');
 
-            // Start with CLI option
+            // Start with CLI option, if it's missing we'll prompt user
             let translation = updateTranslations;
 
             if (!translation) {
