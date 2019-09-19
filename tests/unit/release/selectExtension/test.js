@@ -32,7 +32,7 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './git.js': gitClientFactory,
     './taoInstance.js': taoInstanceFactory,
     inquirer,
-})(null, null, origin);
+})({ origin });
 
 test('should define selectExtension method on release instance', (t) => {
     t.plan(1);

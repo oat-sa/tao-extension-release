@@ -52,7 +52,7 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './log.js': log,
     './taoInstance.js': taoInstanceFactory,
     inquirer,
-})(null, branchPrefix, null, releaseBranch);
+})({ branchPrefix, releaseBranch });
 
 test('should define createPullRequest method on release instance', (t) => {
     t.plan(1);

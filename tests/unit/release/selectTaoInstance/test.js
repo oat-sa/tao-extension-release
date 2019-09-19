@@ -29,7 +29,7 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './log.js': log,
     './taoInstance.js': taoInstanceFactory,
     inquirer,
-})(null, null, null, null, wwwUser);
+})({ wwwUser });
 
 test('should define selectTaoInstance method on release instance', (t) => {
     t.plan(1);

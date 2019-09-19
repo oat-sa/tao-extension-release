@@ -48,7 +48,7 @@ const taoInstanceFactory = require('./taoInstance.js');
  * @param {String} [params.releaseComment] - the release author's comment
  * @return {Object} - instance of taoExtensionRelease
  */
-module.exports = function taoExtensionReleaseFactory(params) {
+module.exports = function taoExtensionReleaseFactory(params = {}) {
     const { baseBranch, branchPrefix, origin, releaseBranch, wwwUser,
         extensionToRelease, versionToRelease, updateTranslations } = params;
     let { pathToTao, releaseComment } = params;

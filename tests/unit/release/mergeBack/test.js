@@ -42,7 +42,7 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './taoInstance.js': taoInstanceFactory,
     './log.js': log,
     inquirer,
-})(baseBranch, null, null, releaseBranch);
+})({ baseBranch, releaseBranch });
 
 test('should define mergeBack method on release instance', (t) => {
     t.plan(1);
