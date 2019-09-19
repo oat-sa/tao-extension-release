@@ -174,7 +174,7 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
         /**
          * Merge and push branches in a Pull Request style layout
          * @param {String} baseBranch - the branch that receive the feature
-         * @param {String} releaseBranch - the branch that contain the feature
+         * @param {String} featureBranch - the branch that contain the feature
          * @returns {Promise}
          */
         mergePr(baseBranch, featureBranch){
