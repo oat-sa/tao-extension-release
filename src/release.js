@@ -26,6 +26,7 @@ const inquirer = require('inquirer');
 const opn = require('opn');
 const path = require('path');
 const compareVersions = require('compare-versions');
+const semverRegex = require('semver-regex');
 
 const config = require('./config.js')();
 const gitClientFactory = require('./git.js');
@@ -492,8 +493,10 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 const branchName = `remotes/${origin}/${branchPrefix}`;
                 const possibleBranches = allBranches.filter(branch => branch.includes(branchName));
                 const highestVersionBranch = this.getHighestVersionBranch(possibleBranches);
-                data.releasingBranch = highestVersionBranch.branch;
-                data.version = highestVersionBranch.version;
+                if (highestVersionBranch && highestVersionBranch.branch && highestVersionBranch.version) {
+                    data.releasingBranch = highestVersionBranch.branch;
+                    data.version = highestVersionBranch.version;
+                }
             }
 
             if (data.releasingBranch) {
@@ -501,7 +504,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 return;
             }
 
-            log.exit('Cannot find any branch with a valid version.');
+            log.exit('Cannot find any branch with version valid.');
         },
 
         // Private methods
@@ -519,9 +522,9 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
             possibleBranches.map(b => {
                 const branchVersion = b.replace(`remotes/${origin}/${branchPrefix}`, '');
-                if (compareVersions(branchVersion, version) === 1) {
+                if (semverRegex().exec(branchVersion) && compareVersions(branchVersion, version) === 1) {
                     branch = b;
-                    version = branchVersion.toString();
+                    version = branchVersion;
                 }
             });
 
