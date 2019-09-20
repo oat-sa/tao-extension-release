@@ -146,3 +146,25 @@ test('should log exit if tao instance is not installed', async (t) => {
     sandbox.restore();
     t.end();
 });
+
+const releaseWithCliOption = proxyquire.noCallThru().load('../../../../src/release.js', {
+    './log.js': log,
+    './taoInstance.js': taoInstanceFactory,
+    inquirer,
+})({ pathToTao: '/path/to/tao' });
+
+test('should use CLI pathToTao instead of prompting', async (t) => {
+    t.plan(3);
+
+    sandbox.stub(inquirer, 'prompt')
+    taoInstanceFactory.resetHistory();
+
+    await releaseWithCliOption.selectTaoInstance();
+
+    t.equal(taoInstanceFactory.callCount, 1, 'Instance has been initialised');
+    t.ok(taoInstanceFactory.calledWith('/path/to/tao'), 'Instance has been initialised with CLI path');
+    t.ok(inquirer.prompt.notCalled, 'No prompt shown');
+
+    sandbox.restore();
+    t.end();
+});
