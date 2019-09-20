@@ -94,8 +94,9 @@ test('Version provided but no branches found', async (t) => {
         'remotes/origin/release-0.6.0',
         'remotes/origin/release-0.7.0',
         'remotes/origin/release-0.8.0',
+        'remotes/origin/release-2.8.0.1',
         'release-0.9.0',
-        'remotes/origin/release_0.9.0',
+        'remotes/origin/release_0.9.0.5',
     ]);
     sandbox.stub(log, 'exit');
 
@@ -121,7 +122,10 @@ test('version provided and found 1 branch', async (t) => {
         'remotes/origin/release-0.8.0',
         'remotes/origin/release-0.9.0',
         'remotes/origin/release-0.9.0-alpha',
-        'remotes/origin/release-0.9.0-beta'
+        'remotes/origin/release-0.9.0-beta',
+        'remotes/origin/release-0.9.1.0-alpha',
+        'remotes/origin/releasing-1.93.1.0-alpha',
+        'remotes/origin/4.93.1.0-alpha-release'
     ]);
 
     sandbox.stub(log, 'done');

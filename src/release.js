@@ -489,8 +489,9 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                     data.version = versionToRelease;
                 }
             } else {
-                const branchName = `remotes/${origin}/${branchPrefix}`;
+                const branchName = `remotes/${origin}/${branchPrefix}-`;
                 const possibleBranches = allBranches.filter(branch => branch.includes(branchName));
+
                 const highestVersionBranch = this.getHighestVersionBranch(possibleBranches);
                 if (highestVersionBranch && highestVersionBranch.branch && highestVersionBranch.version) {
                     data.releasingBranch = highestVersionBranch.branch;
@@ -516,7 +517,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         getHighestVersionBranch(possibleBranches = []) {
             log.doing('Selecting releasing branch from the biggest version found in branches.');
 
-            const semVerRegex = /(?:(\d+)\.)?(?:(\d+)\.)?(?:(\d+)\.\d+)/g;
+            const semVerRegex = /(?:(\d+)\.)?(?:(\d+)\.)?(?:(\d+)\.\d+)(-[\w.]+)?/g;
             const versionedBranches = possibleBranches.filter(branch => branch.match(semVerRegex));
 
             let version = '0.0';
