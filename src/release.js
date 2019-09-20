@@ -484,7 +484,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             const allBranches = await gitClient.getLocalBranches();
 
             if (versionToRelease) {
-                const branchName = `remotes/${origin}/${branchPrefix}${versionToRelease}`;
+                const branchName = `remotes/${origin}/${branchPrefix}-${versionToRelease}`;
                 if (allBranches.includes(branchName)) {
                     data.releasingBranch = branchName;
                     data.version = versionToRelease;
@@ -521,7 +521,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             let branch;
 
             possibleBranches.map(b => {
-                const branchVersion = b.replace(`remotes/${origin}/${branchPrefix}`, '');
+                const branchVersion = b.replace(`remotes/${origin}/${branchPrefix}-`, '');
                 if (semverRegex().exec(branchVersion) && compareVersions(branchVersion, version) === 1) {
                     branch = b;
                     version = branchVersion;

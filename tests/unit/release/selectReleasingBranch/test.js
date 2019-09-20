@@ -63,7 +63,7 @@ const taoInstance = {
 const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
 
 const releaseOptions = {
-    branchPrefix: 'release-',
+    branchPrefix: 'release',
     origin: 'origin',
     versionToRelease: '0.9.0'
 };
