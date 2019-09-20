@@ -91,18 +91,20 @@ test('No version provided but no branches found', async (t) => {
     sandbox.stub(gitClientInstance, 'getLocalBranches').returns([
         'some-branch-with-weird-name',
         'no-semver-version',
-        'remotes/origin/release-0'
+        'remotes/origin/release-0',
+        'remotes/origin/release-'
     ]);
     sandbox.stub(log, 'exit');
 
     await release.selectReleasingBranch();
 
     t.equal(log.exit.callCount, 1, 'Exit message has been logged');
-    t.ok(log.exit.calledWith('Cannot find any branch with a valid version.'), 'Exit message has been logged with apropriate message');
+    t.ok(log.exit.calledWith('Cannot find any branch with version valid.'), 'Exit message has been logged with apropriate message');
 
     sandbox.restore();
     t.end();
 });
+
 
 test('version provided and found 1 branch', async (t) => {
     t.plan(2);
@@ -117,6 +119,7 @@ test('version provided and found 1 branch', async (t) => {
         'remotes/origin/release-0.8.0',
         'remotes/origin/release-0.9.0',
         'remotes/origin/release-0.9.0-alpha',
+        'remotes/origin/release-0.9.0-alpha.1',
         'remotes/origin/release-0.9.0-beta'
     ]);
 
