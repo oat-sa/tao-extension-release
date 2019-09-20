@@ -24,8 +24,8 @@ const commander = require('commander');
 const program = new commander.Command();
 
 program
-    .name("taoRelease prepareRelease")
-    .usage("[options]")
+    .name('taoRelease prepareRelease')
+    .usage('[options]')
     .option('-d, --debug', 'output extra debugging')
     // options with defaults
     .option('--base-branch <branch>', 'the source branch for the release', 'develop')
@@ -34,9 +34,36 @@ program
     .option('--release-branch <branch>', 'the target branch for the release PR', 'master')
     .option('--www-user <user>', 'the user who runs php commands', 'www-data')
     // options which fall back to user prompts if undefined
-    .option('--tao-instance <path>', 'path to local TAO instance')
+    .option('--path-to-tao <path>', 'path to local TAO instance')
     .option('--extension-to-release <extension>', 'camelCase name of the extension to release')
     .option('--update-translations', 'indicates if we need to update translations')
     .parse(process.argv);
 
 if (program.debug) console.log(program.opts());
+
+const release = require('../release')(program.opts());
+
+async function releaseExtension() {
+    try {
+        log.title('TAO Extension Release: prepareRelease');
+
+        await release.loadConfig();
+        await release.selectTaoInstance();
+        await release.selectExtension();
+        await release.verifyLocalChanges();
+        await release.signTags();
+        await release.verifyBranches();
+        await release.doesTagExists();
+        await release.doesReleaseBranchExists();
+        await release.isReleaseRequired();
+        await release.createReleasingBranch();
+        await release.compileAssets();
+        await release.updateTranslations();
+
+        log.done('Release branch prepared, and pushed to remote. Bye!').exit();
+    } catch (error) {
+        log.error(error);
+    }
+}
+
+releaseExtension();
