@@ -17,7 +17,7 @@
  */
 
 /**
- * Unit test the selectReleasingBranch method of module src/release.js
+ * Unit test the getHighestVersionBranch method of module src/release.js
  *
  * @author Ricardo Proença <ricardo@taotesting.com>
  */
@@ -75,11 +75,11 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     inquirer,
 })(releaseOptions);
 
-// test('should define selectReleasingBranch method on release instance', (t) => {
-//     t.plan(1);
-//     t.ok(typeof release.selectReleasingBranch === 'function', 'The release instance has selectReleasingBranch method');
-//     t.end();
-// });
+test('should define getHighestVersionBranch method on release instance', (t) => {
+    t.plan(1);
+    t.ok(typeof release.getHighestVersionBranch === 'function', 'The release instance has getHighestVersionBranch method');
+    t.end();
+});
 
 test('No version provided but no branches found', async (t) => {
     t.plan(2);
@@ -106,32 +106,32 @@ test('No version provided but no branches found', async (t) => {
     t.end();
 });
 
-// test('version provided and found 1 branch', async (t) => {
-//     t.plan(2);
+test('version provided and found 1 branch', async (t) => {
+    t.plan(2);
 
-//     await release.selectTaoInstance();
-//     await release.selectExtension();
+    await release.selectTaoInstance();
+    await release.selectExtension();
 
-//     sandbox.stub(gitClientInstance, 'fetch');
-//     sandbox.stub(gitClientInstance, 'getLocalBranches').returns([
-//         'some-branch-with-weird-name',
-//         'remotes/origin/release-0.7.0',
-//         'remotes/origin/release-0.8.0',
-//         'remotes/origin/release-0.9.0',
-//         'remotes/origin/release-0.9.0-alpha',
-//         'remotes/origin/release-0.9.0-beta',
-//         'remotes/origin/release-1.9.1.0-alpha',
-//         'remotes/origin/releasing-0.93.1.0-alpha',
-//         'remotes/origin/4.93.1.0-alpha-release'
-//     ]);
+    sandbox.stub(gitClientInstance, 'fetch');
+    sandbox.stub(gitClientInstance, 'getLocalBranches').returns([
+        'some-branch-with-weird-name',
+        'remotes/origin/release-0.7.0',
+        'remotes/origin/release-0.8.0',
+        'remotes/origin/release-0.9.0',
+        'remotes/origin/release-0.9.0-alpha',
+        'remotes/origin/release-0.9.0-beta',
+        'remotes/origin/release-1.9.1.0-alpha',
+        'remotes/origin/releasing-0.93.1.0-alpha',
+        'remotes/origin/4.93.1.0-alpha-release'
+    ]);
 
-//     sandbox.stub(log, 'done');
+    sandbox.stub(log, 'done');
 
-//     await release.selectReleasingBranch();
+    await release.selectReleasingBranch();
 
-//     t.equal(log.done.callCount, 1, 'Done message has been logged');
-//     t.ok(log.done.calledWith('Branch remotes/origin/release-1.9.1.0-alpha is selected.'), 'Done message has been logged with apropriate message');
+    t.equal(log.done.callCount, 1, 'Done message has been logged');
+    t.ok(log.done.calledWith('Branch remotes/origin/release-1.9.1.0-alpha is selected.'), 'Done message has been logged with apropriate message');
 
-//     sandbox.restore();
-//     t.end();
-// });
+    sandbox.restore();
+    t.end();
+});
