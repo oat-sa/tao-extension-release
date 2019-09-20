@@ -188,7 +188,7 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
                 .then( () => git(repository).pull(origin, baseBranch) )
                 .then( () => git(repository).merge([releaseBranch]) )
                 .then( () => git(repository).push(origin, baseBranch) )
-                .catch( err => {
+                .catch(async err => {
                     if (err && err.failed && err.conflicts) {
                         log.info(err.conflicts);
                         log.error(`There were conflicts preventing the merge of ${releaseBranch} back into ${baseBranch}.`);
