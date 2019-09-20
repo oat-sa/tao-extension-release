@@ -24,8 +24,8 @@ const commander = require('commander');
 const program = new commander.Command();
 
 program
-    .name("taoRelease oldWayRelease")
-    .usage("[options]")
+    .name('taoRelease oldWayRelease')
+    .usage('[options]')
     .option('-d, --debug', 'output extra debugging')
     // options with defaults
     .option('--base-branch <branch>', 'the source branch for the release', 'develop')
