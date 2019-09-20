@@ -504,7 +504,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
             if (data.releasingBranch) {
                 log.done(`Branch ${data.releasingBranch} is selected.`);
-                return;
             }
         },
 
