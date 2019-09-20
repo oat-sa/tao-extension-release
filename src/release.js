@@ -468,23 +468,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 data.version = highestVersionBranch.version;
             }
 
-            // Cross check branch version with manifest version
-            if (branchToRelease) {
-                await gitClient.checkout(branchToRelease);
-                const manifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
-
-                if (manifest.version === version) {
-                    data.releasingBranch = branchToRelease;
-                    data.version = version;
-                    log.done(`Branch ${branchToRelease} is selected.`);
-                } else {
-                    //TODO: ask user to cross check and then decide if he want to continue
-                    log.error(`Mismatch versions found between branch '${branchToRelease}' and manifest version '${manifest.version}'.`);
-                    log.exit();
-                }
-            } else {
-                log.error('Cannot find any branch with a valid \'X.X.X.X\' semVer version.');
-                log.exit();
             if (data.releasingBranch) {
                 log.done(`Branch ${data.releasingBranch} is selected.`);
                 return;
