@@ -44,7 +44,10 @@ const taoInstanceFactory = require('./taoInstance.js');
  * @param {String} versionToRelease - the version to release in format xx.x.x.
  * @return {Object} - instance of taoExtensionRelease
  */
-module.exports = function taoExtensionReleaseFactory(baseBranch, branchPrefix, origin, releaseBranch, wwwUser, versionToRelease) {
+module.exports = function taoExtensionReleaseFactory(params = {}) {
+    const { baseBranch, branchPrefix, origin, releaseBranch, wwwUser, extensionToRelease, versionToRelease, updateTranslations } = params;
+    let { pathToTao, releaseComment } = params;
+
     let data = {};
     let gitClient;
     let githubClient;
@@ -447,21 +450,22 @@ module.exports = function taoExtensionReleaseFactory(baseBranch, branchPrefix, o
          * - or find the biggest version and find branch with version on it
          */
         async selectReleasingBranch() {
-            let version;
-            let branchToRelease;
-
             // Filter all branches to the ones that have release in the name
             await gitClient.fetch({'--prune': true});
             const allBranches = await gitClient.getLocalBranches();
-            const possibleBranches = allBranches.filter(branch => (branch.includes('remotes') && branch.includes('origin') && branch.includes('release')));
 
             if (versionToRelease) {
-                version = versionToRelease;
-                branchToRelease = this.getBranchWithVersion(possibleBranches, versionToRelease);
+                const branchName = `remotes/${origin}/${branchPrefix}${versionToRelease}`;
+                if (allBranches.includes(branchName)) {
+                    data.releasingBranch = branchName;
+                    data.version = versionToRelease;
+                }
             } else {
+                const branchName = `remotes/${origin}/${branchPrefix}`;
+                const possibleBranches = allBranches.filter(branch => branch.includes(branchName));
                 const highestVersionBranch = this.getHighestVersionBranch(possibleBranches);
-                branchToRelease = highestVersionBranch.branch;
-                version = highestVersionBranch.version;
+                data.releasingBranch = highestVersionBranch.branch;
+                data.version = highestVersionBranch.version;
             }
 
             // Cross check branch version with manifest version
@@ -481,32 +485,30 @@ module.exports = function taoExtensionReleaseFactory(baseBranch, branchPrefix, o
             } else {
                 log.error('Cannot find any branch with a valid \'X.X.X.X\' semVer version.');
                 log.exit();
+            if (data.releasingBranch) {
+                log.done(`Branch ${data.releasingBranch} is selected.`);
+                return;
             }
+
+            log.exit('Cannot find any branch with a valid version.');
         },
 
         // Private methods
 
         /**
-         * Get the branch with the highest semver version in the name
-         * @param {Array.<String>} possibleBranches - array of branches
-         * @returns {{branch: *, version: *}}
+         * Gets the branch with highest version
+         * @param possibleBranches - list of branches
+         * @returns {Object}
          */
         getHighestVersionBranch(possibleBranches = []) {
             log.doing('Selecting releasing branch from the biggest version found in branches.');
 
-            const semVerRegex = /(?:(\d+)\.)?(?:(\d+)\.)?(?:(\d+)\.\d+)/g;
-            const versionedBranches = possibleBranches.filter(branch => branch.match(semVerRegex));
-
-            let version = '0.0.0';
+            let version = '0.0';
             let branch;
 
-            versionedBranches.map(b => {
-                const branchVersion = b.match(semVerRegex).toString();
-                if (compareVersions(branchVersion, version) === 0) {
-                    //TODO: list all branches found and get user to choose
-                    log.error(`Found more than 1 possible branch that can match to '${version}' version.`);
-                    log.exit();
-                } else if (compareVersions(branchVersion, version) === 1) {
+            possibleBranches.map(b => {
+                const branchVersion = b.replace(`remotes/${origin}/${branchPrefix}`, '');
+                if (compareVersions(branchVersion, version) === 1) {
                     branch = b;
                     version = branchVersion.toString();
                 }
@@ -514,35 +516,5 @@ module.exports = function taoExtensionReleaseFactory(baseBranch, branchPrefix, o
 
             return { branch, version };
         },
-
-        /**
-         * Get the branch with the provided semver version in the name
-         * @param {Array.<String>} possibleBranches - array of branches
-         * @param {String} versionToFind - semVer version X.X.X.X
-         * @returns {*}
-         */
-        getBranchWithVersion(possibleBranches = [], versionToFind) {
-            log.doing(`Selecting releasing branch for '${versionToFind}' version to release.`);
-
-            // Filter possible branches with version-to-release
-            const branchesFound = possibleBranches.filter(branch => branch.includes(versionToFind));
-            let branch;
-
-            if (branchesFound.length) {
-                if (branchesFound.length === 1) {
-                    branch = branchesFound[0];
-                } else {
-                    //TODO: list all branches and get user to choose
-                    log.error(`Found more than 1 possible branch that can match to '${versionToFind}' version.`);
-                    log.exit();
-                }
-            } else {
-                //TODO: ask user if we want to do a search for the biggest version
-                log.error(`Cannot find any branch for '${versionToFind}' version.`);
-                log.exit();
-            }
-
-            return branch;
-        }
     };
 };
