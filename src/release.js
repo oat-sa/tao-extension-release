@@ -26,7 +26,6 @@ const inquirer = require('inquirer');
 const opn = require('opn');
 const path = require('path');
 const compareVersions = require('compare-versions');
-const semverRegex = require('semver-regex');
 
 const config = require('./config.js')();
 const gitClientFactory = require('./git.js');
@@ -517,18 +516,46 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         getHighestVersionBranch(possibleBranches = []) {
             log.doing('Selecting releasing branch from the biggest version found in branches.');
 
+            const semVerRegex = /(?:(\d+)\.)?(?:(\d+)\.)?(?:(\d+)\.\d+)/g;
+            const versionedBranches = possibleBranches.filter(branch => branch.match(semVerRegex));
+
             let version = '0.0';
             let branch;
 
-            possibleBranches.map(b => {
+            versionedBranches.map(b => {
                 const branchVersion = b.replace(`remotes/${origin}/${branchPrefix}-`, '');
-                if (semverRegex().exec(branchVersion) && compareVersions(branchVersion, version) === 1) {
+                if (compareVersions(branchVersion, version) === 1) {
                     branch = b;
                     version = branchVersion;
                 }
             });
 
             return { branch, version };
+        },
+
+        async verifyReleasingBranch() {
+            log.doing('Validating releasing branch.');
+
+            // Cross check branch version with manifest version
+            await gitClient.checkout(data.releasingBranch);
+            const releasingBranchManifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
+
+            if (releasingBranchManifest.version === data.version) {
+                log.doing(`Branch ${data.releasingBranch} has valid manifest.`);
+            } else {
+                log.exit(`Mismatch versions found between branch '${data.releasingBranch}' and manifest version '${releasingBranchManifest.version}'.`);
+            }
+
+            // Make sure new version is highest than current release branch version
+            await gitClient.checkout(releaseBranch);
+            const releaseBranchManifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
+
+            if (compareVersions(releasingBranchManifest.version, releaseBranchManifest.version) === 1) {
+                log.done(`Branch ${data.releasingBranch} is valid.`);
+                return;
+            }
+
+            log.exit(`Branch '${data.releasingBranch}' is not valid.\nVersion ${releasingBranchManifest.version} is not greater than '${releaseBranch}' (${releaseBranchManifest.version}).`);
         }
     };
 };
