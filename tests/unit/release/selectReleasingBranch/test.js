@@ -103,7 +103,7 @@ test('Version provided but no branches found', async (t) => {
     await release.selectReleasingBranch();
 
     t.equal(log.exit.callCount, 1, 'Exit message has been logged');
-    t.ok(log.exit.calledWith('Cannot find any branch with valid version.'), 'Exit message has been logged with apropriate message');
+    t.ok(log.exit.calledWith('Cannot find the branch \'remotes/origin/release-0.9.0\'.'), 'Exit message has been logged with apropriate message');
 
     sandbox.restore();
     t.end();
