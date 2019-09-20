@@ -54,7 +54,7 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './log.js': log,
     './taoInstance.js': taoInstanceFactory,
     inquirer,
-})(null, branchPrefix, null, releaseBranch);
+})({ branchPrefix, releaseBranch });
 
 test('should define createGithubRelease method on release instance', (t) => {
     t.plan(1);
@@ -146,5 +146,44 @@ test('should log done message', async (t) => {
     t.equal(log.done.callCount, 1, 'Done has been logged');
 
     sandbox.restore();
+    t.end();
+});
+
+const releaseWithCliOption = proxyquire.noCallThru().load('../../../../src/release.js', {
+    './config.js': () => config,
+    './git.js': gitClientFactory,
+    './github.js': githubFactory,
+    './log.js': log,
+    './taoInstance.js': taoInstanceFactory,
+    inquirer,
+})({ branchPrefix, releaseBranch, releaseComment: 'my first release' });
+
+test('should use CLI release comment instead of prompting', async (t) => {
+    t.plan(4);
+
+    await releaseWithCliOption.selectTaoInstance();
+    await releaseWithCliOption.selectExtension();
+    await releaseWithCliOption.verifyBranches();
+    await releaseWithCliOption.initialiseGithubClient();
+    await releaseWithCliOption.createPullRequest();
+
+    sandbox.stub(inquirer, 'prompt');
+    {
+        await releaseWithCliOption.createGithubRelease();
+
+        t.ok(inquirer.prompt.notCalled, 'No prompt shown');
+    }
+    sandbox.restore();
+
+    sandbox.stub(githubInstance, 'release');
+    {
+        await releaseWithCliOption.createGithubRelease();
+
+        t.ok(githubInstance.release.calledOnce, 'Github release has been created');
+        t.ok(githubInstance.release.calledWith(`v${version}`), 'Github release has been created from apropriate tag');
+        t.ok(githubInstance.release.calledWith(`v${version}`, sinon.match(/^my first release/)), 'Github release has been created with CLI comment');
+    }
+    sandbox.restore();
+
     t.end();
 });

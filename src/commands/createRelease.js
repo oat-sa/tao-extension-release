@@ -24,16 +24,16 @@ const commander = require('commander');
 const program = new commander.Command();
 
 program
-    .name("taoRelease createRelease")
-    .usage("[options]")
+    .name('taoRelease createRelease')
+    .usage('[options]')
     .option('-d, --debug', 'output extra debugging')
     // options with defaults
-    .option('--branch-prefix <prefix>', 'the prefix of the branch created for releasing', 'release')
+    .option('--branch-prefix <prefix>', 'the prefix of the branch created for releasing', 'release-')
     .option('--origin <remotename>', 'the name of the remote repo', 'origin')
     .option('--release-branch <branch>', 'the target branch for the release PR', 'master')
     .option('--www-user <user>', 'the user who runs php commands', 'www-data')
     // options which fall back to user prompts if undefined
-    .option('--tao-instance <path>', 'path to local TAO instance')
+    .option('--path-to-tao <path>', 'path to local TAO instance')
     .option('--extension-to-release <extension>', 'camelCase name of the extension to release')
     .option('--version-to-release <version>', 'version of the extension to release')
     .option('--update-translations', 'indicates if we need to update translations')
@@ -41,3 +41,35 @@ program
     .parse(process.argv);
 
 if (program.debug) console.log(program.opts());
+
+const release = require('../release')(program.opts());
+
+async function releaseExtension() {
+    try {
+        log.title('TAO Extension Release: createRelease');
+
+        await release.loadConfig();
+        await release.selectTaoInstance();
+        await release.selectExtension();
+        await release.verifyLocalChanges();
+        await release.signTags();
+        await release.selectReleasingBranch();
+        // TODO: await release.verifyReleasingBranch();
+        // TODO: await release.mergeWithReleaseBranch();
+        // await release.compileAssets();
+        // await release.initialiseGithubClient();
+        // await release.createPullRequest();
+        // await release.extractReleaseNotes();
+        // await release.mergePullRequest();
+        // await release.createReleaseTag();
+        // await release.createGithubRelease();
+        // await release.mergeBack();
+        // await release.removeReleasingBranch();
+
+        log.done('Good job!').exit();
+    } catch (error) {
+        log.error(error);
+    }
+}
+
+releaseExtension();
