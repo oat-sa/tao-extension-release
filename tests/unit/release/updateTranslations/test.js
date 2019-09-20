@@ -49,7 +49,7 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './log.js': log,
     './taoInstance.js': taoInstanceFactory,
     inquirer,
-})(null, branchPrefix);
+})({ branchPrefix });
 
 test('should define updateTranslations method on release instance', (t) => {
     t.plan(1);
@@ -119,7 +119,7 @@ test('should prompt to update translations', async (t) => {
     t.end();
 });
 
-test('should update translitions', async (t) => {
+test('should update translations', async (t) => {
     t.plan(2);
 
     await release.selectTaoInstance();
@@ -200,6 +200,27 @@ test('should log info message after update of translations', async (t) => {
     t.end();
 });
 
+test('should skip translations if "no" answered', async (t) => {
+    t.plan(3);
+
+    await release.selectTaoInstance();
+    await release.selectExtension();
+    await release.verifyBranches();
+
+    sandbox.stub(inquirer, 'prompt').returns({ translation: false });
+    sandbox.stub(taoInstance, 'updateTranslations');
+    sandbox.stub(log, 'done');
+
+    await release.updateTranslations();
+
+    t.equal(inquirer.prompt.callCount, 1, 'Prompt has been initialised');
+    t.equal(taoInstance.updateTranslations.callCount, 0, 'Translations not updated');
+    t.equal(log.done.callCount, 1, 'Done has been logged');
+
+    sandbox.restore();
+    t.end();
+});
+
 test('should log done message', async (t) => {
     t.plan(1);
 
@@ -212,6 +233,34 @@ test('should log done message', async (t) => {
     await release.updateTranslations();
 
     t.equal(log.done.callCount, 1, 'Done has been logged');
+
+    sandbox.restore();
+    t.end();
+});
+
+const releaseWithCliOption = proxyquire.noCallThru().load('../../../../src/release.js', {
+    './config.js': () => config,
+    './git.js': gitClientFactory,
+    './log.js': log,
+    './taoInstance.js': taoInstanceFactory,
+    inquirer,
+})({ updateTranslations: true });
+
+test('should use CLI updateTranslations instead of prompting', async (t) => {
+    t.plan(3);
+
+    await releaseWithCliOption.selectTaoInstance();
+    await releaseWithCliOption.selectExtension();
+    await releaseWithCliOption.verifyBranches();
+
+    sandbox.stub(inquirer, 'prompt');
+    sandbox.stub(taoInstance, 'updateTranslations');
+
+    await releaseWithCliOption.updateTranslations();
+
+    t.equal(taoInstance.updateTranslations.callCount, 1, 'Translations has been updated');
+    t.ok(taoInstance.updateTranslations.calledWith(extension), 'Translations of apropriate extension has been updated');
+    t.ok(inquirer.prompt.notCalled, 'No prompt shown');
 
     sandbox.restore();
     t.end();

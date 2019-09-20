@@ -177,7 +177,7 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
         },
 
         /**
-         * Operation to merge a released branch merged back in a base branch
+         * Operation to merge a released branch merged back into a base branch
          * @param {String} baseBranch - the branch used to create the release (develop)
          * @param {String} releaseBranch - the branch that received the release (master)
          * @returns {Promise}
@@ -191,7 +191,7 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
         },
 
         /**
-         * Commit and push every changes on the current branch
+         * Commit and push every change on the current branch
          * @param {String} branchName - name of the branch to push to
          * @param {String} comment - commit comment
          * @returns {Promise}

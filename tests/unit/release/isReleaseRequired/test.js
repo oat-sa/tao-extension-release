@@ -43,7 +43,7 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './log.js': log,
     './taoInstance.js': taoInstanceFactory,
     inquirer,
-})(baseBranch, null, null, releaseBranch);
+})({ baseBranch, releaseBranch });
 
 test('should define isReleaseRequired method on release instance', (t) => {
     t.plan(1);

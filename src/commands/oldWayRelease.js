@@ -24,8 +24,8 @@ const commander = require('commander');
 const program = new commander.Command();
 
 program
-    .name("taoRelease oldWayRelease")
-    .usage("[options]")
+    .name('taoRelease oldWayRelease')
+    .usage('[options]')
     .option('-d, --debug', 'output extra debugging')
     // options with defaults
     .option('--base-branch <branch>', 'the source branch for the release', 'develop')
@@ -34,7 +34,7 @@ program
     .option('--release-branch <branch>', 'the target branch for the release PR', 'master')
     .option('--www-user <user>', 'the user who runs php commands', 'www-data')
     // options which fall back to user prompts if undefined
-    .option('--tao-instance <path>', 'path to local TAO instance')
+    .option('--path-to-tao <path>', 'path to local TAO instance')
     .option('--extension-to-release <extension>', 'camelCase name of the extension to release')
     .option('--update-translations', 'indicates if we need to update translations')
     .option('--release-comment <comment>', 'comment to add to github release')
@@ -42,21 +42,19 @@ program
 
 if (program.debug) console.log(program.opts());
 
-const { baseBranch, branchPrefix, origin, releaseBranch, wwwUser } = program;
-
-const release = require('../release')(baseBranch, branchPrefix, origin, releaseBranch, wwwUser);
+const release = require('../release')(program.opts());
 
 async function releaseExtension() {
     try {
-        log.title('TAO Extension Release');
+        log.title('TAO Extension Release: oldWayRelease');
 
+        // TODO: await release.warnAboutDeprecation();
         await release.loadConfig();
         await release.selectTaoInstance();
         await release.selectExtension();
         await release.verifyLocalChanges();
         await release.signTags();
         await release.verifyBranches();
-        await release.initialiseGithubClient();
         await release.doesTagExists();
         await release.doesReleaseBranchExists();
         await release.isReleaseRequired();
@@ -64,6 +62,7 @@ async function releaseExtension() {
         await release.createReleasingBranch();
         await release.compileAssets();
         await release.updateTranslations();
+        await release.initialiseGithubClient();
         await release.createPullRequest();
         await release.extractReleaseNotes();
         await release.mergePullRequest();
@@ -72,7 +71,7 @@ async function releaseExtension() {
         await release.mergeBack();
         await release.removeReleasingBranch();
 
-        log.done('Good job!');
+        log.done('Good job!').exit();
     } catch (error) {
         log.error(error);
     }
