@@ -504,7 +504,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 return;
             }
 
-            log.exit('Cannot find any branch with version valid.');
+            log.exit('Cannot find any branch with valid version.');
         },
 
         // Private methods
