@@ -253,7 +253,7 @@ test('should use CLI updateTranslations instead of prompting', async (t) => {
     await releaseWithCliOption.selectExtension();
     await releaseWithCliOption.verifyBranches();
 
-    sandbox.stub(inquirer, 'prompt')
+    sandbox.stub(inquirer, 'prompt');
     sandbox.stub(taoInstance, 'updateTranslations');
 
     await releaseWithCliOption.updateTranslations();

@@ -156,7 +156,7 @@ const releaseWithCliOption = proxyquire.noCallThru().load('../../../../src/relea
 test('should use CLI pathToTao instead of prompting', async (t) => {
     t.plan(3);
 
-    sandbox.stub(inquirer, 'prompt')
+    sandbox.stub(inquirer, 'prompt');
     taoInstanceFactory.resetHistory();
 
     await releaseWithCliOption.selectTaoInstance();

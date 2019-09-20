@@ -179,7 +179,7 @@ test('should log exit message when bad CLI extension provided', async (t) => {
     await releaseWithCliOption.selectExtension();
 
     t.equal(log.exit.callCount, 1, 'Exit has been logged');
-    t.ok(log.exit.calledWith(`Specified extension testExtensionFoo not found in testRoot`), 'Error has been logged with apropriate message');
+    t.ok(log.exit.calledWith('Specified extension testExtensionFoo not found in testRoot'), 'Error has been logged with apropriate message');
 
     sandbox.restore();
     t.end();
