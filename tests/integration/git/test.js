@@ -23,27 +23,83 @@
  */
 
 const path = require('path');
+const fsExtra = require('fs-extra');
 
-const localRepoPath = path.resolve(__dirname, '../fixtures/localRepo');
-const remoteRepoPath = path.resolve(__dirname, '../fixtures/remoteRepo');
+const localRepoFixturePath = path.resolve(__dirname, '../fixtures/localRepo');
+const remoteRepoFixturePath = path.resolve(__dirname, '../fixtures/remoteRepo');
+const tempDir = path.resolve(__dirname, '../temp');
+const localRepoPath = path.join(tempDir, 'localRepo');
+const remoteRepoPath = path.join(tempDir, 'remoteRepo');
 
 const test = require('tape');
 const gitFactory = require('../../../src/git.js');
-const simpleGitLocal = require('simple-git/promise')(localRepoPath);
-const simpleGitRemote = require('simple-git/promise')(remoteRepoPath);
+const simpleGit = require('simple-git/promise');
 
-const setUp = tearDown = function() {
-    simpleGitLocal.checkout(['--', '.']);
-    simpleGitLocal.checkout('master');
-}
+/**
+ * Lifecycle
+ */
+const setUp = function setUp() {
+    tearDown();
+    try {
+        // copy fixtures/localRepo and fixtures/remoteRepo into temp dir
+        // the working-remote link between them is even preserved!
+        fsExtra.copySync(localRepoFixturePath, localRepoPath);
+        fsExtra.copySync(remoteRepoFixturePath, remoteRepoPath);
+        console.log('fixture repos copied to tempDir');
+    }
+    catch (err) {
+        throw new Error('Error setting up test repos');
+    }
+};
+
+const verifyLocal = async function verifyLocal(gitHelper) {
+    const isBare = await gitHelper.raw(['rev-parse', '--is-bare-repository']);
+    if (isBare.trim() === 'true') {
+        throw new Error('The localRepo appears to be bare');
+    }
+    // verify repo is not the wrong one!
+    const remotes = await gitHelper.getRemotes(true);
+    if (remotes.some(r => r.refs.push.includes('github.com'))) {
+        console.log('remotes', remotes);
+        throw new Error(`I won't test against a github-connected repo!`);
+    }
+};
+
+const verifyRemote = async function verifyRemote(gitHelper) {
+    const isBare = await gitHelper.raw(['rev-parse', '--is-bare-repository']);
+    if (isBare.trim() !== 'true') {
+        throw new Error('The remoteRepo does not appear to be bare');
+    }
+    // verify repo is not the wrong one!
+    const remotes = await gitHelper.getRemotes(true);
+    if (remotes.filter(r => r.name).length) {
+        throw new Error(`The remoteRepo should have 0 remotes, ${remotes.length} found`);
+    }
+};
+
+const tearDown = function tearDown() {
+    // empty temp dir
+    console.log('emptying tempDir...');
+    try {
+        fsExtra.emptyDirSync(tempDir);
+    }
+    catch (err) {
+        throw new Error('Error removing test repos');
+    }
+};
 
 test.onFinish( tearDown );
-test.onFailure( tearDown );
+// test.onFailure( tearDown );
 
-test('presence of branches', async t => {
+/**
+ * Tests
+ */
+test('presence of original branches', async t => {
     setUp();
     t.plan(7);
     const localRepo = gitFactory(localRepoPath); // module we're testing
+    const gitHelper = simpleGit(localRepoPath); // helper lib
+    await verifyLocal(gitHelper);
 
     t.ok(await localRepo.hasBranch('master'), 'localRepo hasBranch master');
     t.ok(await localRepo.hasBranch('develop'), 'localRepo hasBranch develop');
@@ -60,18 +116,23 @@ test('creating/deleting branch', async t => {
     setUp();
     t.plan(4);
     const localRepo = gitFactory(localRepoPath); // module we're testing
-    const gitHelper = require('simple-git/promise')(localRepoPath); // helper lib
+    const gitHelper = simpleGit(localRepoPath); // helper lib
+    await verifyLocal(gitHelper);
 
     t.notOk(await localRepo.hasBranch('test1'), 'localRepo does not hasBranch test1');
+
+    // create branch & switch to it
     await localRepo.localBranch('test1');
     t.ok(await localRepo.hasBranch('test1'), 'localRepo hasBranch test1');
 
     const currentBranch = await gitHelper.raw(['symbolic-ref', '--short', 'HEAD']);
     t.equal(currentBranch.trim(), 'test1', 'on correct branch test1');
 
+    // push branch to remote
     await gitHelper.push('origin', 'test1');
-    await gitHelper.checkout('master');
 
+    // clean up
+    await gitHelper.checkout('master');
     const deleted = await localRepo.deleteBranch('test1');;
     t.equal(deleted.branch, 'test1', 'deleted branch test1');
 });
@@ -81,8 +142,10 @@ test('creating/deleting tag', async t => {
     t.plan(8);
     const localRepo = gitFactory(localRepoPath); // module we're testing
     const remoteRepo = gitFactory(remoteRepoPath); // module we're testing
-    const gitHelper = require('simple-git/promise')(localRepoPath); // helper lib
-    const remoteGitHelper = require('simple-git/promise')(remoteRepoPath); // helper lib
+    const gitHelper = simpleGit(localRepoPath); // helper lib
+    const remoteGitHelper = simpleGit(remoteRepoPath); // helper lib
+    await verifyLocal(gitHelper);
+    await verifyRemote(remoteGitHelper);
 
     t.notOk(await localRepo.hasTag('tag1'), 'localRepo does not hasTag tag1');
     t.notOk(await remoteRepo.hasTag('tag1'), 'remoteRepo does not hasTag tag1');
