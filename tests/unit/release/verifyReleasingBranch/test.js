@@ -35,6 +35,7 @@ const config = {
 const gitClientInstance = {
     getLocalBranches: () => {},
     fetch: () => { },
+    checkout: () => { }
 };
 
 const gitClientFactory = sandbox.stub().callsFake(() => gitClientInstance);
@@ -65,7 +66,8 @@ const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
 const releaseOptions = {
     branchPrefix: 'release',
     origin: 'origin',
-    versionToRelease: '0.9.0'
+    versionToRelease: '0.9.0',
+    releaseBranch: 'master'
 };
 
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
@@ -76,60 +78,87 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     inquirer,
 })(releaseOptions);
 
-test('should define selectReleasingBranch method on release instance', (t) => {
+const releasingBranch = 'remotes/origin/release-0.9.0';
+const releaseBranch = 'master';
+
+test('should define verifyReleasingBranch method on release instance', (t) => {
     t.plan(1);
-    t.ok(typeof release.selectReleasingBranch === 'function', 'The release instance has selectReleasingBranch method');
+    t.ok(typeof release.verifyReleasingBranch === 'function', 'The release instance has verifyReleasingBranch method');
     t.end();
 });
 
-test('Version provided but no branches found', async (t) => {
+test('Releasing branch has different version than manifest', async (t) => {
     t.plan(2);
+
+    sandbox.stub(gitClientInstance, 'fetch');
+    sandbox.stub(gitClientInstance, 'getLocalBranches').returns([releasingBranch]);
+    sandbox.stub(log, 'exit');
+
+    const callback = sandbox.stub(taoInstance, 'parseManifest');
+    callback.onCall(0).returns({ version: '0.7.0'});
+    callback.onCall(1).returns({ version: '0.7.0'});
 
     await release.selectTaoInstance();
     await release.selectExtension();
-
-    sandbox.stub(gitClientInstance, 'fetch');
-    sandbox.stub(gitClientInstance, 'getLocalBranches').returns([
-        'some-branch-with-weird-name',
-        'remotes/origin/release-0.6.0',
-        'remotes/origin/release-0.7.0',
-        'remotes/origin/release-0.8.0',
-        'release-0.9.0',
-        'remotes/origin/release_0.9.0',
-    ]);
-    sandbox.stub(log, 'exit');
-
     await release.selectReleasingBranch();
+    await release.verifyReleasingBranch();
 
-    t.equal(log.exit.callCount, 1, 'Exit message has been logged');
-    t.ok(log.exit.calledWith('Cannot find any branch with valid version.'), 'Exit message has been logged with apropriate message');
+    t.equal(log.exit.callCount, 2, 'Exit message has been logged');
+    t.ok(log.exit.calledWith(`Mismatch versions found between branch '${releasingBranch}' and manifest version '0.7.0'.`), 'Exit message has been logged with apropriate message');
 
     sandbox.restore();
     t.end();
 });
 
-test('version provided and found 1 branch', async (t) => {
-    t.plan(2);
+test('Releasing branch is valid and is greather than release branch version', async (t) => {
+    t.plan(4);
+
+    sandbox.stub(gitClientInstance, 'fetch');
+    sandbox.stub(gitClientInstance, 'getLocalBranches').returns(['remotes/origin/release-0.9.0']);
+    sandbox.stub(log, 'doing');
+    sandbox.stub(log, 'done');
+
+    const callback = sandbox.stub(taoInstance, 'parseManifest');
+    callback.onCall(0).returns({ version: '0.9.0'});
+    callback.onCall(1).returns({ version: '0.8.0'});
 
     await release.selectTaoInstance();
     await release.selectExtension();
+    await release.selectReleasingBranch();
+    await release.verifyReleasingBranch();
+
+    t.equal(log.doing.callCount, 2, 'Doing message has been logged');
+    t.ok(log.doing.calledWith(`Branch ${releasingBranch} has valid manifest.`), 'Doing message has been logged with apropriate message');
+
+    t.equal(log.done.callCount, 2, 'Done message has been logged');
+    t.ok(log.done.calledWith(`Branch ${releasingBranch} is valid.`), 'Done message has been logged with apropriate message');
+
+    sandbox.restore();
+    t.end();
+});
+
+test('Releasing branch is valid but is less than release branch version', async (t) => {
+    t.plan(4);
 
     sandbox.stub(gitClientInstance, 'fetch');
-    sandbox.stub(gitClientInstance, 'getLocalBranches').returns([
-        'some-branch-with-weird-name',
-        'remotes/origin/release-0.7.0',
-        'remotes/origin/release-0.8.0',
-        'remotes/origin/release-0.9.0',
-        'remotes/origin/release-0.9.0-alpha',
-        'remotes/origin/release-0.9.0-beta'
-    ]);
+    sandbox.stub(gitClientInstance, 'getLocalBranches').returns([releasingBranch]);
+    sandbox.stub(log, 'doing');
+    sandbox.stub(log, 'exit');
 
-    sandbox.stub(log, 'done');
+    const callback = sandbox.stub(taoInstance, 'parseManifest');
+    callback.onCall(0).returns({ version: '0.9.0'});
+    callback.onCall(1).returns({ version: '0.10.0'});
 
+    await release.selectTaoInstance();
+    await release.selectExtension();
     await release.selectReleasingBranch();
+    await release.verifyReleasingBranch();
 
-    t.equal(log.done.callCount, 1, 'Done message has been logged');
-    t.ok(log.done.calledWith('Branch remotes/origin/release-0.9.0 is selected.'), 'Done message has been logged with apropriate message');
+    t.equal(log.doing.callCount, 2, 'Doing message has been logged');
+    t.ok(log.doing.calledWith(`Branch ${releasingBranch} has valid manifest.`), 'Doing message has been logged with apropriate message');
+
+    t.equal(log.exit.callCount, 1, 'Exit message has been logged');
+    t.ok(log.exit.calledWith(`Branch '${releasingBranch}' is not valid because version is not greater than '${releaseBranch}' (0.10.0).`), 'Exit message has been logged with apropriate message');
 
     sandbox.restore();
     t.end();
