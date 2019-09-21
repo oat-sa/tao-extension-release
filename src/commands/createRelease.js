@@ -54,7 +54,7 @@ async function releaseExtension() {
         await release.verifyLocalChanges();
         await release.signTags();
         await release.selectReleasingBranch();
-        // TODO: await release.verifyReleasingBranch();
+        await release.verifyReleasingBranch();
         // TODO: await release.mergeWithReleaseBranch();
         // await release.compileAssets();
         // await release.initialiseGithubClient();
