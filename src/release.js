@@ -527,7 +527,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             // Cross check releasing branch wth release branch and make sure new version is highest
             await gitClient.checkout(releaseBranch);
             const releaseBranchManifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
-            if (compareVersions(releasingBranchManifest.version, releaseBranchManifest.version) == 1 ) {
+            if (compareVersions(releasingBranchManifest.version, releaseBranchManifest.version) === 1 ) {
                 log.done(`Branch ${data.releasingBranch} is valid.`);
             } else {
                 log.exit(`Branch '${data.releasingBranch}' cannot be released because its manifest version (${data.version}) is not greater than the manifest version of '${releaseBranch}' (${releaseBranchManifest.version}).`);
