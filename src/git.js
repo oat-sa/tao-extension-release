@@ -121,7 +121,7 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
          * @param {String} branchName - the branch name
          * @returns {Promise}
          */
-        pull(branchName){
+        pull(branchName){ // TODO: rename fetchAndPull
 
             return git(repository).fetch(origin)
                 .then(() => this.getLocalBranches() )
@@ -201,29 +201,20 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
          * @returns {Promise}
          */
         mergeBack(baseBranch, releaseBranch){
-
             return git(repository).checkout(baseBranch)
                 .then( () => git(repository).pull(origin, baseBranch) )
                 .then( () => git(repository).merge([releaseBranch]) )
-                .then( () => git(repository).push(origin, baseBranch) )
-                .catch(async err => {
-                    if (err && err.failed && err.conflicts) {
-                        log.info(err.conflicts);
-                        log.error(`There were conflicts preventing the merge of ${releaseBranch} back into ${baseBranch}.`);
-                        log.warn(`Please resolve the conflicts and complete the merge manually.`);
-                        const { mergeDone } = await inquirer.prompt({
-                            type: 'confirm',
-                            name: 'mergeDone',
-                            message: `Has the merge been completed manually? I need to push ${baseBranch} back to ${origin}.`
-                        });
-                        if (mergeDone) {
-                            return git(repository).push(origin, baseBranch);
-                        }
-                        else {
-                            log.exit();
-                        }
-                    }
-                });
+                .then( () => git(repository).push(origin, baseBranch) );
+        },
+
+        /**
+         * Push a branch to the given remote
+         * @param {String} origin - name of the remote
+         * @param {String} branchName - name of the branch to push to
+         * @returns {Promise}
+         */
+        push(origin, branchName) {
+            return git(repository).push(origin, branchName);
         },
 
         /**

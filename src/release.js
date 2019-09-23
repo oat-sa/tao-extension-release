@@ -297,7 +297,23 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         async mergeBack() {
             log.doing(`Merging back ${releaseBranch} into ${baseBranch}`);
 
-            await gitClient.mergeBack(baseBranch, releaseBranch);
+            try {
+                await gitClient.mergeBack(baseBranch, releaseBranch);
+            }
+            catch (err) {
+                if (err && err.failed && err.conflicts) {
+                    log.info(err.conflicts);
+                    log.error(`There were conflicts preventing the merge of ${releaseBranch} back into ${baseBranch}.`);
+                    log.warn(`Please resolve the conflicts and complete the merge manually (including making the merge commit).`);
+
+                    const mergeDone = await this.promptToResolveConflicts();
+                    if (!mergeDone) {
+                        console.log('woo!');
+                        log.exit(`Not able to bring ${baseBranch} up to date. Please fix it manually.`);
+                    }
+                    await gitClient.push(origin, baseBranch);
+                }
+            }
 
             log.done();
         },
@@ -323,6 +339,18 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             await gitClient.mergePr(releaseBranch, data.releasingBranch);
 
             log.done('PR merged');
+        },
+
+        /**
+         * There are merge conflicts which the user must deal with manually.
+         * Show a prompt to pause the program and make them confirm they have resolved conflicts.
+         * @returns {Promise}
+         */
+        async promptToResolveConflicts() {
+            return await inquirer.prompt({
+                type: 'confirm',
+                message: `Has the merge been completed manually? I need to push the branch to ${origin}.`
+            });
         },
 
         /**
