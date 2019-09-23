@@ -65,14 +65,14 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Prompt user if he really want to use deprecated way to do the release
          */
         async warnAboutDeprecation() {
-            const { go } = await inquirer.prompt({
+            const { isOldWayReleaseSelected } = await inquirer.prompt({
                 type: 'confirm',
-                name: 'go',
+                name: 'isOldWayReleaseSelected',
                 message: 'This release process is [deprecated]. Are you sure you want to continue?',
                 default: false
             });
 
-            if (!go) {
+            if (!isOldWayReleaseSelected) {
                 log.exit();
             }
         },
