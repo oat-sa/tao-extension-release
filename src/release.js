@@ -521,7 +521,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             if (compareVersions(releasingBranchManifest.version, data.version) === 0 ) {
                 log.doing(`Branch ${data.releasingBranch} has valid manifest.`);
             } else {
-                log.exit(`Mismatch versions found between branch '${data.releasingBranch}' and manifest version '${releasingBranchManifest.version}'.`);
+                log.exit(`Branch '${data.releasingBranch}' cannot be released because its branch name does not match its own manifest version (${releasingBranchManifest.version}).`);
             }
 
             // Cross check releasing branch wth release branch and make sure new version is highest
@@ -530,7 +530,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             if (compareVersions(releasingBranchManifest.version, releaseBranchManifest.version) == 1 ) {
                 log.done(`Branch ${data.releasingBranch} is valid.`);
             } else {
-                log.exit(`Branch '${data.releasingBranch}' is not valid because version is not greater than '${releaseBranch}' (${releaseBranchManifest.version}).`);
+                log.exit(`Branch '${data.releasingBranch}' cannot be released because its manifest version (${data.version}) is not greater than the manifest version of '${releaseBranch}' (${releaseBranchManifest.version}).`);
             }
         },
 
