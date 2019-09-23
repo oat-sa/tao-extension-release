@@ -507,6 +507,33 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             }
         },
 
+        /**
+         * Verify that the version that we are going to release is valid
+         * - is the same on branch name and manifest
+         * - is bigger than current release branch version.
+         */
+        async verifyReleasingBranch() {
+            log.doing('Validating releasing branch.');
+
+            // Cross check releasing branch version with manifest version
+            await gitClient.checkout(data.releasingBranch);
+            const releasingBranchManifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
+            if (compareVersions(releasingBranchManifest.version, data.version) === 0 ) {
+                log.doing(`Branch ${data.releasingBranch} has valid manifest.`);
+            } else {
+                log.exit(`Branch '${data.releasingBranch}' cannot be released because it's branch name does not match its own manifest version (${releasingBranchManifest.version}).`);
+            }
+
+            // Cross check releasing branch wth release branch and make sure new version is highest
+            await gitClient.checkout(releaseBranch);
+            const releaseBranchManifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
+            if (compareVersions(releasingBranchManifest.version, releaseBranchManifest.version) === 1 ) {
+                log.done(`Branch ${data.releasingBranch} is valid.`);
+            } else {
+                log.exit(`Branch '${data.releasingBranch}' cannot be released because its manifest version (${data.version}) is not greater than the manifest version of '${releaseBranch}' (${releaseBranchManifest.version}).`);
+            }
+        },
+
         // Private methods
 
         /**
