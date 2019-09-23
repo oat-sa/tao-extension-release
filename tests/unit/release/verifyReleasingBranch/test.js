@@ -104,7 +104,7 @@ test('Releasing branch has different version than manifest', async (t) => {
     await release.verifyReleasingBranch();
 
     t.equal(log.exit.callCount, 2, 'Exit message has been logged');
-    t.ok(log.exit.calledWith(`Mismatch versions found between branch '${releasingBranch}' and manifest version '0.7.0'.`), 'Exit message has been logged with apropriate message');
+    t.ok(log.exit.calledWith(`Branch '${releasingBranch}' cannot be released because its branch name does not match its own manifest version (0.7.0).`), 'Exit message has been logged with apropriate message');
 
     sandbox.restore();
     t.end();
@@ -158,8 +158,7 @@ test('Releasing branch is valid but is less than release branch version', async 
     t.ok(log.doing.calledWith(`Branch ${releasingBranch} has valid manifest.`), 'Doing message has been logged with apropriate message');
 
     t.equal(log.exit.callCount, 1, 'Exit message has been logged');
-    t.ok(log.exit.calledWith(`Branch '${releasingBranch}' is not valid because version is not greater than '${releaseBranch}' (0.10.0).`), 'Exit message has been logged with apropriate message');
-
+    t.ok(log.exit.calledWith(`Branch '${releasingBranch}' cannot be released because its manifest version (0.9.0) is not greater than the manifest version of '${releaseBranch}' (0.10.0).`), 'Exit message has been logged with apropriate message');
     sandbox.restore();
     t.end();
 });
