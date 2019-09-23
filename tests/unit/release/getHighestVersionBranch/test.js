@@ -17,7 +17,7 @@
  */
 
 /**
- * Unit test the selectReleasingBranch method of module src/release.js
+ * Unit test the getHighestVersionBranch method of module src/release.js
  *
  * @author Ricardo Proença <ricardo@taotesting.com>
  */
@@ -75,9 +75,9 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     inquirer,
 })(releaseOptions);
 
-test('should define selectReleasingBranch method on release instance', (t) => {
+test('should define getHighestVersionBranch method on release instance', (t) => {
     t.plan(1);
-    t.ok(typeof release.selectReleasingBranch === 'function', 'The release instance has selectReleasingBranch method');
+    t.ok(typeof release.getHighestVersionBranch === 'function', 'The release instance has getHighestVersionBranch method');
     t.end();
 });
 
@@ -90,8 +90,9 @@ test('No version provided but no branches found', async (t) => {
     sandbox.stub(gitClientInstance, 'fetch');
     sandbox.stub(gitClientInstance, 'getLocalBranches').returns([
         'some-branch-with-weird-name',
-        'no-semver-version',
-        'remotes/origin/release-0',
+        'remotes/origin/release-release',
+        'release-0.9.0',
+        'remotes/origin/release_0.9.0.5',
         'remotes/origin/release-'
     ]);
     sandbox.stub(log, 'exit');
@@ -99,12 +100,11 @@ test('No version provided but no branches found', async (t) => {
     await release.selectReleasingBranch();
 
     t.equal(log.exit.callCount, 1, 'Exit message has been logged');
-    t.ok(log.exit.calledWith('Cannot find any branch with valid version.'), 'Exit message has been logged with apropriate message');
+    t.ok(log.exit.calledWith('Cannot find any branches matching \'remotes/origin/release-\'.'), 'Exit message has been logged with apropriate message');
 
     sandbox.restore();
     t.end();
 });
-
 
 test('version provided and found 1 branch', async (t) => {
     t.plan(2);
@@ -119,8 +119,10 @@ test('version provided and found 1 branch', async (t) => {
         'remotes/origin/release-0.8.0',
         'remotes/origin/release-0.9.0',
         'remotes/origin/release-0.9.0-alpha',
-        'remotes/origin/release-0.9.0-alpha.1',
-        'remotes/origin/release-0.9.0-beta'
+        'remotes/origin/release-0.9.0-beta',
+        'remotes/origin/release-1.9.1.0-alpha',
+        'remotes/origin/releasing-0.93.1.0-alpha',
+        'remotes/origin/4.93.1.0-alpha-release'
     ]);
 
     sandbox.stub(log, 'done');
@@ -128,7 +130,7 @@ test('version provided and found 1 branch', async (t) => {
     await release.selectReleasingBranch();
 
     t.equal(log.done.callCount, 1, 'Done message has been logged');
-    t.ok(log.done.calledWith('Branch remotes/origin/release-0.9.0 is selected.'), 'Done message has been logged with apropriate message');
+    t.ok(log.done.calledWith('Branch remotes/origin/release-1.9.1.0-alpha is selected.'), 'Done message has been logged with apropriate message');
 
     sandbox.restore();
     t.end();

@@ -487,23 +487,24 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 if (allBranches.includes(branchName)) {
                     data.releasingBranch = branchName;
                     data.version = versionToRelease;
+                } else {
+                    log.exit(`Cannot find the branch '${branchName}'.`);
                 }
             } else {
-                const branchName = `remotes/${origin}/${branchPrefix}`;
-                const possibleBranches = allBranches.filter(branch => branch.includes(branchName));
+                const partialBranchName = `remotes/${origin}/${branchPrefix}-`;
+                const possibleBranches = allBranches.filter(branch => branch.startsWith(partialBranchName));
                 const highestVersionBranch = this.getHighestVersionBranch(possibleBranches);
                 if (highestVersionBranch && highestVersionBranch.branch && highestVersionBranch.version) {
                     data.releasingBranch = highestVersionBranch.branch;
                     data.version = highestVersionBranch.version;
+                } else {
+                    log.exit(`Cannot find any branches matching '${partialBranchName}'.`);
                 }
             }
 
             if (data.releasingBranch) {
                 log.done(`Branch ${data.releasingBranch} is selected.`);
-                return;
             }
-
-            log.exit('Cannot find any branch with valid version.');
         },
 
         /**

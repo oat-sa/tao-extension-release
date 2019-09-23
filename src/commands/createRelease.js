@@ -56,15 +56,15 @@ async function releaseExtension() {
         await release.selectReleasingBranch();
         await release.verifyReleasingBranch();
         // TODO: await release.mergeWithReleaseBranch();
-        // await release.compileAssets();
-        // await release.initialiseGithubClient();
-        // await release.createPullRequest();
-        // await release.extractReleaseNotes();
-        // await release.mergePullRequest();
-        // await release.createReleaseTag();
-        // await release.createGithubRelease();
-        // await release.mergeBack();
-        // await release.removeReleasingBranch();
+        await release.compileAssets();
+        await release.initialiseGithubClient();
+        await release.createPullRequest();
+        await release.extractReleaseNotes();
+        await release.mergePullRequest();
+        await release.createReleaseTag();
+        await release.createGithubRelease();
+        await release.mergeBack();
+        await release.removeReleasingBranch();
 
         log.done('Good job!').exit();
     } catch (error) {
