@@ -25,6 +25,7 @@
 const inquirer = require('inquirer');
 const opn = require('opn');
 const path = require('path');
+const compareVersions = require('compare-versions');
 
 const config = require('./config.js')();
 const gitClientFactory = require('./git.js');
@@ -487,5 +488,67 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
             log.done(`${data.extension.name} is clean`);
         },
+
+        /**
+         * Select releasing branch
+         * - picking version-to-release CLI option and find branch with version on it
+         * - or find the biggest version and find branch with version on it
+         */
+        async selectReleasingBranch() {
+            // Filter all branches to the ones that have release in the name
+            await gitClient.fetch({'--prune': true});
+            const allBranches = await gitClient.getLocalBranches();
+
+            if (versionToRelease) {
+                const branchName = `remotes/${origin}/${branchPrefix}-${versionToRelease}`;
+                if (allBranches.includes(branchName)) {
+                    data.releasingBranch = branchName;
+                    data.version = versionToRelease;
+                } else {
+                    log.exit(`Cannot find the branch '${branchName}'.`);
+                }
+            } else {
+                const partialBranchName = `remotes/${origin}/${branchPrefix}-`;
+                const possibleBranches = allBranches.filter(branch => branch.startsWith(partialBranchName));
+                const highestVersionBranch = this.getHighestVersionBranch(possibleBranches);
+                if (highestVersionBranch && highestVersionBranch.branch && highestVersionBranch.version) {
+                    data.releasingBranch = highestVersionBranch.branch;
+                    data.version = highestVersionBranch.version;
+                } else {
+                    log.exit(`Cannot find any branches matching '${partialBranchName}'.`);
+                }
+            }
+
+            if (data.releasingBranch) {
+                log.done(`Branch ${data.releasingBranch} is selected.`);
+            }
+        },
+
+        // Private methods
+
+        /**
+         * Gets the branch with highest version
+         * @param possibleBranches - list of branches
+         * @returns {Object}
+         */
+        getHighestVersionBranch(possibleBranches = []) {
+            log.doing('Selecting releasing branch from the biggest version found in branches.');
+
+            const semVerRegex = /(?:(\d+)\.)?(?:(\d+)\.)?(?:(\d+)\.\d+)(-[\w.]+)?/g;
+            const versionedBranches = possibleBranches.filter(branch => branch.match(semVerRegex));
+
+            let version = '0.0';
+            let branch;
+
+            versionedBranches.map(b => {
+                const branchVersion = b.replace(`remotes/${origin}/${branchPrefix}-`, '');
+                if (compareVersions(branchVersion, version) === 1) {
+                    branch = b;
+                    version = branchVersion;
+                }
+            });
+
+            return { branch, version };
+        }
     };
 };

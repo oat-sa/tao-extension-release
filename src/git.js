@@ -99,6 +99,24 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
         },
 
         /**
+         * Checks out the supplied tag, revision or branch.
+         * @param {String} branchName - the branch name
+         * @returns {Promise}
+         */
+        checkout(branchName){
+            return git(repository).checkout(branchName);
+        },
+
+        /**
+         * Gets any new commits, references (like tags), branches and files from a remote repository
+         * @param options
+         * @returns {Promise}
+         */
+        fetch(options) {
+            return git(repository).fetch(options);
+        },
+
+        /**
          * Full pull (fetch, checkout branch from remote if not there, and pull)
          * @param {String} branchName - the branch name
          * @returns {Promise}
@@ -165,7 +183,7 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
         /**
          * Merge and push branches in a Pull Request style layout
          * @param {String} baseBranch - the branch that receive the feature
-         * @param {String} releaseBranch - the branch that contain the feature
+         * @param {String} featureBranch - the branch that contain the feature
          * @returns {Promise}
          */
         mergePr(baseBranch, featureBranch){
