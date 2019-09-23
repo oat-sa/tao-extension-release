@@ -25,6 +25,7 @@
 const inquirer = require('inquirer');
 const opn = require('opn');
 const path = require('path');
+const compareVersions = require('compare-versions');
 
 const config = require('./config.js')();
 const gitClientFactory = require('./git.js');
@@ -59,6 +60,23 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
     let taoInstance;
 
     return {
+
+        /**
+         * Prompt user if he really want to use deprecated way to do the release
+         */
+        async warnAboutDeprecation() {
+            const { isOldWayReleaseSelected } = await inquirer.prompt({
+                type: 'confirm',
+                name: 'isOldWayReleaseSelected',
+                message: 'This release process is [deprecated]. Are you sure you want to continue?',
+                default: false
+            });
+
+            if (!isOldWayReleaseSelected) {
+                log.exit();
+            }
+        },
+
         /**
          * Compile and publish extension assets
          */
@@ -470,5 +488,94 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
             log.done(`${data.extension.name} is clean`);
         },
+
+        /**
+         * Select releasing branch
+         * - picking version-to-release CLI option and find branch with version on it
+         * - or find the biggest version and find branch with version on it
+         */
+        async selectReleasingBranch() {
+            // Filter all branches to the ones that have release in the name
+            await gitClient.fetch({'--prune': true});
+            const allBranches = await gitClient.getLocalBranches();
+
+            if (versionToRelease) {
+                const branchName = `remotes/${origin}/${branchPrefix}-${versionToRelease}`;
+                if (allBranches.includes(branchName)) {
+                    data.releasingBranch = branchName;
+                    data.version = versionToRelease;
+                } else {
+                    log.exit(`Cannot find the branch '${branchName}'.`);
+                }
+            } else {
+                const partialBranchName = `remotes/${origin}/${branchPrefix}-`;
+                const possibleBranches = allBranches.filter(branch => branch.startsWith(partialBranchName));
+                const highestVersionBranch = this.getHighestVersionBranch(possibleBranches);
+                if (highestVersionBranch && highestVersionBranch.branch && highestVersionBranch.version) {
+                    data.releasingBranch = highestVersionBranch.branch;
+                    data.version = highestVersionBranch.version;
+                } else {
+                    log.exit(`Cannot find any branches matching '${partialBranchName}'.`);
+                }
+            }
+
+            if (data.releasingBranch) {
+                log.done(`Branch ${data.releasingBranch} is selected.`);
+            }
+        },
+
+        /**
+         * Verify that the version that we are going to release is valid
+         * - is the same on branch name and manifest
+         * - is bigger than current release branch version.
+         */
+        async verifyReleasingBranch() {
+            log.doing('Validating releasing branch.');
+
+            // Cross check releasing branch version with manifest version
+            await gitClient.checkout(data.releasingBranch);
+            const releasingBranchManifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
+            if (compareVersions(releasingBranchManifest.version, data.version) === 0 ) {
+                log.doing(`Branch ${data.releasingBranch} has valid manifest.`);
+            } else {
+                log.exit(`Branch '${data.releasingBranch}' cannot be released because it's branch name does not match its own manifest version (${releasingBranchManifest.version}).`);
+            }
+
+            // Cross check releasing branch wth release branch and make sure new version is highest
+            await gitClient.checkout(releaseBranch);
+            const releaseBranchManifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
+            if (compareVersions(releasingBranchManifest.version, releaseBranchManifest.version) === 1 ) {
+                log.done(`Branch ${data.releasingBranch} is valid.`);
+            } else {
+                log.exit(`Branch '${data.releasingBranch}' cannot be released because its manifest version (${data.version}) is not greater than the manifest version of '${releaseBranch}' (${releaseBranchManifest.version}).`);
+            }
+        },
+
+        // Private methods
+
+        /**
+         * Gets the branch with highest version
+         * @param possibleBranches - list of branches
+         * @returns {Object}
+         */
+        getHighestVersionBranch(possibleBranches = []) {
+            log.doing('Selecting releasing branch from the biggest version found in branches.');
+
+            const semVerRegex = /(?:(\d+)\.)?(?:(\d+)\.)?(?:(\d+)\.\d+)(-[\w.]+)?/g;
+            const versionedBranches = possibleBranches.filter(branch => branch.match(semVerRegex));
+
+            let version = '0.0';
+            let branch;
+
+            versionedBranches.map(b => {
+                const branchVersion = b.replace(`remotes/${origin}/${branchPrefix}-`, '');
+                if (compareVersions(branchVersion, version) === 1) {
+                    branch = b;
+                    version = branchVersion;
+                }
+            });
+
+            return { branch, version };
+        }
     };
 };
