@@ -521,7 +521,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             if (compareVersions(releasingBranchManifest.version, data.version) === 0 ) {
                 log.doing(`Branch ${data.releasingBranch} has valid manifest.`);
             } else {
-                log.exit(`Branch '${data.releasingBranch}' cannot be released because its branch name does not match its own manifest version (${releasingBranchManifest.version}).`);
+                log.exit(`Branch '${data.releasingBranch}' cannot be released because it's branch name does not match its own manifest version (${releasingBranchManifest.version}).`);
             }
 
             // Cross check releasing branch wth release branch and make sure new version is highest

@@ -104,7 +104,7 @@ test('Releasing branch has different version than manifest', async (t) => {
     await release.verifyReleasingBranch();
 
     t.equal(log.exit.callCount, 2, 'Exit message has been logged');
-    t.ok(log.exit.calledWith(`Branch '${releasingBranch}' cannot be released because its branch name does not match its own manifest version (0.7.0).`), 'Exit message has been logged with apropriate message');
+    t.ok(log.exit.calledWith(`Branch '${releasingBranch}' cannot be released because it's branch name does not match its own manifest version (0.7.0).`), 'Exit message has been logged with apropriate message');
 
     sandbox.restore();
     t.end();
