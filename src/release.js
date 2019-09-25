@@ -576,6 +576,19 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             });
 
             return { branch, version };
+        },
+
+        /**
+         * Show a prompt to pause the program and make them confirm they have resolved conflicts.
+         * @returns {Promise}
+         */
+        async promptToResolveConflicts() {
+            return await inquirer.prompt({
+                name: 'resolveConflicts',
+                type: 'confirm',
+                message: `Has the merge been completed manually? I need to push the branch to ${origin}.`,
+                default: false
+            });
         }
     };
 };
