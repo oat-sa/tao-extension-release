@@ -558,17 +558,19 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         async mergeWithReleaseBranch() {
             log.doing(`Merging '${releaseBranch}' into '${data.releasingBranch}'.`);
 
-            // checkout master
-            await gitClient.checkout(releaseBranch);
+            try {
+                // checkout master
+                await gitClient.checkout(releaseBranch);
 
-            // pull master
-            await gitClient.pull(releaseBranch);
+                // pull master
+                await gitClient.pull(releaseBranch);
 
-            // checkout releasingBranch
-            await gitClient.checkout(`${branchPrefix}-${data.version}`);
+                // checkout releasingBranch
+                await gitClient.checkout(`${branchPrefix}-${data.version}`);
 
-            // merge master releasingBranch
-            await gitClient.merge([releaseBranch]).catch( async () => {
+                // merge release branch into releasingBranch
+                await gitClient.merge([releaseBranch]);
+            } catch (err) {
                 log.warn('Please resolve the conflicts and complete the merge manually (including making the merge commit).');
 
                 const mergeDone = await this.promptToResolveConflicts();
@@ -581,7 +583,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 }
                 await gitClient.abortMerge([releaseBranch]);
                 log.exit();
-            });
+            }
         },
 
         // Private methods
