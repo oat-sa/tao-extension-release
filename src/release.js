@@ -551,6 +551,32 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             }
         },
 
+        async mergeWithReleaseBranch() {
+            log.doing(`Merging '${releaseBranch}' into '${data.releasingBranch}'.`);
+
+            // checkout master
+            await gitClient.checkout(releaseBranch);
+            // pull master
+            await gitClient.pull(releaseBranch);
+
+            // checkout releasingBranch
+            await gitClient.checkout(`${branchPrefix}-${data.version}`);
+
+            // merge master in current branch
+            await gitClient.merge([releaseBranch]).catch ( async () => {
+                log.warn('Please resolve the conflicts and complete the merge manually (including making the merge commit).');
+
+                const mergeDone = await this.promptToResolveConflicts();
+                if (mergeDone) {
+                    await gitClient.push(origin, data.releasingBranch).catch(err => {
+                        log.exit(`Not able to bring ${baseBranch} up to date. Please fix it manually.`);
+                    });
+                } else {
+                    log.exit();
+                }
+            });
+        },
+
         // Private methods
 
         /**
