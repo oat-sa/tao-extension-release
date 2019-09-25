@@ -349,7 +349,9 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         async promptToResolveConflicts() {
             return await inquirer.prompt({
                 type: 'confirm',
-                message: `Has the merge been completed manually? I need to push the branch to ${origin}.`
+                name: 'mergeDone',
+                message: `Has the merge been completed manually? I need to push the branch to ${origin}.`,
+                default: false,
             });
         },
 
