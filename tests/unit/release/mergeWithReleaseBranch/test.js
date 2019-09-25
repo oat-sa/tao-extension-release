@@ -35,7 +35,11 @@ const config = {
 const gitClientInstance = {
     getLocalBranches: () => {},
     fetch: () => { },
-    checkout: () => { }
+    checkout: () => { },
+    pull: () => { },
+    merge: () => { },
+    abortMerge: () => { },
+    push: () => { }
 };
 
 const gitClientFactory = sandbox.stub().callsFake(() => gitClientInstance);
@@ -44,7 +48,8 @@ const log = {
     doing: () => { },
     exit: () => { },
     error: () => { },
-    done: () => { }
+    done: () => { },
+    warn: () => { }
 };
 
 const taoRoot = 'testRoot';
@@ -87,78 +92,55 @@ test('should define mergeWithReleaseBranch method on release instance', (t) => {
     t.end();
 });
 
-// test('Releasing branch has different version than manifest', async (t) => {
-//     t.plan(2);
+test('Merging release branch into releasing branch, found conflicts and user abort merge', async (t) => {
+    t.plan(13);
 
-//     sandbox.stub(gitClientInstance, 'fetch');
-//     sandbox.stub(gitClientInstance, 'getLocalBranches').returns([releasingBranch]);
-//     sandbox.stub(log, 'exit');
+    await release.selectTaoInstance();
+    await release.selectExtension();
 
-//     const callback = sandbox.stub(taoInstance, 'parseManifest');
-//     callback.onCall(0).returns({ version: '0.7.0'});
-//     callback.onCall(1).returns({ version: '0.7.0'});
+    sandbox.stub(gitClientInstance, 'getLocalBranches').returns([releasingBranch]);
 
-//     await release.selectTaoInstance();
-//     await release.selectExtension();
-//     await release.selectReleasingBranch();
-//     await release.verifyReleasingBranch();
+    await release.selectReleasingBranch();
 
-//     t.equal(log.exit.callCount, 2, 'Exit message has been logged');
-//     t.ok(log.exit.calledWith(`Branch '${releasingBranch}' cannot be released because it's branch name does not match its own manifest version (0.7.0).`), 'Exit message has been logged with apropriate message');
+    const callback = sandbox.stub(taoInstance, 'parseManifest');
+    callback.onCall(0).returns({ version: '0.9.0'});
+    callback.onCall(1).returns({ version: '0.8.0'});
 
-//     sandbox.restore();
-//     t.end();
-// });
+    await release.verifyReleasingBranch();
 
-// test('Releasing branch is valid and is greather than release branch version', async (t) => {
-//     t.plan(4);
+    sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message }) => {
+        t.equal(type, 'confirm', 'The type should be "confirm"');
+        t.equal(name, 'isMergeDone', 'The param name should be isMergeDone');
+        t.equal(message, `Has the merge been completed manually? I need to push the branch to ${releaseOptions.origin}.`, 'Should disaplay appropriate message');
 
-//     sandbox.stub(gitClientInstance, 'fetch');
-//     sandbox.stub(gitClientInstance, 'getLocalBranches').returns(['remotes/origin/release-0.9.0']);
-//     sandbox.stub(log, 'doing');
-//     sandbox.stub(log, 'done');
+        return { isMergeDone: false };
+    });
 
-//     const callback = sandbox.stub(taoInstance, 'parseManifest');
-//     callback.onCall(0).returns({ version: '0.9.0'});
-//     callback.onCall(1).returns({ version: '0.8.0'});
+    sandbox.stub(gitClientInstance, 'checkout');
 
-//     await release.selectTaoInstance();
-//     await release.selectExtension();
-//     await release.selectReleasingBranch();
-//     await release.verifyReleasingBranch();
+    sandbox.stub(gitClientInstance, 'pull');
+    sandbox.stub(gitClientInstance, 'merge').throws();
+    sandbox.stub(gitClientInstance, 'abortMerge');
+    sandbox.stub(log, 'warn');
+    sandbox.stub(log, 'exit');
 
-//     t.equal(log.doing.callCount, 2, 'Doing message has been logged');
-//     t.ok(log.doing.calledWith(`Branch ${releasingBranch} has valid manifest.`), 'Doing message has been logged with apropriate message');
+    await release.mergeWithReleaseBranch();
 
-//     t.equal(log.done.callCount, 2, 'Done message has been logged');
-//     t.ok(log.done.calledWith(`Branch ${releasingBranch} is valid.`), 'Done message has been logged with apropriate message');
+    // Assertions
+    t.equal(gitClientInstance.checkout.callCount, 2, 'git checkout has been called.');
+    t.ok(gitClientInstance.checkout.calledWith(releaseBranch), `Checkout ${releaseBranch} called`);
+    t.ok(gitClientInstance.checkout.calledWith(`${releaseOptions.branchPrefix}-${releaseOptions.versionToRelease}`), `Checkout ${releaseOptions.branchPrefix}-${releaseOptions.versionToRelease} has been called`);
 
-//     sandbox.restore();
-//     t.end();
-// });
+    t.equal(gitClientInstance.pull.callCount, 1, 'git pull has been called.');
+    t.ok(gitClientInstance.checkout.calledWith(`${releaseOptions.branchPrefix}-${releaseOptions.versionToRelease}`), `Checkout ${releaseOptions.branchPrefix}-${releaseOptions.versionToRelease}`);
 
-// test('Releasing branch is valid but is less than release branch version', async (t) => {
-//     t.plan(4);
+    t.equal(gitClientInstance.merge.callCount, 1, 'Merge has been called due to conflicts');
+    t.equal(log.warn.callCount, 1, 'Warn message has been logged');
 
-//     sandbox.stub(gitClientInstance, 'fetch');
-//     sandbox.stub(gitClientInstance, 'getLocalBranches').returns([releasingBranch]);
-//     sandbox.stub(log, 'doing');
-//     sandbox.stub(log, 'exit');
+    t.ok(log.warn.calledWith('Please resolve the conflicts and complete the merge manually (including making the merge commit).'), 'Warn message has been logged with apropriate message');
+    t.equal(gitClientInstance.abortMerge.callCount, 1, 'Abort merge has been called.');
+    t.equal(log.exit.callCount, 1, 'Exit message has been logged');
 
-//     const callback = sandbox.stub(taoInstance, 'parseManifest');
-//     callback.onCall(0).returns({ version: '0.9.0'});
-//     callback.onCall(1).returns({ version: '0.10.0'});
-
-//     await release.selectTaoInstance();
-//     await release.selectExtension();
-//     await release.selectReleasingBranch();
-//     await release.verifyReleasingBranch();
-
-//     t.equal(log.doing.callCount, 2, 'Doing message has been logged');
-//     t.ok(log.doing.calledWith(`Branch ${releasingBranch} has valid manifest.`), 'Doing message has been logged with apropriate message');
-
-//     t.equal(log.exit.callCount, 1, 'Exit message has been logged');
-//     t.ok(log.exit.calledWith(`Branch '${releasingBranch}' cannot be released because its manifest version (0.9.0) is not greater than the manifest version of '${releaseBranch}' (0.10.0).`), 'Exit message has been logged with apropriate message');
-//     sandbox.restore();
-//     t.end();
-// });
+    sandbox.restore();
+    t.end();
+});
