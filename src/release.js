@@ -551,11 +551,16 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             }
         },
 
+
+        /**
+         * Merge release branch into releasing branch and ask user to resolve conflicts manually if any
+         */
         async mergeWithReleaseBranch() {
             log.doing(`Merging '${releaseBranch}' into '${data.releasingBranch}'.`);
 
             // checkout master
             await gitClient.checkout(releaseBranch);
+
             // pull master
             await gitClient.pull(releaseBranch);
 
