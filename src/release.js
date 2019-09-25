@@ -567,18 +567,20 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             // checkout releasingBranch
             await gitClient.checkout(`${branchPrefix}-${data.version}`);
 
-            // merge master in current branch
-            await gitClient.merge([releaseBranch]).catch ( async () => {
+            // merge master releasingBranch
+            await gitClient.merge([releaseBranch]).catch( async () => {
                 log.warn('Please resolve the conflicts and complete the merge manually (including making the merge commit).');
 
                 const mergeDone = await this.promptToResolveConflicts();
                 if (mergeDone) {
-                    await gitClient.push(origin, data.releasingBranch).catch(err => {
-                        log.exit(`Not able to bring ${baseBranch} up to date. Please fix it manually.`);
-                    });
-                } else {
-                    log.exit();
+                    if (await gitClient.hasLocalChanges()) {
+                        log.exit(`Cannot push changes because local branch '${data.releasingBranch}' still has changes to commit.`);
+                    }
+                    await gitClient.push(origin, data.releasingBranch);
+                    return;
                 }
+                await gitClient.abortMerge([releaseBranch]);
+                log.exit();
             });
         },
 
