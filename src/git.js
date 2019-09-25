@@ -229,6 +229,13 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
         },
 
         /**
+         * Aborts a merge
+         */
+        async abortMerge(targetBranch) {
+            return git(repository).merge([targetBranch], {'--abort': true});
+        },
+
+        /**
          * Commit and push every change on the current branch
          * @param {String} branchName - name of the branch to push to
          * @param {String} comment - commit comment
