@@ -609,12 +609,14 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * @returns {Promise}
          */
         async promptToResolveConflicts() {
-            return await inquirer.prompt({
-                name: 'resolveConflicts',
+            const { isMergeDone } = await inquirer.prompt({
+                name: 'isMergeDone',
                 type: 'confirm',
                 message: `Has the merge been completed manually? I need to push the branch to ${origin}.`,
                 default: false
             });
+
+            return isMergeDone;
         }
     };
 };
