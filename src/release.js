@@ -299,6 +299,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
             try {
                 await gitClient.mergeBack(baseBranch, releaseBranch);
+                log.done();
             }
             catch (err) {
                 if (err && err.failed && err.conflicts) {
@@ -308,14 +309,17 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
                     const mergeDone = await this.promptToResolveConflicts();
                     if (!mergeDone) {
-                        console.log('woo!');
                         log.exit(`Not able to bring ${baseBranch} up to date. Please fix it manually.`);
                     }
-                    await gitClient.push(origin, baseBranch);
+                    else {
+                        await gitClient.push(origin, baseBranch);
+                        log.done();
+                    }
+                }
+                else {
+                    log.exit(`An error occurred: ${err}`);
                 }
             }
-
-            log.done();
         },
 
         /**
@@ -347,12 +351,13 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * @returns {Promise}
          */
         async promptToResolveConflicts() {
-            return await inquirer.prompt({
+            const { mergeDone } = await inquirer.prompt({
                 type: 'confirm',
                 name: 'mergeDone',
                 message: `Has the merge been completed manually? I need to push the branch to ${origin}.`,
                 default: false,
             });
+            return mergeDone;
         },
 
         /**

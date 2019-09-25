@@ -165,7 +165,6 @@ test('should push and log done if prompt accepted', async (t) => {
     sandbox.resetHistory();
 
     await release.mergeBack();
-    console.log(gitClientInstance.push.callCount);
 
     t.equal(gitClientInstance.mergeBack.callCount, 1, 'git.mergeBack was called');
     t.equal(release.promptToResolveConflicts.callCount, 1, 'promptToResolveConflicts was called');
