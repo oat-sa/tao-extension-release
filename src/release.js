@@ -356,19 +356,24 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
                 log.done(`'${releaseBranch}' merged into '${branchPrefix}-${data.version}'.`);
             } catch (err) {
-                log.warn('Please resolve the conflicts and complete the merge manually (including making the merge commit).');
+                // error is about merging conflicts
+                if (err.stack && err.message && err.message.startsWith('CONFLICTS:')) {
+                    log.warn('Please resolve the conflicts and complete the merge manually (including making the merge commit).');
 
-                const mergeDone = await this.promptToResolveConflicts();
-                if (mergeDone) {
-                    if (await gitClient.hasLocalChanges()) {
-                        log.exit(`Cannot push changes because local branch '${data.releasingBranch}' still has changes to commit.`);
+                    const mergeDone = await this.promptToResolveConflicts();
+                    if (mergeDone) {
+                        if (await gitClient.hasLocalChanges()) {
+                            log.exit(`Cannot push changes because local branch '${data.releasingBranch}' still has changes to commit.`);
+                        } else {
+                            // await gitClient.push(origin, data.releasingBranch);
+                            log.done(`'${releaseBranch}' merged into '${branchPrefix}-${data.version}'.`);
+                        }
                     }
-                    await gitClient.push(origin, data.releasingBranch);
-                    log.done(`'${releaseBranch}' merged into '${branchPrefix}-${data.version}'.`);
-                    return;
+                    await gitClient.abortMerge([releaseBranch]);
+                    log.exit();
+                } else {
+                    log.exit(`An error occurred: ${err}`);
                 }
-                await gitClient.abortMerge([releaseBranch]);
-                log.exit();
             }
         },
 
