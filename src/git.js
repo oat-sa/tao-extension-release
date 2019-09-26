@@ -224,14 +224,14 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
          * @param {String} targetBranch - the branch to merge into the current branch
          * @returns {Promise}
          */
-        async merge(targetBranch){
+        merge(targetBranch){
             return git(repository).merge([targetBranch]);
         },
 
         /**
          * Aborts a merge
          */
-        async abortMerge(targetBranch) {
+        abortMerge(targetBranch) {
             return git(repository).merge([targetBranch], {'--abort': true});
         },
 
