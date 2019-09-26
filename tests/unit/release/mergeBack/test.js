@@ -131,8 +131,6 @@ test('should log done message', async (t) => {
     t.end();
 });
 
-//new
-
 test('should prompt if there are merge conflicts', async (t) => {
     t.plan(2);
 
