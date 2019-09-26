@@ -209,6 +209,33 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
         },
 
         /**
+         * Push a branch to the given remote
+         * @param {String} origin - name of the remote
+         * @param {String} branchName - name of the branch to push to
+         * @returns {Promise}
+         */
+        push(origin, branchName) {
+            return git(repository).push(origin, branchName);
+        },
+
+        /**
+         * Merge targetBranch into your current tbranch
+         *
+         * @param {String} targetBranch - the branch to merge into the current branch
+         * @returns {Promise}
+         */
+        merge(targetBranch){
+            return git(repository).merge([targetBranch]);
+        },
+
+        /**
+         * Aborts a merge
+         */
+        abortMerge(targetBranch) {
+            return git(repository).merge([targetBranch], {'--abort': true});
+        },
+
+        /**
          * Commit and push every change on the current branch
          * @param {String} branchName - name of the branch to push to
          * @param {String} comment - commit comment
