@@ -102,6 +102,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Prompt user to confirm release
+         * @deprecated - only used in oldWayRelease for backward compatibility / user experience
          */
         async confirmRelease() {
             const { go } = await inquirer.prompt({
