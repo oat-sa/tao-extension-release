@@ -56,19 +56,15 @@ const setUp = async function setUp() {
 
         // initialise remoteRepo (bare)
         process.chdir(remoteRepoPath);
-        if (process.cwd() !== remoteRepoPath) {
-            console.error('r', process.cwd());
-            process.exit(1)
-        };
         await remoteGitHelper.init(true);
+
+        verifyRemote(remoteGitHelper);
 
         // initialise localRepo
         process.chdir(localRepoPath);
-        if (process.cwd() !== localRepoPath) {
-            console.error('l', process.cwd());
-            process.exit(1)
-        };
         await localGitHelper.init();
+
+        verifyLocal(localGitHelper);
 
         // connect local to remote
         await localGitHelper.addRemote('origin', '../remoteRepo');
@@ -84,6 +80,22 @@ const setUp = async function setUp() {
         await localGitHelper.add('.');
         await localGitHelper.commit('Initial commit');
         await localGitHelper.push('origin', 'master');
+
+        // make a remote-only branch
+        await localGitHelper.checkoutLocalBranch('remote-only');
+        await localGitHelper.push('origin', 'remote-only');
+        // delete the branch locally
+        await localGitHelper.checkout('master');
+        await localGitHelper.branch('-D remote-only');
+
+        // make a remote-only branch with new content
+        await localGitHelper.checkoutLocalBranch('remote-is-ahead');
+        fs.writeFileSync('remote-file.txt', 'file content');
+        await localGitHelper.add('.');
+        await localGitHelper.commit('Add text file');
+        await localGitHelper.push('origin', 'remote-is-ahead');
+
+        await localGitHelper.checkout('master');
     }
     catch (err) {
         console.error(err);
@@ -132,8 +144,8 @@ const getCurrentBranch = async function getCurrentBranch() {
     return currentBranch.trim();
 }
 
-//test.onFinish( tearDown );
-// test.onFailure( tearDown );
+test.onFinish( tearDown );
+test.onFailure( tearDown );
 
 /**
  * Tests
@@ -225,4 +237,84 @@ test('hasSignKey (false)', async t => {
     await gitHelper.raw(['config', '--local', 'user.signingkey', 'foobar']);
     t.ok(await localRepo.hasSignKey(), 'signing key is set up');
     await gitHelper.raw(['config', '--local', '--unset', 'user.signingkey']);
+});
+
+test('pull from remote', async t => {
+    await setUp();
+    t.plan(10);
+    const localRepo = gitFactory(localRepoPath); // module we're testing
+    const gitHelper = simpleGit(localRepoPath); // helper lib
+    await verifyLocal(gitHelper);
+
+    // equal branch
+    const branch1 = 'master';
+    const pull1 = await localRepo.pull(branch1);
+    t.equal(getCurrentBranch(), branch1, `on ${branch1} branch`);
+    t.equal(pull1.files.length, 0, '0 files changed');
+    t.equal(pull1.summary.insertions, 0, 'correct insertions');
+    t.equal(pull1.summary.deletions, 0, 'correct deletions');
+
+    // locally unknown remote branch
+    const branch2 = 'remote-only';
+    t.notOk(await localRepo.hasBranch(branch2), `branch ${branch2} unknown to local`);
+    await localRepo.pull(branch2);
+    currentBranch = await gitHelper.raw(['symbolic-ref', '--short', 'HEAD']);
+    t.equal(currentBranch.trim(), branch2, `on ${branch2} branch`);
+
+    // remote branch with changes
+    const branch3 = 'remote-is-ahead';
+    const pull3 = await localRepo.pull(branch3);
+    currentBranch = await gitHelper.raw(['symbolic-ref', '--short', 'HEAD']);
+    t.equal(currentBranch.trim(), branch3, `on ${branch3} branch`);
+    t.equal(pull3.files.length, 1, '1 file changed');
+    t.equal(pull3.summary.insertions, 1, 'correct insertions');
+    t.equal(pull3.summary.deletions, 0, 'correct deletions');
+});
+
+test.skip('branch, edit, commit, diff, push', async t => {
+    await setUp();
+    t.plan(10);
+    const localRepo = gitFactory(localRepoPath); // module we're testing
+    const remoteRepo = gitFactory(remoteRepoPath); // module we're testing
+    const gitHelper = simpleGit(localRepoPath); // helper lib
+    const remoteGitHelper = simpleGit(remoteRepoPath); // helper lib
+    await verifyLocal(gitHelper);
+    await verifyRemote(remoteGitHelper);
+
+    // start on develop
+    await gitHelper.checkout('develop');
+    let currentBranch = await gitHelper.raw(['symbolic-ref', '--short', 'HEAD']);
+    t.equal(currentBranch.trim(), 'develop', 'on develop branch');
+
+    // create branch & switch to it
+    const newBranch = 'testing/TAO-xyz/my-feature'
+    await localRepo.localBranch(newBranch);
+    t.ok(await localRepo.hasBranch(newBranch), 'localRepo has new branch');
+    currentBranch = await gitHelper.raw(['symbolic-ref', '--short', 'HEAD']);
+    t.equal(currentBranch.trim(), newBranch, 'on the new branch');
+
+    // edit file
+    const manifest = path.join(localRepoPath, 'manifest.php');
+    const replacings = await replace({
+        files: manifest,
+        from: '1.2.3',
+        to: '1.3.0',
+    });
+    t.equal(replacings.length, 1, 'exactly one file was changed');
+    t.equal(replacings[0].file, manifest, 'the manifest was changed');
+    t.equal(replacings[0].hasChanged, true, 'the manifest was changed');
+
+    // diff
+    t.ok(await localRepo.hasLocalChanges(), 'there are local changes');
+
+    // commit and push
+    await localRepo.commitAndPush(newBranch, 'version bump 1.3.0');
+    t.ok(await remoteRepo.hasBranch(newBranch), 'remoteRepo has branch');
+
+    // branch comparisons
+    const localDiff = await localRepo.hasDiff(newBranch, 'develop');
+    t.ok(localDiff && localDiff.length, 'the branches have a difference on local');
+    const remoteDiff = await remoteRepo.hasDiff(newBranch, 'develop');
+    t.ok(remoteDiff && remoteDiff.length, 'the branches have a difference on remote');
+
 });
