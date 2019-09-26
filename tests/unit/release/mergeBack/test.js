@@ -28,10 +28,8 @@ const sinon = require('sinon');
 const test = require('tape');
 
 const conflictedSummary = {
-    failed: true,
-    conflicts: [
-        { reason: 'content', file: 'readme.md' }
-    ]
+    stack: [],
+    message: 'CONFLICTS: manifest.php:content'
 };
 
 const sandbox = sinon.sandbox.create();
@@ -43,7 +41,8 @@ const config = {
 const extension = 'testExtension';
 const gitClientInstance = {
     mergeBack: () => { },
-    push: () => { }
+    push: () => { },
+    hasLocalChanges: () => { }
 };
 const gitClientFactory = sandbox.stub().callsFake(() => gitClientInstance);
 const taoRoot = 'testRoot';
@@ -158,6 +157,7 @@ test('should push and log done if prompt accepted', async (t) => {
 
     sandbox.stub(gitClientInstance, 'mergeBack').throws(conflictedSummary);
     sandbox.stub(gitClientInstance, 'push');
+    sandbox.stub(gitClientInstance, 'hasLocalChanges').returns(false);
     sandbox.stub(release, 'promptToResolveConflicts').returns(true);
     sandbox.stub(log, 'done');
     sandbox.resetHistory();

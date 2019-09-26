@@ -65,13 +65,13 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
 test('should define promptToResolveConflicts method on release instance', (t) => {
     t.plan(1);
 
-    t.ok(typeof release.confirmRelease === 'function', 'The release instance has promptToResolveConflicts method');
+    t.ok(typeof release.promptToResolveConflicts === 'function', 'The release instance has promptToResolveConflicts method');
 
     t.end();
 });
 
-test('should prompt to confirm release', async (t) => {
-    t.plan(6);
+test('should prompt to confirm resolution', async (t) => {
+    t.plan(5);
 
     await release.selectTaoInstance();
     await release.selectExtension();
@@ -79,15 +79,14 @@ test('should prompt to confirm release', async (t) => {
     sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message, default: defaultValue }) => {
         t.equal(type, 'confirm', 'The type should be "confirm"');
         t.equal(name, 'isMergeDone', 'The param name should be isMergeDone');
-        t.equal(message, `Has the merge been completed manually? I need to push the branch to origin.`, 'Should display appropriate message');
+        t.equal(message, 'Has the merge been completed manually? I need to push the branch to origin.', 'Should display appropriate message');
         t.equal(defaultValue, false, 'The default response should be false');
 
         return { mergeDone: false };
-    })
+    });
 
-    const ret = await release.promptToResolveConflicts();
+    await release.promptToResolveConflicts();
 
-    t.equal(typeof ret, 'boolean', 'Returns true or false');
     t.equal(inquirer.prompt.callCount, 1, 'Prompt has been initialised');
 
     sandbox.restore();
