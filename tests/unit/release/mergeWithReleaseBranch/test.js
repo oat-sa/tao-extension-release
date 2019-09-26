@@ -17,7 +17,7 @@
  */
 
 /**
- * Unit test the verifyReleasingBranch method of module src/release.js
+ * Unit test the mergeWithReleaseBranch method of module src/release.js
  *
  * @author Ricardo Proença <ricardo@taotesting.com>
  */
