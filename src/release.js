@@ -341,16 +341,16 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         async mergeWithReleaseBranch() {
             log.doing(`Merging '${releaseBranch}' into '${data.releasingBranch}'.`);
 
+            // checkout master
+            await gitClient.checkout(releaseBranch);
+
+            // pull master
+            await gitClient.pull(releaseBranch);
+
+            // checkout releasingBranch
+            await gitClient.checkout(`${branchPrefix}-${data.version}`);
+
             try {
-                // checkout master
-                await gitClient.checkout(releaseBranch);
-
-                // pull master
-                await gitClient.pull(releaseBranch);
-
-                // checkout releasingBranch
-                await gitClient.checkout(`${branchPrefix}-${data.version}`);
-
                 // merge release branch into releasingBranch
                 await gitClient.merge([releaseBranch]);
 
@@ -365,7 +365,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                         if (await gitClient.hasLocalChanges()) {
                             log.exit(`Cannot push changes because local branch '${data.releasingBranch}' still has changes to commit.`);
                         } else {
-                            // await gitClient.push(origin, data.releasingBranch);
+                            await gitClient.push(origin, data.releasingBranch);
                             log.done(`'${releaseBranch}' merged into '${branchPrefix}-${data.version}'.`);
                         }
                     }
