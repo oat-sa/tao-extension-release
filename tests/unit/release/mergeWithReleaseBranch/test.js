@@ -39,7 +39,8 @@ const gitClientInstance = {
     pull: () => { },
     merge: () => { },
     abortMerge: () => { },
-    push: () => { }
+    push: () => { },
+    hasLocalChanges: () => { }
 };
 
 const gitClientFactory = sandbox.stub().callsFake(() => gitClientInstance);
@@ -92,8 +93,50 @@ test('should define mergeWithReleaseBranch method on release instance', (t) => {
     t.end();
 });
 
+test('Merging release branch into releasing branch, no conflicts found', async (t) => {
+    t.plan(9);
+
+    await release.selectTaoInstance();
+    await release.selectExtension();
+
+    sandbox.stub(gitClientInstance, 'getLocalBranches').returns([releasingBranch]);
+
+    await release.selectReleasingBranch();
+
+    const callback = sandbox.stub(taoInstance, 'parseManifest');
+    callback.onCall(0).returns({ version: '0.9.0'});
+    callback.onCall(1).returns({ version: '0.8.0'});
+
+    await release.verifyReleasingBranch();
+
+    sandbox.stub(gitClientInstance, 'checkout');
+    sandbox.stub(gitClientInstance, 'pull');
+    sandbox.stub(gitClientInstance, 'merge');
+    sandbox.stub(log, 'doing');
+    sandbox.stub(log, 'done');
+
+    await release.mergeWithReleaseBranch();
+
+    // Assertions
+    t.equal(log.doing.callCount, 1, 'Doing message has been logged');
+    t.ok(log.doing.calledWith(`Merging '${releaseBranch}' into '${releasingBranch}'.`), 'Doing message has been logged with apropriate message');
+
+    t.equal(gitClientInstance.checkout.callCount, 2, 'git checkout has been called.');
+    t.ok(gitClientInstance.checkout.calledWith(releaseBranch), `Checkout ${releaseBranch} called`);
+    t.ok(gitClientInstance.checkout.calledWith(`${releaseOptions.branchPrefix}-${releaseOptions.versionToRelease}`), `Checkout ${releaseOptions.branchPrefix}-${releaseOptions.versionToRelease} has been called`);
+
+    t.equal(gitClientInstance.pull.callCount, 1, 'git pull has been called.');
+
+    t.equal(gitClientInstance.merge.callCount, 1, 'Merge has been called due to conflicts');
+    t.equal(log.done.callCount, 1, 'Done message has been logged');
+    t.ok(log.done.calledWith(`'${releaseBranch}' merged into '${releaseOptions.branchPrefix}-${releaseOptions.versionToRelease}'.`), 'Done message has been logged with apropriate message');
+
+    sandbox.restore();
+    t.end();
+});
+
 test('Merging release branch into releasing branch, found conflicts and user abort merge', async (t) => {
-    t.plan(13);
+    t.plan(14);
 
     await release.selectTaoInstance();
     await release.selectExtension();
@@ -117,29 +160,152 @@ test('Merging release branch into releasing branch, found conflicts and user abo
     });
 
     sandbox.stub(gitClientInstance, 'checkout');
-
     sandbox.stub(gitClientInstance, 'pull');
     sandbox.stub(gitClientInstance, 'merge').throws();
     sandbox.stub(gitClientInstance, 'abortMerge');
+    sandbox.stub(log, 'doing');
     sandbox.stub(log, 'warn');
     sandbox.stub(log, 'exit');
 
     await release.mergeWithReleaseBranch();
 
     // Assertions
+    t.equal(log.doing.callCount, 1, 'Doing message has been logged');
+    t.ok(log.doing.calledWith(`Merging '${releaseBranch}' into '${releasingBranch}'.`), 'Doing message has been logged with apropriate message');
+
     t.equal(gitClientInstance.checkout.callCount, 2, 'git checkout has been called.');
     t.ok(gitClientInstance.checkout.calledWith(releaseBranch), `Checkout ${releaseBranch} called`);
     t.ok(gitClientInstance.checkout.calledWith(`${releaseOptions.branchPrefix}-${releaseOptions.versionToRelease}`), `Checkout ${releaseOptions.branchPrefix}-${releaseOptions.versionToRelease} has been called`);
 
     t.equal(gitClientInstance.pull.callCount, 1, 'git pull has been called.');
-    t.ok(gitClientInstance.checkout.calledWith(`${releaseOptions.branchPrefix}-${releaseOptions.versionToRelease}`), `Checkout ${releaseOptions.branchPrefix}-${releaseOptions.versionToRelease}`);
 
     t.equal(gitClientInstance.merge.callCount, 1, 'Merge has been called due to conflicts');
-    t.equal(log.warn.callCount, 1, 'Warn message has been logged');
 
+    t.equal(log.warn.callCount, 1, 'Warn message has been logged');
     t.ok(log.warn.calledWith('Please resolve the conflicts and complete the merge manually (including making the merge commit).'), 'Warn message has been logged with apropriate message');
+
     t.equal(gitClientInstance.abortMerge.callCount, 1, 'Abort merge has been called.');
     t.equal(log.exit.callCount, 1, 'Exit message has been logged');
+
+    sandbox.restore();
+    t.end();
+});
+
+test('Merging release branch into releasing branch, found conflicts and user proceed with merge and resolved conflicts', async (t) => {
+    t.plan(16);
+
+    await release.selectTaoInstance();
+    await release.selectExtension();
+
+    sandbox.stub(gitClientInstance, 'getLocalBranches').returns([releasingBranch]);
+
+    await release.selectReleasingBranch();
+
+    const callback = sandbox.stub(taoInstance, 'parseManifest');
+    callback.onCall(0).returns({ version: '0.9.0'});
+    callback.onCall(1).returns({ version: '0.8.0'});
+
+    await release.verifyReleasingBranch();
+
+    sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message }) => {
+        t.equal(type, 'confirm', 'The type should be "confirm"');
+        t.equal(name, 'isMergeDone', 'The param name should be isMergeDone');
+        t.equal(message, `Has the merge been completed manually? I need to push the branch to ${releaseOptions.origin}.`, 'Should disaplay appropriate message');
+
+        return { isMergeDone: true };
+    });
+
+    sandbox.stub(gitClientInstance, 'checkout');
+    sandbox.stub(gitClientInstance, 'pull');
+    sandbox.stub(gitClientInstance, 'merge').throws();
+    sandbox.stub(gitClientInstance, 'hasLocalChanges').returns(false);
+    sandbox.stub(gitClientInstance, 'push');
+
+    sandbox.stub(log, 'doing');
+    sandbox.stub(log, 'warn');
+    sandbox.stub(log, 'done');
+
+    await release.mergeWithReleaseBranch();
+
+    // Assertions
+    t.equal(log.doing.callCount, 1, 'Doing message has been logged');
+    t.ok(log.doing.calledWith(`Merging '${releaseBranch}' into '${releasingBranch}'.`), 'Doing message has been logged with apropriate message');
+
+    t.equal(gitClientInstance.checkout.callCount, 2, 'git checkout has been called.');
+    t.ok(gitClientInstance.checkout.calledWith(releaseBranch), `Checkout ${releaseBranch} called`);
+    t.ok(gitClientInstance.checkout.calledWith(`${releaseOptions.branchPrefix}-${releaseOptions.versionToRelease}`), `Checkout ${releaseOptions.branchPrefix}-${releaseOptions.versionToRelease} has been called`);
+
+    t.equal(gitClientInstance.pull.callCount, 1, 'git pull has been called.');
+
+    t.equal(gitClientInstance.merge.callCount, 1, 'Merge has been called due to conflicts');
+
+    t.equal(log.warn.callCount, 1, 'Warn message has been logged');
+    t.ok(log.warn.calledWith('Please resolve the conflicts and complete the merge manually (including making the merge commit).'), 'Warn message has been logged with apropriate message');
+
+    t.equal(gitClientInstance.hasLocalChanges.callCount, 1, 'hasLocalChanges has been called.');
+    t.equal(gitClientInstance.push.callCount, 1, 'git push has been called.');
+
+    t.equal(log.done.callCount, 1, 'Done message has been logged');
+    t.ok(log.done.calledWith(`'${releaseBranch}' merged into '${releaseOptions.branchPrefix}-${releaseOptions.versionToRelease}'.`), 'Done message has been logged with apropriate message');
+
+    sandbox.restore();
+    t.end();
+});
+
+test('Merging release branch into releasing branch, found conflicts and user proceed with merge without commiting local changes', async (t) => {
+    t.plan(15);
+
+    await release.selectTaoInstance();
+    await release.selectExtension();
+
+    sandbox.stub(gitClientInstance, 'getLocalBranches').returns([releasingBranch]);
+
+    await release.selectReleasingBranch();
+
+    const callback = sandbox.stub(taoInstance, 'parseManifest');
+    callback.onCall(0).returns({ version: '0.9.0'});
+    callback.onCall(1).returns({ version: '0.8.0'});
+
+    await release.verifyReleasingBranch();
+
+    sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message }) => {
+        t.equal(type, 'confirm', 'The type should be "confirm"');
+        t.equal(name, 'isMergeDone', 'The param name should be isMergeDone');
+        t.equal(message, `Has the merge been completed manually? I need to push the branch to ${releaseOptions.origin}.`, 'Should disaplay appropriate message');
+
+        return { isMergeDone: true };
+    });
+
+    sandbox.stub(gitClientInstance, 'checkout');
+    sandbox.stub(gitClientInstance, 'pull');
+    sandbox.stub(gitClientInstance, 'merge').throws();
+    sandbox.stub(gitClientInstance, 'hasLocalChanges').returns(true);
+    sandbox.stub(gitClientInstance, 'push');
+
+    sandbox.stub(log, 'doing');
+    sandbox.stub(log, 'warn');
+    sandbox.stub(log, 'exit');
+
+    await release.mergeWithReleaseBranch();
+
+    // Assertions
+    t.equal(log.doing.callCount, 1, 'Doing message has been logged');
+    t.ok(log.doing.calledWith(`Merging '${releaseBranch}' into '${releasingBranch}'.`), 'Doing message has been logged with apropriate message');
+
+    t.equal(gitClientInstance.checkout.callCount, 2, 'git checkout has been called.');
+    t.ok(gitClientInstance.checkout.calledWith(releaseBranch), `Checkout ${releaseBranch} called`);
+    t.ok(gitClientInstance.checkout.calledWith(`${releaseOptions.branchPrefix}-${releaseOptions.versionToRelease}`), `Checkout ${releaseOptions.branchPrefix}-${releaseOptions.versionToRelease} has been called`);
+
+    t.equal(gitClientInstance.pull.callCount, 1, 'git pull has been called.');
+
+    t.equal(gitClientInstance.merge.callCount, 1, 'Merge has been called due to conflicts');
+
+    t.equal(log.warn.callCount, 1, 'Warn message has been logged');
+    t.ok(log.warn.calledWith('Please resolve the conflicts and complete the merge manually (including making the merge commit).'), 'Warn message has been logged with apropriate message');
+    t.equal(gitClientInstance.hasLocalChanges.callCount, 1, 'hasLocalChanges has been called.');
+
+    t.equal(log.exit.callCount, 1, 'Exit message has been logged');
+    t.ok(log.exit.calledWith(`Cannot push changes because local branch '${releasingBranch}' still has changes to commit.`), 'Exit message has been logged with apropriate message');
 
     sandbox.restore();
     t.end();
