@@ -581,6 +581,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                         log.exit(`Cannot push changes because local branch '${data.releasingBranch}' still has changes to commit.`);
                     }
                     await gitClient.push(origin, data.releasingBranch);
+                    log.done(`'${releaseBranch}' merged into '${branchPrefix}-${data.version}'.`);
                     return;
                 }
                 await gitClient.abortMerge([releaseBranch]);
