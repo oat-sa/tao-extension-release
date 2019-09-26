@@ -4,7 +4,7 @@
   "description": "Helps you to release TAO extensions",
   "main": "index.js",
   "scripts": {
-    "test:dev": "nodemon -e js --watch tests --watch src --delay 1 --exec 'npm run test'",
+    "test:dev": "nodemon -e js --watch tests --watch src --delay 1 --exec npm run test",
     "test:cov": "nyc npm test",
     "test:cov:html": "nyc report --reporter=lcov && open-cli coverage/lcov-report/index.html",
     "test": "tape tests/**/test.js | tap-diff || true",
