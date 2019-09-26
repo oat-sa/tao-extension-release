@@ -103,9 +103,7 @@ test('Merging release branch into releasing branch, no conflicts found', async (
 
     await release.selectReleasingBranch();
 
-    const callback = sandbox.stub(taoInstance, 'parseManifest');
-    callback.onCall(0).returns({ version: '0.9.0'});
-    callback.onCall(1).returns({ version: '0.8.0'});
+    sandbox.stub(taoInstance, 'parseManifest').returns({ version: '0.9.0'});
 
     await release.verifyReleasingBranch();
 
@@ -145,9 +143,7 @@ test('Merging release branch into releasing branch, found conflicts and user abo
 
     await release.selectReleasingBranch();
 
-    const callback = sandbox.stub(taoInstance, 'parseManifest');
-    callback.onCall(0).returns({ version: '0.9.0'});
-    callback.onCall(1).returns({ version: '0.8.0'});
+    sandbox.stub(taoInstance, 'parseManifest').returns({ version: '0.9.0'});
 
     await release.verifyReleasingBranch();
 
@@ -161,7 +157,7 @@ test('Merging release branch into releasing branch, found conflicts and user abo
 
     sandbox.stub(gitClientInstance, 'checkout');
     sandbox.stub(gitClientInstance, 'pull');
-    sandbox.stub(gitClientInstance, 'merge').throws();
+    sandbox.stub(gitClientInstance, 'merge').throws({stack : 'Error: CONFLICTS:', message: 'CONFLICTS:'});
     sandbox.stub(gitClientInstance, 'abortMerge');
     sandbox.stub(log, 'doing');
     sandbox.stub(log, 'warn');
@@ -201,9 +197,7 @@ test('Merging release branch into releasing branch, found conflicts and user pro
 
     await release.selectReleasingBranch();
 
-    const callback = sandbox.stub(taoInstance, 'parseManifest');
-    callback.onCall(0).returns({ version: '0.9.0'});
-    callback.onCall(1).returns({ version: '0.8.0'});
+    sandbox.stub(taoInstance, 'parseManifest').returns({ version: '0.9.0'});
 
     await release.verifyReleasingBranch();
 
@@ -217,7 +211,7 @@ test('Merging release branch into releasing branch, found conflicts and user pro
 
     sandbox.stub(gitClientInstance, 'checkout');
     sandbox.stub(gitClientInstance, 'pull');
-    sandbox.stub(gitClientInstance, 'merge').throws();
+    sandbox.stub(gitClientInstance, 'merge').throws({stack : 'Error: CONFLICTS:', message: 'CONFLICTS:'});
     sandbox.stub(gitClientInstance, 'hasLocalChanges').returns(false);
     sandbox.stub(gitClientInstance, 'push');
 
@@ -262,9 +256,7 @@ test('Merging release branch into releasing branch, found conflicts and user pro
 
     await release.selectReleasingBranch();
 
-    const callback = sandbox.stub(taoInstance, 'parseManifest');
-    callback.onCall(0).returns({ version: '0.9.0'});
-    callback.onCall(1).returns({ version: '0.8.0'});
+    sandbox.stub(taoInstance, 'parseManifest').returns({ version: '0.9.0'});
 
     await release.verifyReleasingBranch();
 
@@ -278,7 +270,7 @@ test('Merging release branch into releasing branch, found conflicts and user pro
 
     sandbox.stub(gitClientInstance, 'checkout');
     sandbox.stub(gitClientInstance, 'pull');
-    sandbox.stub(gitClientInstance, 'merge').throws();
+    sandbox.stub(gitClientInstance, 'merge').throws({stack : 'Error: CONFLICTS:', message: 'CONFLICTS:'});
     sandbox.stub(gitClientInstance, 'hasLocalChanges').returns(true);
     sandbox.stub(gitClientInstance, 'push');
 
