@@ -78,7 +78,7 @@ test('should prompt to confirm release', async (t) => {
 
     sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message, default: defaultValue }) => {
         t.equal(type, 'confirm', 'The type should be "confirm"');
-        t.equal(name, 'mergeDone', 'The param name should be mergeDone');
+        t.equal(name, 'isMergeDone', 'The param name should be isMergeDone');
         t.equal(message, `Has the merge been completed manually? I need to push the branch to origin.`, 'Should display appropriate message');
         t.equal(defaultValue, false, 'The default response should be false');
 

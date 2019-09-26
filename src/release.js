@@ -308,12 +308,15 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                     log.warn(`Please resolve the conflicts and complete the merge manually (including making the merge commit).`);
 
                     const mergeDone = await this.promptToResolveConflicts();
-                    if (!mergeDone) {
-                        log.exit(`Not able to bring ${baseBranch} up to date. Please fix it manually.`);
-                    }
-                    else {
+                    if (mergeDone) {
+                        if (await gitClient.hasLocalChanges()) {
+                            log.exit(`Cannot push changes because local branch '${baseBranch}' still has changes to commit.`);
+                        }
                         await gitClient.push(origin, baseBranch);
                         log.done();
+                    }
+                    else {
+                        log.exit(`Not able to bring ${baseBranch} up to date. Please fix it manually.`);
                     }
                 }
                 else {
@@ -348,16 +351,16 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         /**
          * There are merge conflicts which the user must deal with manually.
          * Show a prompt to pause the program and make them confirm they have resolved conflicts.
-         * @returns {Promise}
+         * @returns {Promise<Boolean>}
          */
         async promptToResolveConflicts() {
-            const { mergeDone } = await inquirer.prompt({
+            const { isMergeDone } = await inquirer.prompt({
                 type: 'confirm',
-                name: 'mergeDone',
+                name: 'isMergeDone',
                 message: `Has the merge been completed manually? I need to push the branch to ${origin}.`,
                 default: false,
             });
-            return mergeDone;
+            return isMergeDone;
         },
 
         /**
