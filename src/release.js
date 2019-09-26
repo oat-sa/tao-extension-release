@@ -570,6 +570,8 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
                 // merge release branch into releasingBranch
                 await gitClient.merge([releaseBranch]);
+
+                log.done(`'${releaseBranch}' merged into '${data.releasingBranch}'.`);
             } catch (err) {
                 log.warn('Please resolve the conflicts and complete the merge manually (including making the merge commit).');
 
