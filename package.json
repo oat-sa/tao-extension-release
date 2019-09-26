@@ -4,10 +4,12 @@
   "description": "Helps you to release TAO extensions",
   "main": "index.js",
   "scripts": {
-    "test:dev": "nodemon -e js --watch tests --watch src --delay 1 --exec 'npm run test'",
+    "test:dev": "nodemon -e js --watch tests --watch src --delay 1 --exec npm run test",
     "test:cov": "nyc npm test",
     "test:cov:html": "nyc report --reporter=lcov && open-cli coverage/lcov-report/index.html",
-    "test": "tape 'tests/**/test.js' | tap-diff || true",
+    "test": "tape tests/**/test.js | tap-diff || true",
+    "test:unit": "tape tests/unit/**/test.js | tap-diff || true",
+    "test:integ": "tape tests/integration/git/test.js | tap-diff || true",
     "lint": "eslint index.js src/*.js tests/**/test.js"
   },
   "bin": {
@@ -40,7 +42,7 @@
     "octonode": "^0.9.4",
     "opn": "^5.1.0",
     "php-parser": "^2.0.7",
-    "simple-git": "^1.77.0",
+    "simple-git": "^1.126.0",
     "update-notifier": "^2.3.0"
   },
   "engine": {
@@ -53,6 +55,7 @@
     "nyc": "^14.1.1",
     "open-cli": "^5.0.0",
     "proxyquire": "^2.0.0",
+    "replace-in-file": "^4.1.3",
     "sinon": "^4.4.5",
     "tap-diff": "^0.1.1",
     "tape": "^4.9.0"
