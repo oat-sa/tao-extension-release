@@ -315,7 +315,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             catch (err) {
                 if (err && err.message && err.message.startsWith('CONFLICTS:')) {
                     log.error(`There were conflicts preventing the merge of ${releaseBranch} back into ${baseBranch}.`);
-                    log.warn(`Please resolve the conflicts and complete the merge manually (including making the merge commit).`);
+                    log.warn('Please resolve the conflicts and complete the merge manually (including making the merge commit).');
 
                     const mergeDone = await this.promptToResolveConflicts();
                     if (mergeDone) {
