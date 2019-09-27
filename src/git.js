@@ -218,6 +218,23 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
         },
 
         /**
+         * Merge targetBranch into your current tbranch
+         *
+         * @param {String} targetBranch - the branch to merge into the current branch
+         * @returns {Promise}
+         */
+        merge(targetBranch){
+            return git(repository).merge([targetBranch]);
+        },
+
+        /**
+         * Aborts a merge
+         */
+        abortMerge(targetBranch) {
+            return git(repository).merge([targetBranch], {'--abort': true});
+        },
+
+        /**
          * Commit and push every change on the current branch
          * @param {String} branchName - name of the branch to push to
          * @param {String} comment - commit comment
