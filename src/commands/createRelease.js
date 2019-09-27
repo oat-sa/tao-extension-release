@@ -28,6 +28,7 @@ program
     .usage('[options]')
     .option('-d, --debug', 'output extra debugging')
     // options with defaults
+    .option('--base-branch <branch>', 'the source branch for the release', 'develop')
     .option('--branch-prefix <prefix>', 'the prefix of the branch created for releasing', 'release')
     .option('--origin <remotename>', 'the name of the remote repo', 'origin')
     .option('--release-branch <branch>', 'the target branch for the release PR', 'master')

@@ -58,5 +58,3 @@ typings/
 .env
 
 .nyc_output
-
-tests/integration/temp
