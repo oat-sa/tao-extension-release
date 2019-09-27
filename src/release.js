@@ -308,9 +308,31 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         async mergeBack() {
             log.doing(`Merging back ${releaseBranch} into ${baseBranch}`);
 
-            await gitClient.mergeBack(baseBranch, releaseBranch);
+            try {
+                await gitClient.mergeBack(baseBranch, releaseBranch);
+                log.done();
+            }
+            catch (err) {
+                if (err && err.message && err.message.startsWith('CONFLICTS:')) {
+                    log.error(`There were conflicts preventing the merge of ${releaseBranch} back into ${baseBranch}.`);
+                    log.warn('Please resolve the conflicts and complete the merge manually (including making the merge commit).');
 
-            log.done();
+                    const mergeDone = await this.promptToResolveConflicts();
+                    if (mergeDone) {
+                        if (await gitClient.hasLocalChanges()) {
+                            log.exit(`Cannot push changes because local branch '${baseBranch}' still has changes to commit.`);
+                        }
+                        await gitClient.push(origin, baseBranch);
+                        log.done();
+                    }
+                    else {
+                        log.exit(`Not able to bring ${baseBranch} up to date. Please fix it manually.`);
+                    }
+                }
+                else {
+                    log.exit(`An error occurred: ${err}`);
+                }
+            }
         },
 
         /**

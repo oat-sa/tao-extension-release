@@ -121,7 +121,7 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
          * @param {String} branchName - the branch name
          * @returns {Promise}
          */
-        pull(branchName){
+        pull(branchName){ // TODO: rename fetchAndPull
 
             return git(repository).fetch(origin)
                 .then(() => this.getLocalBranches() )
@@ -201,7 +201,6 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
          * @returns {Promise}
          */
         mergeBack(baseBranch, releaseBranch){
-
             return git(repository).checkout(baseBranch)
                 .then( () => git(repository).pull(origin, baseBranch) )
                 .then( () => git(repository).merge([releaseBranch]) )
