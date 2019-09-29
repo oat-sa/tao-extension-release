@@ -19,6 +19,14 @@
 /**
  * This module tests the src/git.js module against the repos provided in fixtures
  *
+ * When running each test:
+ * - folders and files from `tests/integration/fixtures` will be copied into `tests/integration/work`
+ * - a git client will be used to set up 3 temporary git repos:
+ *   - remoteRepo (a bare repo)
+ *   - localRepo (1st working copy of remoteRepo)
+ *   - secondLocalRepo (2nd working copy of remoteRepo)
+ * - after the tests, the `work` folder will be cleared, destroying the temporary repos
+ *
  * @author Martin Nicholson <martin@taotesting.com>
  */
 
@@ -32,48 +40,38 @@ const simpleGit = require('simple-git/promise');
 
 const localRepoFixturePath = path.resolve(__dirname, '../fixtures/localRepo');
 const remoteRepoFixturePath = path.resolve(__dirname, '../fixtures/remoteRepo');
-// const secondLocalRepoFixturePath = path.resolve(__dirname, '../fixtures/secondLocalRepo');
+const secondLocalRepoFixturePath = path.resolve(__dirname, '../fixtures/secondLocalRepo');
 const workDir = path.resolve(__dirname, '../work');
 const localRepoPath = path.join(workDir, 'localRepo');
 const remoteRepoPath = path.join(workDir, 'remoteRepo');
-// const secondLocalRepoPath = path.join(workDir, 'secondLocalRepo');
+const secondLocalRepoPath = path.join(workDir, 'secondLocalRepo');
 
 /**
- * Lifecycle
+ * Lifecycle functions
  */
 const setUp = async function setUp() {
 
     tearDown();
     try {
-        // copy fixtures/localRepo and fixtures/remoteRepo into work dir
-        // the working-remote link between them is even preserved!
+        // copy 3 folders from `fixtures` into work dir
         fs.copySync(localRepoFixturePath, localRepoPath);
-        fs.copySync(remoteRepoFixturePath, remoteRepoPath);
+        fs.copySync(remoteRepoFixturePath, remoteRepoPath); // empty
+        fs.copySync(secondLocalRepoFixturePath, secondLocalRepoPath); // empty
         console.log('fixture repos copied to workDir');
 
         const localGitHelper = simpleGit(localRepoPath);
         const remoteGitHelper = simpleGit(remoteRepoPath);
 
         // initialise remoteRepo (bare)
-        process.chdir(remoteRepoPath);
         await remoteGitHelper.init(true);
-
-        verifyRemote(remoteGitHelper);
+        await verifyRemote(remoteGitHelper);
 
         // initialise localRepo
-        process.chdir(localRepoPath);
         await localGitHelper.init();
-
-        verifyLocal(localGitHelper);
+        await verifyLocal(localGitHelper);
 
         // connect local to remote
-        await localGitHelper.addRemote('origin', '../remoteRepo');
-
-        // checkout develop, add all local files, initial commit, and push
-        await localGitHelper.checkoutLocalBranch('develop');
-        await localGitHelper.add('.');
-        await localGitHelper.commit('Initial commit');
-        await localGitHelper.push('origin', 'develop');
+        await localGitHelper.addRemote('origin', remoteRepoPath);
 
         // checkout master, add all local files, initial commit, and push
         await localGitHelper.checkoutLocalBranch('master');
@@ -81,21 +79,32 @@ const setUp = async function setUp() {
         await localGitHelper.commit('Initial commit');
         await localGitHelper.push('origin', 'master');
 
-        // make a remote-only branch
-        await localGitHelper.checkoutLocalBranch('remote-only');
-        await localGitHelper.push('origin', 'remote-only');
-        // delete the branch locally
-        await localGitHelper.checkout('master');
-        await localGitHelper.branch('-D remote-only');
-
-        // make a remote-only branch with new content
-        await localGitHelper.checkoutLocalBranch('remote-is-ahead');
-        fs.writeFileSync('remote-file.txt', 'file content');
+        // checkout develop, add all local files, initial commit, and push
+        await localGitHelper.checkoutLocalBranch('develop');
         await localGitHelper.add('.');
-        await localGitHelper.commit('Add text file');
+        await localGitHelper.commit('Initial commit');
+        await localGitHelper.push('origin', 'develop');
+
+        // prepare remote-is-ahead branch
+        await localGitHelper.checkoutLocalBranch('remote-is-ahead'); // creates in parent!
         await localGitHelper.push('origin', 'remote-is-ahead');
 
-        await localGitHelper.checkout('master');
+        // clone remoteRepo to secondLocalRepo
+        await simpleGit().clone(remoteRepoPath, secondLocalRepoPath);
+        const secondLocalGitHelper = simpleGit(secondLocalRepoPath);
+        await verifyLocal(secondLocalGitHelper);
+
+        // make a branch unknown to localRepo
+        await secondLocalGitHelper.checkoutLocalBranch('remote-only');
+        await secondLocalGitHelper.push('origin', 'remote-only');
+
+        // make a remote branch with different content
+        await secondLocalGitHelper.checkoutLocalBranch('remote-is-ahead');
+        fs.writeFileSync(path.join(secondLocalRepoPath, 'data.txt'), 'new content');
+        await secondLocalGitHelper.add('data.txt');
+        await secondLocalGitHelper.commit('Update data.txt');
+        await secondLocalGitHelper.push('origin', 'remote-is-ahead');
+
     }
     catch (err) {
         console.error(err);
@@ -108,11 +117,11 @@ const verifyLocal = async function verifyLocal(gitHelper) {
     if (isBare.trim() === 'true') {
         throw new Error('The localRepo appears to be bare');
     }
-    // verify repo is not the wrong one!
+    // make sure repo is not the wrong one!
     const remotes = await gitHelper.getRemotes(true);
     if (remotes.some(r => r.refs.push.includes('github.com'))) {
         console.log('remotes', remotes);
-        throw new Error(`I won't test against a github-connected repo!`);
+        throw new Error('I won\'t test against a github-connected repo!');
     }
 };
 
@@ -121,7 +130,7 @@ const verifyRemote = async function verifyRemote(gitHelper) {
     if (isBare.trim() !== 'true') {
         throw new Error('The remoteRepo does not appear to be bare');
     }
-    // verify repo is not the wrong one!
+    // make sure repo is not the wrong one!
     const remotes = await gitHelper.getRemotes(true);
     if (remotes.filter(r => r.name).length) {
         throw new Error(`The remoteRepo should have 0 remotes, ${remotes.length} found`);
@@ -130,19 +139,19 @@ const verifyRemote = async function verifyRemote(gitHelper) {
 
 const tearDown = function tearDown() {
     // empty temp dir
-    console.log('emptying workDir...');
     try {
         fs.emptyDirSync(workDir);
+        console.log('emptied workDir');
     }
     catch (err) {
         throw new Error('Error removing test repos');
     }
 };
 
-const getCurrentBranch = async function getCurrentBranch() {
+const getCurrentBranch = async function getCurrentBranch(gitHelper) {
     const currentBranch = await gitHelper.raw(['symbolic-ref', '--short', 'HEAD']);
     return currentBranch.trim();
-}
+};
 
 test.onFinish( tearDown );
 test.onFailure( tearDown );
@@ -175,7 +184,7 @@ test('creating/deleting branch', async t => {
     const gitHelper = simpleGit(localRepoPath); // helper lib
     await verifyLocal(gitHelper);
 
-    testBranch = 'test1';
+    const testBranch = 'test1';
     t.notOk(await localRepo.hasBranch(testBranch), `localRepo does not hasBranch ${testBranch}`);
 
     // create branch & switch to it
@@ -190,7 +199,7 @@ test('creating/deleting branch', async t => {
 
     // clean up
     await gitHelper.checkout('master');
-    const deleted = await localRepo.deleteBranch(testBranch);;
+    const deleted = await localRepo.deleteBranch(testBranch);
     t.equal(deleted.branch, testBranch, `deleted branch ${testBranch}`);
 });
 
@@ -226,7 +235,7 @@ test('creating/deleting tag', async t => {
     t.notOk(await remoteRepo.hasTag('tag1'), 'tag1 gone on remote');
 });
 
-test('hasSignKey (false)', async t => {
+test('hasSignKey', async t => {
     await setUp();
     t.plan(2);
     const localRepo = gitFactory(localRepoPath); // module we're testing
@@ -246,32 +255,31 @@ test('pull from remote', async t => {
     const gitHelper = simpleGit(localRepoPath); // helper lib
     await verifyLocal(gitHelper);
 
-    // equal branch
+    // pull equal branch
     const branch1 = 'master';
     const pull1 = await localRepo.pull(branch1);
-    t.equal(getCurrentBranch(), branch1, `on ${branch1} branch`);
+    t.equal(await getCurrentBranch(gitHelper), branch1, `on ${branch1} branch`);
     t.equal(pull1.files.length, 0, '0 files changed');
-    t.equal(pull1.summary.insertions, 0, 'correct insertions');
-    t.equal(pull1.summary.deletions, 0, 'correct deletions');
+    t.equal(pull1.summary.insertions, 0, '0 insertions');
+    t.equal(pull1.summary.deletions, 0, '0 deletions');
 
-    // locally unknown remote branch
+    // pull locally unknown remote branch
     const branch2 = 'remote-only';
     t.notOk(await localRepo.hasBranch(branch2), `branch ${branch2} unknown to local`);
     await localRepo.pull(branch2);
-    currentBranch = await gitHelper.raw(['symbolic-ref', '--short', 'HEAD']);
-    t.equal(currentBranch.trim(), branch2, `on ${branch2} branch`);
+    t.equal(await getCurrentBranch(gitHelper), branch2, `on ${branch2} branch`);
 
-    // remote branch with changes
+    // pull known remote branch with changes
     const branch3 = 'remote-is-ahead';
     const pull3 = await localRepo.pull(branch3);
-    currentBranch = await gitHelper.raw(['symbolic-ref', '--short', 'HEAD']);
-    t.equal(currentBranch.trim(), branch3, `on ${branch3} branch`);
+    t.equal(await getCurrentBranch(gitHelper), branch3, `on ${branch3} branch`);
+
     t.equal(pull3.files.length, 1, '1 file changed');
-    t.equal(pull3.summary.insertions, 1, 'correct insertions');
-    t.equal(pull3.summary.deletions, 0, 'correct deletions');
+    t.equal(pull3.summary.insertions, 1, '1 insertions');
+    t.equal(pull3.summary.deletions, 1, '1 deletions');
 });
 
-test.skip('branch, edit, commit, diff, push', async t => {
+test('branch, edit, commit, diff, push', async t => {
     await setUp();
     t.plan(10);
     const localRepo = gitFactory(localRepoPath); // module we're testing
@@ -287,7 +295,7 @@ test.skip('branch, edit, commit, diff, push', async t => {
     t.equal(currentBranch.trim(), 'develop', 'on develop branch');
 
     // create branch & switch to it
-    const newBranch = 'testing/TAO-xyz/my-feature'
+    const newBranch = 'testing/TAO-xyz/my-feature';
     await localRepo.localBranch(newBranch);
     t.ok(await localRepo.hasBranch(newBranch), 'localRepo has new branch');
     currentBranch = await gitHelper.raw(['symbolic-ref', '--short', 'HEAD']);
