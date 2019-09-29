@@ -198,7 +198,7 @@ test('creating/deleting branch', async t => {
     await gitHelper.push('origin', testBranch);
 
     // clean up
-    await gitHelper.checkout('master');
+    await localRepo.checkout('master');
     const deleted = await localRepo.deleteBranch(testBranch);
     t.equal(deleted.branch, testBranch, `deleted branch ${testBranch}`);
 });
@@ -325,4 +325,28 @@ test('branch, edit, commit, diff, push', async t => {
     const remoteDiff = await remoteRepo.hasDiff(newBranch, 'develop');
     t.ok(remoteDiff && remoteDiff.length, 'the branches have a difference on remote');
 
+});
+
+test('mergeBack from master to develop', async t => {
+    await setUp();
+    t.plan(2);
+    const localRepo = gitFactory(localRepoPath); // module we're testing
+    const gitHelper = simpleGit(localRepoPath); // helper lib
+    await verifyLocal(gitHelper);
+
+    await localRepo.checkout('master');
+    const manifest = path.join(localRepoPath, 'manifest.php');
+    await replace({
+        files: manifest,
+        from: '1.2.3',
+        to: '1.3.0',
+    });
+    await gitHelper.add(manifest);
+    await gitHelper.commit('To v1.3.0');
+    const diff1 = await gitHelper.diff(['develop', 'master']);
+    t.ok(diff1.trim().length > 0, 'develop not equal with master');
+
+    await localRepo.mergeBack('develop', 'master');
+    const diff2 = await gitHelper.diff(['develop', 'master']);
+    t.equal(diff2.trim().length, 0, 'develop equal with master');
 });
