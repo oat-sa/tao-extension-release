@@ -60,7 +60,7 @@ async function releaseExtension() {
         await release.compileAssets();
         await release.updateTranslations();
 
-        log.done('Release branch prepared, and pushed to remote. Bye!').exit();
+        log.done('Release branch prepared, and pushed to remote.').exit();
     } catch (error) {
         log.error(error);
     }

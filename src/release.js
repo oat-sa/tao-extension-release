@@ -653,7 +653,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             const { isOldWayReleaseSelected } = await inquirer.prompt({
                 type: 'confirm',
                 name: 'isOldWayReleaseSelected',
-                message: 'This release process is [deprecated]. Are you sure you want to continue?',
+                message: 'This release process is deprecated. Are you sure you want to continue?',
                 default: false
             });
 
