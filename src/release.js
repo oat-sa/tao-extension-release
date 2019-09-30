@@ -476,8 +476,10 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             if (versionToRelease) {
                 const branchName = `remotes/${origin}/${branchPrefix}-${versionToRelease}`;
                 if (allBranches.includes(branchName)) {
-                    data.releasingBranch = branchName;
+                    data.releasingBranch = `${branchPrefix}-${versionToRelease}`;
                     data.version = versionToRelease;
+                    data.tag = `v${versionToRelease}`;
+
                 } else {
                     log.exit(`Cannot find the branch '${branchName}'.`);
                 }
@@ -486,8 +488,10 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 const possibleBranches = allBranches.filter(branch => branch.startsWith(partialBranchName));
                 const highestVersionBranch = this.getHighestVersionBranch(possibleBranches);
                 if (highestVersionBranch && highestVersionBranch.branch && highestVersionBranch.version) {
-                    data.releasingBranch = highestVersionBranch.branch;
+                    data.releasingBranch = `${branchPrefix}-${highestVersionBranch.version}`;
                     data.version = highestVersionBranch.version;
+                    data.tag = `v${highestVersionBranch.version}`;
+
                 } else {
                     log.exit(`Cannot find any branches matching '${partialBranchName}'.`);
                 }
@@ -640,6 +644,9 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             await gitClient.checkout(releaseBranch);
             const releaseBranchManifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
             if (compareVersions(releasingBranchManifest.version, releaseBranchManifest.version) === 1 ) {
+                data.lastVersion = releaseBranchManifest.version;
+                data.lastTag = `v${releaseBranchManifest.version}`;
+
                 log.done(`Branch ${data.releasingBranch} is valid.`);
             } else {
                 log.exit(`Branch '${data.releasingBranch}' cannot be released because its manifest version (${data.version}) is not greater than the manifest version of '${releaseBranch}' (${releaseBranchManifest.version}).`);
