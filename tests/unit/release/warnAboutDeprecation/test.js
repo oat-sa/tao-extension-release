@@ -62,7 +62,7 @@ test('should prompt to confirm release', async (t) => {
     sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message }) => {
         t.equal(type, 'confirm', 'The type should be "confirm"');
         t.equal(name, 'isOldWayReleaseSelected', 'The param name should be isOldWayReleaseSelected');
-        t.equal(message, 'This release process is [deprecated]. Are you sure you want to continue?', 'Should disaplay appropriate message');
+        t.equal(message, 'This release process is deprecated. Are you sure you want to continue?', 'Should disaplay appropriate message');
 
         return { go: true };
     });
