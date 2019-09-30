@@ -62,22 +62,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
     return {
 
         /**
-         * Prompt user if he really want to use deprecated way to do the release
-         */
-        async warnAboutDeprecation() {
-            const { isOldWayReleaseSelected } = await inquirer.prompt({
-                type: 'confirm',
-                name: 'isOldWayReleaseSelected',
-                message: 'This release process is [deprecated]. Are you sure you want to continue?',
-                default: false
-            });
-
-            if (!isOldWayReleaseSelected) {
-                log.exit();
-            }
-        },
-
-        /**
          * Compile and publish extension assets
          */
         async compileAssets() {
@@ -102,6 +86,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Prompt user to confirm release
+         * @deprecated - only used in oldWayRelease for backward compatibility / user experience
          */
         async confirmRelease() {
             const { go } = await inquirer.prompt({
@@ -189,6 +174,32 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
+         * Check if release tag exists
+         */
+        async doesTagExists() {
+            log.doing(`Check if tag ${data.tag} exists`);
+
+            if (await gitClient.hasTag(data.tag)) {
+                log.exit(`The tag ${data.tag} already exists`);
+            }
+
+            log.done();
+        },
+
+        /**
+         * Check if release branch exists
+         */
+        async doesReleaseBranchExists() {
+            log.doing(`Check if branch ${data.releasingBranch} exists`);
+
+            if (await gitClient.hasBranch(data.releasingBranch)) {
+                log.exit(`The branch ${data.releasingBranch} already exists`);
+            }
+
+            log.done();
+        },
+
+        /**
          * Extract release notes from release pull request
          */
         async extractReleaseNotes() {
@@ -221,29 +232,29 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
-         * Check if release tag exists
+         * Gets the branch with highest version
+         * @private
+         * @param possibleBranches - list of branches
+         * @returns {Object}
          */
-        async doesTagExists() {
-            log.doing(`Check if tag ${data.tag} exists`);
+        getHighestVersionBranch(possibleBranches = []) {
+            log.doing('Selecting releasing branch from the biggest version found in branches.');
 
-            if (await gitClient.hasTag(data.tag)) {
-                log.exit(`The tag ${data.tag} already exists`);
-            }
+            const semVerRegex = /(?:(\d+)\.)?(?:(\d+)\.)?(?:(\d+)\.\d+)(-[\w.]+)?/g;
+            const versionedBranches = possibleBranches.filter(branch => branch.match(semVerRegex));
 
-            log.done();
-        },
+            let version = '0.0';
+            let branch;
 
-        /**
-         * Check if release branch exists
-         */
-        async doesReleaseBranchExists() {
-            log.doing(`Check if branch ${data.releasingBranch} exists`);
+            versionedBranches.map(b => {
+                const branchVersion = b.replace(`remotes/${origin}/${branchPrefix}-`, '');
+                if (compareVersions(branchVersion, version) === 1) {
+                    branch = b;
+                    version = branchVersion;
+                }
+            });
 
-            if (await gitClient.hasBranch(data.releasingBranch)) {
-                log.exit(`The branch ${data.releasingBranch} already exists`);
-            }
-
-            log.done();
+            return { branch, version };
         },
 
         /**
@@ -297,9 +308,31 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         async mergeBack() {
             log.doing(`Merging back ${releaseBranch} into ${baseBranch}`);
 
-            await gitClient.mergeBack(baseBranch, releaseBranch);
+            try {
+                await gitClient.mergeBack(baseBranch, releaseBranch);
+                log.done();
+            }
+            catch (err) {
+                if (err && err.message && err.message.startsWith('CONFLICTS:')) {
+                    log.error(`There were conflicts preventing the merge of ${releaseBranch} back into ${baseBranch}.`);
+                    log.warn('Please resolve the conflicts and complete the merge manually (including making the merge commit).');
 
-            log.done();
+                    const mergeDone = await this.promptToResolveConflicts();
+                    if (mergeDone) {
+                        if (await gitClient.hasLocalChanges()) {
+                            log.exit(`Cannot push changes because local branch '${baseBranch}' still has changes to commit.`);
+                        }
+                        await gitClient.push(origin, baseBranch);
+                        log.done();
+                    }
+                    else {
+                        log.exit(`Not able to bring ${baseBranch} up to date. Please fix it manually.`);
+                    }
+                }
+                else {
+                    log.exit(`An error occurred: ${err}`);
+                }
+            }
         },
 
         /**
@@ -323,6 +356,68 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             await gitClient.mergePr(releaseBranch, data.releasingBranch);
 
             log.done('PR merged');
+        },
+
+        /**
+         * Merge release branch into releasing branch and ask user to resolve conflicts manually if any
+         */
+        async mergeWithReleaseBranch() {
+            log.doing(`Merging '${releaseBranch}' into '${data.releasingBranch}'.`);
+
+            // checkout master
+            await gitClient.checkout(releaseBranch);
+
+            // pull master
+            await gitClient.pull(releaseBranch);
+
+            // checkout releasingBranch
+            await gitClient.checkout(`${branchPrefix}-${data.version}`);
+
+            try {
+                // merge release branch into releasingBranch
+                await gitClient.merge([releaseBranch]);
+
+                log.done(`'${releaseBranch}' merged into '${branchPrefix}-${data.version}'.`);
+            } catch (err) {
+                // error is about merging conflicts
+                if (err && err.message && err.message.startsWith('CONFLICTS:')) {
+                    log.warn('Please resolve the conflicts and complete the merge manually (including making the merge commit).');
+
+                    const mergeDone = await this.promptToResolveConflicts();
+                    if (mergeDone) {
+
+                        if (await gitClient.hasLocalChanges()) {
+                            log.exit(`Cannot push changes because local branch '${data.releasingBranch}' still has changes to commit.`);
+                        } else {
+                            await gitClient.push(origin, data.releasingBranch);
+                            log.done(`'${releaseBranch}' merged into '${branchPrefix}-${data.version}'.`);
+                        }
+
+                    } else {
+                        await gitClient.abortMerge([releaseBranch]);
+                        log.exit();
+                    }
+
+                } else {
+                    log.exit(`An error occurred: ${err}`);
+                }
+            }
+        },
+
+        /**
+         * Show a prompt to pause the program and make them confirm they have resolved conflicts.
+         * @private
+         * @returns {Promise}
+         */
+        async promptToResolveConflicts() {
+            const { isMergeDone } = await inquirer.prompt({
+                name: 'isMergeDone',
+                type: 'confirm',
+                message: `Has the merge been completed manually? I need to push the branch to ${origin}.`,
+                default: false
+            });
+
+            return isMergeDone;
         },
 
         /**
@@ -366,6 +461,41 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             };
 
             await config.write(data);
+        },
+
+        /**
+         * Select releasing branch
+         * - picking version-to-release CLI option and find branch with version on it
+         * - or find the biggest version and find branch with version on it
+         */
+        async selectReleasingBranch() {
+            // Filter all branches to the ones that have release in the name
+            await gitClient.fetch({'--prune': true});
+            const allBranches = await gitClient.getLocalBranches();
+
+            if (versionToRelease) {
+                const branchName = `remotes/${origin}/${branchPrefix}-${versionToRelease}`;
+                if (allBranches.includes(branchName)) {
+                    data.releasingBranch = branchName;
+                    data.version = versionToRelease;
+                } else {
+                    log.exit(`Cannot find the branch '${branchName}'.`);
+                }
+            } else {
+                const partialBranchName = `remotes/${origin}/${branchPrefix}-`;
+                const possibleBranches = allBranches.filter(branch => branch.startsWith(partialBranchName));
+                const highestVersionBranch = this.getHighestVersionBranch(possibleBranches);
+                if (highestVersionBranch && highestVersionBranch.branch && highestVersionBranch.version) {
+                    data.releasingBranch = highestVersionBranch.branch;
+                    data.version = highestVersionBranch.version;
+                } else {
+                    log.exit(`Cannot find any branches matching '${partialBranchName}'.`);
+                }
+            }
+
+            if (data.releasingBranch) {
+                log.done(`Branch ${data.releasingBranch} is selected.`);
+            }
         },
 
         /**
@@ -490,41 +620,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
-         * Select releasing branch
-         * - picking version-to-release CLI option and find branch with version on it
-         * - or find the biggest version and find branch with version on it
-         */
-        async selectReleasingBranch() {
-            // Filter all branches to the ones that have release in the name
-            await gitClient.fetch({'--prune': true});
-            const allBranches = await gitClient.getLocalBranches();
-
-            if (versionToRelease) {
-                const branchName = `remotes/${origin}/${branchPrefix}-${versionToRelease}`;
-                if (allBranches.includes(branchName)) {
-                    data.releasingBranch = branchName;
-                    data.version = versionToRelease;
-                } else {
-                    log.exit(`Cannot find the branch '${branchName}'.`);
-                }
-            } else {
-                const partialBranchName = `remotes/${origin}/${branchPrefix}-`;
-                const possibleBranches = allBranches.filter(branch => branch.startsWith(partialBranchName));
-                const highestVersionBranch = this.getHighestVersionBranch(possibleBranches);
-                if (highestVersionBranch && highestVersionBranch.branch && highestVersionBranch.version) {
-                    data.releasingBranch = highestVersionBranch.branch;
-                    data.version = highestVersionBranch.version;
-                } else {
-                    log.exit(`Cannot find any branches matching '${partialBranchName}'.`);
-                }
-            }
-
-            if (data.releasingBranch) {
-                log.done(`Branch ${data.releasingBranch} is selected.`);
-            }
-        },
-
-        /**
          * Verify that the version that we are going to release is valid
          * - is the same on branch name and manifest
          * - is bigger than current release branch version.
@@ -551,31 +646,21 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             }
         },
 
-        // Private methods
-
         /**
-         * Gets the branch with highest version
-         * @param possibleBranches - list of branches
-         * @returns {Object}
+         * Prompt user if he really want to use deprecated way to do the release
          */
-        getHighestVersionBranch(possibleBranches = []) {
-            log.doing('Selecting releasing branch from the biggest version found in branches.');
-
-            const semVerRegex = /(?:(\d+)\.)?(?:(\d+)\.)?(?:(\d+)\.\d+)(-[\w.]+)?/g;
-            const versionedBranches = possibleBranches.filter(branch => branch.match(semVerRegex));
-
-            let version = '0.0';
-            let branch;
-
-            versionedBranches.map(b => {
-                const branchVersion = b.replace(`remotes/${origin}/${branchPrefix}-`, '');
-                if (compareVersions(branchVersion, version) === 1) {
-                    branch = b;
-                    version = branchVersion;
-                }
+        async warnAboutDeprecation() {
+            const { isOldWayReleaseSelected } = await inquirer.prompt({
+                type: 'confirm',
+                name: 'isOldWayReleaseSelected',
+                message: 'This release process is [deprecated]. Are you sure you want to continue?',
+                default: false
             });
 
-            return { branch, version };
+            if (!isOldWayReleaseSelected) {
+                log.exit();
+            }
         }
+
     };
 };
