@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -62,7 +60,7 @@ async function releaseExtension() {
 
         log.done('Release branch prepared, and pushed to remote.').exit();
     } catch (error) {
-        log.error(error);
+        log.error(error).exit();
     }
 }
 

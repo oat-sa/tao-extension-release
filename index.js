@@ -34,7 +34,7 @@ const commander = require('commander');
 const program = new commander.Command();
 
 program
-    .version('0.5.0')
+    .version(pkg.version)
     .name('taoRelease')
     .usage('command [options]')
     .command('prepareRelease', 'prepare an extension release in a local branch', {
