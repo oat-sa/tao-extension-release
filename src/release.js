@@ -246,9 +246,9 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             let version = '0.0';
             let branch;
 
-            versionedBranches.map(b => {
+            versionedBranches.forEach(b => {
                 const branchVersion = b.replace(`remotes/${origin}/${branchPrefix}-`, '');
-                if (compareVersions(branchVersion, version) === 1) {
+                if (compareVersions(branchVersion, version) > 0) {
                     branch = b;
                     version = branchVersion;
                 }
