@@ -40,18 +40,35 @@ The `taoRelease oldWayRelease` command launches the sequence used by the old ver
 
 Commandline arguments to give you more control over the parameters of the release:
 
-| option | description | default | prepareRelease | createRelease | oldWayRelease |
-|---|---|---|---|---|---|
-|`--base-branch`|branch to release from|`develop`|✅|✅|✅|
-|`--branch-prefix`|releasing branch prefix|`release`|✅|✅|✅|
-|`--origin`|git repository remote name|`origin`|✅|✅|✅|
-|`--release-branch`|branch to release to|`master`|✅|✅|✅|
-|`--www-user`|www user|`www-data`|✅|✅|✅|
-|`--path-to-tao`|relative or absolute filesystem path|(prompted)|✅|✅|❌|
-|`--extension-to-release`|extension name|(prompted)|✅|✅|❌|
-|`--version-to-release`|which branch to look for|(prompted)|❌|✅|❌|
-|`--update-translations`|should translation files be updated?|(prompted)|✅|✅|❌|
-|`--release-comment`|comment to attach to the release|(prompted)|❌|✅|❌|
+### Common options
+
+| option | description | default |
+|---|---|---|
+|`--base-branch <branch>`|branch to release from|`develop`|
+|`--branch-prefix <prefix>`|releasing branch prefix|`release`|
+|`--origin <remote>`|git repository remote name|`origin`|
+|`--release-branch <branch>`|branch to release to|`master`|
+|`--www-user <user>`|the system user used to launch PHP commands|`www-data`|
+
+### prepareRelease extra options
+
+| option | description | default |
+|---|---|---|
+|`--path-to-tao <path>`|relative or absolute filesystem path|(none - prompted)|
+|`--extension-to-release <extension>`|extension name (e.g. taoFoobar)|(none - prompted)|
+|`--update-translations`|flag to indicate translation files should be updated|(none - prompted)|
+
+### createRelease extra options
+
+| option | description | default |
+|---|---|---|
+|`--path-to-tao <path>`|relative or absolute filesystem path|(none - prompted)|
+|`--extension-to-release <extension>`|extension name (e.g. taoFoobar)|(none - prompted)|
+|`--version-to-release <version>`|version of remote branch to retrieve (e.g. 1.2.3)|(none - prompted)|
+|`--update-translations`|flag to indicate translation files should be updated|(none - prompted)|
+|`--release-comment <comment>`|comment to attach to the release|(none - prompted)|
+
+For absolute control, specify both `--branch-prefix` and `--version-to-release`. That way, the program is guaranteed to retrieve the remote branch named e.g. `release-1.2.3`, which could be helpful if there are multiple remote branches with similar names.
 
 ## Development
 
