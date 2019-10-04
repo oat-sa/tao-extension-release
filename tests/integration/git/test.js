@@ -39,8 +39,6 @@ const gitFactory = require('../../../src/git.js');
 const simpleGit = require('simple-git/promise');
 
 const localRepoFixturePath = path.resolve(__dirname, '../fixtures/localRepo');
-const remoteRepoFixturePath = path.resolve(__dirname, '../fixtures/remoteRepo');
-const secondLocalRepoFixturePath = path.resolve(__dirname, '../fixtures/secondLocalRepo');
 const workDir = path.resolve(__dirname, '../work');
 const localRepoPath = path.join(workDir, 'localRepo');
 const remoteRepoPath = path.join(workDir, 'remoteRepo');
@@ -53,11 +51,11 @@ const setUp = async function setUp() {
 
     tearDown();
     try {
-        // copy 3 folders from `fixtures` into work dir
+        // copy 1 folder from `fixtures` into work dir, and make 2 empty folders
         fs.copySync(localRepoFixturePath, localRepoPath);
-        fs.copySync(remoteRepoFixturePath, remoteRepoPath); // empty
-        fs.copySync(secondLocalRepoFixturePath, secondLocalRepoPath); // empty
-        console.log('fixture repos copied to workDir');
+        fs.emptyDirSync(remoteRepoPath);
+        fs.emptyDirSync(secondLocalRepoPath);
+        console.log('fixture repos created in workDir');
 
         const localGitHelper = simpleGit(localRepoPath);
         const remoteGitHelper = simpleGit(remoteRepoPath);
@@ -86,7 +84,7 @@ const setUp = async function setUp() {
         await localGitHelper.push('origin', 'develop');
 
         // prepare remote-is-ahead branch
-        await localGitHelper.checkoutLocalBranch('remote-is-ahead'); // creates in parent!
+        await localGitHelper.checkoutLocalBranch('remote-is-ahead');
         await localGitHelper.push('origin', 'remote-is-ahead');
 
         // clone remoteRepo to secondLocalRepo
