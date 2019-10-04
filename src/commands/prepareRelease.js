@@ -49,7 +49,6 @@ async function prepareRelease() {
         await release.selectTaoInstance();
         await release.selectExtension();
         await release.verifyLocalChanges();
-        await release.signTags();
         await release.verifyBranches();
         await release.doesTagExists();
         await release.doesReleaseBranchExists();
