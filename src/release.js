@@ -234,8 +234,8 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         /**
          * Gets the branch with highest version
          * @private
-         * @param possibleBranches - list of branches
-         * @returns {Object}
+         * @param {String[]} - the list of branches to compare
+         * @returns {Object} with the highest branch and version as property
          */
         getHighestVersionBranch(possibleBranches = []) {
             log.doing('Selecting releasing branch from the biggest version found in branches.');
@@ -246,9 +246,9 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             let version = '0.0';
             let branch;
 
-            versionedBranches.map(b => {
+            versionedBranches.forEach(b => {
                 const branchVersion = b.replace(`remotes/${origin}/${branchPrefix}-`, '');
-                if (compareVersions(branchVersion, version) === 1) {
+                if (compareVersions(branchVersion, version) > 0) {
                     branch = b;
                     version = branchVersion;
                 }
@@ -476,8 +476,10 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             if (versionToRelease) {
                 const branchName = `remotes/${origin}/${branchPrefix}-${versionToRelease}`;
                 if (allBranches.includes(branchName)) {
-                    data.releasingBranch = branchName;
+                    data.releasingBranch = `${branchPrefix}-${versionToRelease}`;
                     data.version = versionToRelease;
+                    data.tag = `v${versionToRelease}`;
+
                 } else {
                     log.exit(`Cannot find the branch '${branchName}'.`);
                 }
@@ -486,8 +488,10 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 const possibleBranches = allBranches.filter(branch => branch.startsWith(partialBranchName));
                 const highestVersionBranch = this.getHighestVersionBranch(possibleBranches);
                 if (highestVersionBranch && highestVersionBranch.branch && highestVersionBranch.version) {
-                    data.releasingBranch = highestVersionBranch.branch;
+                    data.releasingBranch = `${branchPrefix}-${highestVersionBranch.version}`;
                     data.version = highestVersionBranch.version;
+                    data.tag = `v${highestVersionBranch.version}`;
+
                 } else {
                     log.exit(`Cannot find any branches matching '${partialBranchName}'.`);
                 }
@@ -640,6 +644,9 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             await gitClient.checkout(releaseBranch);
             const releaseBranchManifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
             if (compareVersions(releasingBranchManifest.version, releaseBranchManifest.version) === 1 ) {
+                data.lastVersion = releaseBranchManifest.version;
+                data.lastTag = `v${releaseBranchManifest.version}`;
+
                 log.done(`Branch ${data.releasingBranch} is valid.`);
             } else {
                 log.exit(`Branch '${data.releasingBranch}' cannot be released because its manifest version (${data.version}) is not greater than the manifest version of '${releaseBranch}' (${releaseBranchManifest.version}).`);
@@ -653,7 +660,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             const { isOldWayReleaseSelected } = await inquirer.prompt({
                 type: 'confirm',
                 name: 'isOldWayReleaseSelected',
-                message: 'This release process is [deprecated]. Are you sure you want to continue?',
+                message: 'This release process is deprecated. Are you sure you want to continue?',
                 default: false
             });
 

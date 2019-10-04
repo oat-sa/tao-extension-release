@@ -1,16 +1,16 @@
 {
   "name": "@oat-sa/tao-extension-release",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "description": "Helps you to release TAO extensions",
   "main": "index.js",
   "scripts": {
     "test:dev": "nodemon -e js --watch tests --watch src --delay 1 --exec npm run test",
     "test:cov": "nyc npm test",
     "test:cov:html": "nyc report --reporter=lcov && open-cli coverage/lcov-report/index.html",
-    "test": "tape 'tests/**/test.js' | tap-diff || true",
-    "test:unit": "tape 'tests/unit/**/test.js' | tap-diff || true",
-    "test:integ": "tape 'tests/integration/**/test.js' | tap-diff || true",
-    "lint": "eslint index.js 'src/**/*.js' 'tests/**/test.js'"
+    "test": "tape \"tests/**/test.js\" | tap-diff || true",
+    "test:unit": "tape \"tests/unit/**/test.js\" | tap-diff || true",
+    "test:integ": "tape \"tests/integration/**/test.js\" | tap-diff || true",
+    "lint": "eslint index.js \"src/**/*.js\" \"tests/**/test.js\""
   },
   "bin": {
     "taoRelease": "./index.js"

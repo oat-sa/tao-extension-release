@@ -79,6 +79,7 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
 })(releaseOptions);
 
 const releasingBranch = 'remotes/origin/release-0.9.0';
+const localReleasingBranch = 'release-0.9.0';
 const releaseBranch = 'master';
 
 test('should define verifyReleasingBranch method on release instance', (t) => {
@@ -104,7 +105,7 @@ test('Releasing branch has different version than manifest', async (t) => {
     await release.verifyReleasingBranch();
 
     t.equal(log.exit.callCount, 2, 'Exit message has been logged');
-    t.ok(log.exit.calledWith(`Branch '${releasingBranch}' cannot be released because it's branch name does not match its own manifest version (0.7.0).`), 'Exit message has been logged with apropriate message');
+    t.ok(log.exit.calledWith(`Branch '${localReleasingBranch}' cannot be released because it's branch name does not match its own manifest version (0.7.0).`), 'Exit message has been logged with apropriate message');
 
     sandbox.restore();
     t.end();
@@ -128,10 +129,10 @@ test('Releasing branch is valid and is greather than release branch version', as
     await release.verifyReleasingBranch();
 
     t.equal(log.doing.callCount, 2, 'Doing message has been logged');
-    t.ok(log.doing.calledWith(`Branch ${releasingBranch} has valid manifest.`), 'Doing message has been logged with apropriate message');
+    t.ok(log.doing.calledWith(`Branch ${localReleasingBranch} has valid manifest.`), 'Doing message has been logged with apropriate message');
 
     t.equal(log.done.callCount, 2, 'Done message has been logged');
-    t.ok(log.done.calledWith(`Branch ${releasingBranch} is valid.`), 'Done message has been logged with apropriate message');
+    t.ok(log.done.calledWith(`Branch ${localReleasingBranch} is valid.`), 'Done message has been logged with apropriate message');
 
     sandbox.restore();
     t.end();
@@ -155,10 +156,10 @@ test('Releasing branch is valid but is less than release branch version', async 
     await release.verifyReleasingBranch();
 
     t.equal(log.doing.callCount, 2, 'Doing message has been logged');
-    t.ok(log.doing.calledWith(`Branch ${releasingBranch} has valid manifest.`), 'Doing message has been logged with apropriate message');
+    t.ok(log.doing.calledWith(`Branch ${localReleasingBranch} has valid manifest.`), 'Doing message has been logged with apropriate message');
 
     t.equal(log.exit.callCount, 1, 'Exit message has been logged');
-    t.ok(log.exit.calledWith(`Branch '${releasingBranch}' cannot be released because its manifest version (0.9.0) is not greater than the manifest version of '${releaseBranch}' (0.10.0).`), 'Exit message has been logged with apropriate message');
+    t.ok(log.exit.calledWith(`Branch '${localReleasingBranch}' cannot be released because its manifest version (0.9.0) is not greater than the manifest version of '${releaseBranch}' (0.10.0).`), 'Exit message has been logged with apropriate message');
     sandbox.restore();
     t.end();
 });

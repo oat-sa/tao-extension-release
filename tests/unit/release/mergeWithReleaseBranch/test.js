@@ -85,6 +85,7 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
 })(releaseOptions);
 
 const releasingBranch = 'remotes/origin/release-0.9.0';
+const localReleasingBranch = 'release-0.9.0';
 const releaseBranch = 'master';
 
 test('should define mergeWithReleaseBranch method on release instance', (t) => {
@@ -117,7 +118,7 @@ test('Merging release branch into releasing branch, no conflicts found', async (
 
     // Assertions
     t.equal(log.doing.callCount, 1, 'Doing message has been logged');
-    t.ok(log.doing.calledWith(`Merging '${releaseBranch}' into '${releasingBranch}'.`), 'Doing message has been logged with apropriate message');
+    t.ok(log.doing.calledWith(`Merging '${releaseBranch}' into '${localReleasingBranch}'.`), 'Doing message has been logged with apropriate message');
 
     t.equal(gitClientInstance.checkout.callCount, 2, 'git checkout has been called.');
     t.ok(gitClientInstance.checkout.calledWith(releaseBranch), `Checkout ${releaseBranch} called`);
@@ -167,7 +168,7 @@ test('Merging release branch into releasing branch, found conflicts and user abo
 
     // Assertions
     t.equal(log.doing.callCount, 1, 'Doing message has been logged');
-    t.ok(log.doing.calledWith(`Merging '${releaseBranch}' into '${releasingBranch}'.`), 'Doing message has been logged with apropriate message');
+    t.ok(log.doing.calledWith(`Merging '${releaseBranch}' into '${localReleasingBranch}'.`), 'Doing message has been logged with apropriate message');
 
     t.equal(gitClientInstance.checkout.callCount, 2, 'git checkout has been called.');
     t.ok(gitClientInstance.checkout.calledWith(releaseBranch), `Checkout ${releaseBranch} called`);
@@ -223,7 +224,7 @@ test('Merging release branch into releasing branch, found conflicts and user pro
 
     // Assertions
     t.equal(log.doing.callCount, 1, 'Doing message has been logged');
-    t.ok(log.doing.calledWith(`Merging '${releaseBranch}' into '${releasingBranch}'.`), 'Doing message has been logged with apropriate message');
+    t.ok(log.doing.calledWith(`Merging '${releaseBranch}' into '${localReleasingBranch}'.`), 'Doing message has been logged with apropriate message');
 
     t.equal(gitClientInstance.checkout.callCount, 2, 'git checkout has been called.');
     t.ok(gitClientInstance.checkout.calledWith(releaseBranch), `Checkout ${releaseBranch} called`);
@@ -282,7 +283,7 @@ test('Merging release branch into releasing branch, found conflicts and user pro
 
     // Assertions
     t.equal(log.doing.callCount, 1, 'Doing message has been logged');
-    t.ok(log.doing.calledWith(`Merging '${releaseBranch}' into '${releasingBranch}'.`), 'Doing message has been logged with apropriate message');
+    t.ok(log.doing.calledWith(`Merging '${releaseBranch}' into '${localReleasingBranch}'.`), 'Doing message has been logged with apropriate message');
 
     t.equal(gitClientInstance.checkout.callCount, 2, 'git checkout has been called.');
     t.ok(gitClientInstance.checkout.calledWith(releaseBranch), `Checkout ${releaseBranch} called`);
@@ -297,7 +298,7 @@ test('Merging release branch into releasing branch, found conflicts and user pro
     t.equal(gitClientInstance.hasLocalChanges.callCount, 1, 'hasLocalChanges has been called.');
 
     t.equal(log.exit.callCount, 1, 'Exit message has been logged');
-    t.ok(log.exit.calledWith(`Cannot push changes because local branch '${releasingBranch}' still has changes to commit.`), 'Exit message has been logged with apropriate message');
+    t.ok(log.exit.calledWith(`Cannot push changes because local branch '${localReleasingBranch}' still has changes to commit.`), 'Exit message has been logged with apropriate message');
 
     sandbox.restore();
     t.end();

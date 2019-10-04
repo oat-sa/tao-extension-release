@@ -130,7 +130,7 @@ test('version provided and found 1 branch', async (t) => {
     await release.selectReleasingBranch();
 
     t.equal(log.done.callCount, 1, 'Done message has been logged');
-    t.ok(log.done.calledWith('Branch remotes/origin/release-1.9.1.0-alpha is selected.'), 'Done message has been logged with apropriate message');
+    t.ok(log.done.calledWith('Branch release-1.9.1.0-alpha is selected.'), 'Done message has been logged with apropriate message');
 
     sandbox.restore();
     t.end();
