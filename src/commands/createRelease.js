@@ -24,19 +24,19 @@ const program = new commander.Command();
 program
     .name('taoRelease createRelease')
     .usage('[options]')
-    .option('-d, --debug', 'output extra debugging')
+    .option(...cliOptions.debug)
     // options with defaults
-    .option('--base-branch <branch>', 'the source branch for the release', 'develop')
-    .option('--branch-prefix <prefix>', 'the prefix of the branch created for releasing', 'release')
-    .option('--origin <remotename>', 'the name of the remote repo', 'origin')
-    .option('--release-branch <branch>', 'the target branch for the release PR', 'master')
-    .option('--www-user <user>', 'the user who runs php commands', 'www-data')
+    .option(...cliOptions.baseBranch)
+    .option(...cliOptions.branchPrefix)
+    .option(...cliOptions.origin)
+    .option(...cliOptions.releaseBranch)
+    .option(...cliOptions.wwwUser)
     // options which fall back to user prompts if undefined
-    .option('--path-to-tao <path>', 'path to local TAO instance')
-    .option('--extension-to-release <extension>', 'camelCase name of the extension to release')
-    .option('--version-to-release <version>', 'version of the extension to release')
-    .option('--update-translations', 'indicates if we need to update translations')
-    .option('--release-comment <comment>', 'comment to add to github release')
+    .option(...cliOptions.pathToTao)
+    .option(...cliOptions.extensionToRelease)
+    .option(...cliOptions.versionToRelease)
+    .option(...cliOptions.updateTranslations)
+    .option(...cliOptions.releaseComment)
     .parse(process.argv);
 
 if (program.debug) console.log(program.opts());
