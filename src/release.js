@@ -234,8 +234,8 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         /**
          * Gets the branch with highest version
          * @private
-         * @param possibleBranches - list of branches
-         * @returns {Object}
+         * @param {String[]} - the list of branches to compare
+         * @returns {Object} with the highest branch and version as property
          */
         getHighestVersionBranch(possibleBranches = []) {
             log.doing('Selecting releasing branch from the biggest version found in branches.');
