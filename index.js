@@ -37,10 +37,10 @@ program
     .version(pkg.version)
     .name('taoRelease')
     .usage('command [options]')
-    .command('prepareRelease', 'prepare an extension release in a local branch', {
+    .command('prepareRelease', 'prepare an extension release', {
         executableFile: './src/commands/prepareRelease'
     })
-    .command('createRelease', 'push a local release branch to its remote and finish the release', {
+    .command('createRelease', 'create a release from a prepared release branch', {
         executableFile: './src/commands/createRelease'
     })
     .command('oldWayRelease', '[deprecated] run the whole release process from start to finish',  {

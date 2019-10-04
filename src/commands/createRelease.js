@@ -43,7 +43,7 @@ if (program.debug) console.log(program.opts());
 
 const release = require('../release')(program.opts());
 
-async function releaseExtension() {
+async function createRelease() {
     try {
         log.title('TAO Extension Release: createRelease');
 
@@ -71,4 +71,4 @@ async function releaseExtension() {
     }
 }
 
-releaseExtension();
+createRelease();
