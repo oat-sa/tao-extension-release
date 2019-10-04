@@ -21,6 +21,8 @@ const log = require('../log.js');
 const commander = require('commander');
 const program = new commander.Command();
 
+const cliOptions =  require('./cliOptions');
+
 program
     .name('taoRelease createRelease')
     .usage('[options]')
