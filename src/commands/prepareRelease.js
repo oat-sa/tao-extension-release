@@ -53,7 +53,7 @@ async function prepareRelease() {
         await release.verifyLocalChanges();
         await release.verifyBranches();
         await release.doesTagExists();
-        await release.doesReleaseBranchExists();
+        await release.doesReleasingBranchExists();
         await release.isReleaseRequired();
         await release.createReleasingBranch();
         await release.compileAssets();
