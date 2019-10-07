@@ -240,10 +240,10 @@ test('hasSignKey', async t => {
     const gitHelper = simpleGit(localRepoPath); // helper lib
     await verifyLocal(gitHelper);
 
-    t.notOk(await localRepo.hasSignKey(), 'no signing key is set up');
     await gitHelper.raw(['config', '--local', 'user.signingkey', 'foobar']);
     t.ok(await localRepo.hasSignKey(), 'signing key is set up');
     await gitHelper.raw(['config', '--local', '--unset', 'user.signingkey']);
+    t.notOk(await localRepo.hasSignKey(), 'no signing key is set up');
 });
 
 test('pull from remote', async t => {
