@@ -233,19 +233,6 @@ test('creating/deleting tag', async t => {
     t.notOk(await remoteRepo.hasTag('tag1'), 'tag1 gone on remote');
 });
 
-test('hasSignKey', async t => {
-    await setUp();
-    t.plan(2);
-    const localRepo = gitFactory(localRepoPath); // module we're testing
-    const gitHelper = simpleGit(localRepoPath); // helper lib
-    await verifyLocal(gitHelper);
-
-    await gitHelper.raw(['config', '--local', 'user.signingkey', 'foobar']);
-    t.ok(await localRepo.hasSignKey(), 'signing key is set up');
-    await gitHelper.raw(['config', '--local', '--unset', 'user.signingkey']);
-    t.notOk(await localRepo.hasSignKey(), 'no signing key is set up');
-});
-
 test('pull from remote', async t => {
     await setUp();
     t.plan(10);
