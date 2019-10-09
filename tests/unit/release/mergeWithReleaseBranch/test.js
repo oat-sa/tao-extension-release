@@ -36,6 +36,7 @@ const gitClientInstance = {
     getLocalBranches: () => {},
     fetch: () => { },
     checkout: () => { },
+    checkoutNonLocal: () => { },
     pull: () => { },
     merge: () => { },
     abortMerge: () => { },
@@ -100,7 +101,7 @@ test('Merging release branch into releasing branch, no conflicts found', async (
     await release.selectTaoInstance();
     await release.selectExtension();
 
-    sandbox.stub(gitClientInstance, 'getLocalBranches').returns([releasingBranch]);
+    sandbox.stub(gitClientInstance, 'getLocalBranches').returns([releasingBranch, localReleasingBranch]);
 
     await release.selectReleasingBranch();
 
@@ -140,7 +141,7 @@ test('Merging release branch into releasing branch, found conflicts and user abo
     await release.selectTaoInstance();
     await release.selectExtension();
 
-    sandbox.stub(gitClientInstance, 'getLocalBranches').returns([releasingBranch]);
+    sandbox.stub(gitClientInstance, 'getLocalBranches').returns([releasingBranch, localReleasingBranch]);
 
     await release.selectReleasingBranch();
 
@@ -194,7 +195,7 @@ test('Merging release branch into releasing branch, found conflicts and user pro
     await release.selectTaoInstance();
     await release.selectExtension();
 
-    sandbox.stub(gitClientInstance, 'getLocalBranches').returns([releasingBranch]);
+    sandbox.stub(gitClientInstance, 'getLocalBranches').returns([releasingBranch, localReleasingBranch]);
 
     await release.selectReleasingBranch();
 
@@ -253,7 +254,7 @@ test('Merging release branch into releasing branch, found conflicts and user pro
     await release.selectTaoInstance();
     await release.selectExtension();
 
-    sandbox.stub(gitClientInstance, 'getLocalBranches').returns([releasingBranch]);
+    sandbox.stub(gitClientInstance, 'getLocalBranches').returns([releasingBranch, localReleasingBranch]);
 
     await release.selectReleasingBranch();
 

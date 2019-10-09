@@ -35,7 +35,8 @@ const config = {
 const gitClientInstance = {
     getLocalBranches: () => {},
     fetch: () => { },
-    checkout: () => { }
+    checkout: () => { },
+    checkoutNonLocal: () => { }
 };
 
 const gitClientFactory = sandbox.stub().callsFake(() => gitClientInstance);
