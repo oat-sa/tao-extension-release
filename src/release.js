@@ -62,6 +62,22 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
     return {
 
         /**
+         * Check out the predefined releasing branch
+         */
+        async checkoutReleasingBranch() {
+            const allBranches = await gitClient.getLocalBranches();
+
+            if (allBranches.includes(data.releasingBranch)) {
+                // Branch exists locally
+                await gitClient.checkout(data.releasingBranch);
+            }
+            else {
+                // Branch only exists remotely
+                await gitClient.checkoutNonLocal(data.releasingBranch, origin);
+            }
+        },
+
+        /**
          * Compile and publish extension assets
          */
         async compileAssets() {
@@ -371,7 +387,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             await gitClient.pull(releaseBranch);
 
             // checkout releasingBranch
-            await gitClient.checkout(`${branchPrefix}-${data.version}`);
+            await this.checkoutReleasingBranch();
 
             try {
                 // merge release branch into releasingBranch
@@ -629,10 +645,11 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * - is bigger than current release branch version.
          */
         async verifyReleasingBranch() {
-            log.doing('Validating releasing branch.');
+            log.doing('Checking out and verifying releasing branch.');
+
+            await this.checkoutReleasingBranch();
 
             // Cross check releasing branch version with manifest version
-            await gitClient.checkout(data.releasingBranch);
             const releasingBranchManifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
             if (compareVersions(releasingBranchManifest.version, data.version) === 0 ) {
                 log.doing(`Branch ${data.releasingBranch} has valid manifest.`);

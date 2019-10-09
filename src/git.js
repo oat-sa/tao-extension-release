@@ -108,6 +108,16 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
         },
 
         /**
+         * Checks out the supplied tag, revision or branch from a remote tracking branch.
+         * @param {String} branchName - the branch name
+         * @param {String} remote - the remote name
+         * @returns {Promise}
+         */
+        checkoutNonLocal(branchName, remote) {
+            return git(repository).checkout(['--track', `${remote}/${branchName}`]);
+        },
+
+        /**
          * Gets any new commits, references (like tags), branches and files from a remote repository
          * @param options
          * @returns {Promise}
