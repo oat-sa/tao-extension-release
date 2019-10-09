@@ -249,7 +249,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Gets the branch with highest version
-         * @private
          * @param {String[]} - the list of branches to compare
          * @returns {Object} with the highest branch and version as property
          */
@@ -422,7 +421,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Show a prompt to pause the program and make them confirm they have resolved conflicts.
-         * @private
          * @returns {Promise}
          */
         async promptToResolveConflicts() {
