@@ -484,7 +484,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          */
         async selectReleasingBranch() {
             // Filter all branches to the ones that have release in the name
-            await gitClient.fetch({'--prune': true});
+            await gitClient.fetch();
             const allBranches = await gitClient.getLocalBranches();
 
             if (versionToRelease) {
