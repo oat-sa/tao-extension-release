@@ -16,11 +16,10 @@
  * Copyright (c) 2019 Open Assessment Technologies SA;
  */
 
- /**
+/**
+ * Unit test the selectReleasingBranch method of module src/release.js
  *
- * Unit test the confirmRelease method of module src/release.js
- *
- * @author Anton Tsymuk <anton@taotesting.com>
+ * @author Ricardo Proença <ricardo@taotesting.com>
  */
 
 const proxyquire = require('proxyquire');
@@ -30,42 +29,29 @@ const test = require('tape');
 const sandbox = sinon.sandbox.create();
 
 const config = {
-    write: () => { },
+    write: () => { }
 };
-const extension = 'testExtension';
-const gitClientInstance = {
-    pull: () => { }
-};
-const gitClientFactory = sandbox.stub().callsFake(() => gitClientInstance);
+
 const log = {
-    exit: () => { },
-    doing: () => { },
-    done: () => { },
+    exit: () => { }
 };
-const taoRoot = 'testRoot';
+
 const inquirer = {
-    prompt: () => ({ extension, taoRoot }),
+    prompt: () => {},
 };
-const version = '1.1.1';
-const taoInstance = {
-    getExtensions: () => [],
-    isInstalled: () => true,
-    isRoot: () => ({ root: true, dir: taoRoot }),
-    parseManifest: () => ({ version, name: extension })
-};
-const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
+
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './config.js': () => config,
-    './git.js': gitClientFactory,
+    './git.js': {},
     './log.js': log,
-    './taoInstance.js': taoInstanceFactory,
+    './taoInstance.js': {},
     inquirer,
 })();
 
-test('should define confirmRelease method on release instance', (t) => {
+test('should define warnAboutDeprecation method on release instance', (t) => {
     t.plan(1);
 
-    t.ok(typeof release.confirmRelease === 'function', 'The release instance has confirmRelease method');
+    t.ok(typeof release.warnAboutDeprecation === 'function', 'The release instance has warnAboutDeprecation method');
 
     t.end();
 });
@@ -73,19 +59,15 @@ test('should define confirmRelease method on release instance', (t) => {
 test('should prompt to confirm release', async (t) => {
     t.plan(4);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
-
     sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message }) => {
         t.equal(type, 'confirm', 'The type should be "confirm"');
-        t.equal(name, 'go', 'The param name should be go');
-        t.equal(message, `Let's release version ${extension}@${version} 🚀 ?`, 'Should disaplay appropriate message');
+        t.equal(name, 'isOldWayReleaseSelected', 'The param name should be isOldWayReleaseSelected');
+        t.equal(message, 'This release process is deprecated. Are you sure you want to continue?', 'Should disaplay appropriate message');
 
         return { go: true };
     });
 
-    await release.confirmRelease();
+    await release.warnAboutDeprecation();
 
     t.equal(inquirer.prompt.callCount, 1, 'Prompt has been initialised');
 
@@ -96,14 +78,10 @@ test('should prompt to confirm release', async (t) => {
 test('should log exit if release was not confirmed', async (t) => {
     t.plan(1);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
-
     sandbox.stub(inquirer, 'prompt').returns({ go: false });
     sandbox.stub(log, 'exit');
 
-    await release.confirmRelease();
+    await release.warnAboutDeprecation();
 
     t.equal(log.exit.callCount, 1, 'Exit has been logged');
 

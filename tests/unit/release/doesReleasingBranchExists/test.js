@@ -17,10 +17,7 @@
  */
 
  /**
- *
- * Unit test the isReleaseRequired method of module src/release.js
- *
- * @author Anton Tsymuk <anton@taotesting.com>
+ * Unit test the doesReleasingBranchExists method of module src/release.js
  */
 
 const proxyquire = require('proxyquire');
@@ -29,29 +26,32 @@ const test = require('tape');
 
 const sandbox = sinon.sandbox.create();
 
-const baseBranch = 'testBaseBranch';
 const config = {
     write: () => { },
 };
 const extension = 'testExtension';
 const gitClientInstance = {
-    hasDiff: () => true,
+    pull: () => { },
+    hasBranch: () => false
 };
 const gitClientFactory = sandbox.stub().callsFake(() => gitClientInstance);
+const log = {
+    exit: () => { },
+    doing: () => { },
+    done: () => { },
+};
 const taoRoot = 'testRoot';
 const inquirer = {
     prompt: () => ({ extension, taoRoot }),
 };
-const log = {
-    doing: () => { },
-    done: () => { },
-    exit: () => { },
-};
-const releaseBranch = 'testReleaseBranch';
+const origin = 'origin';
+const branchPrefix = 'release';
+const version = '1.1.1';
 const taoInstance = {
     getExtensions: () => [],
     isInstalled: () => true,
     isRoot: () => ({ root: true, dir: taoRoot }),
+    parseManifest: () => ({ version })
 };
 const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
@@ -59,13 +59,13 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './git.js': gitClientFactory,
     './log.js': log,
     './taoInstance.js': taoInstanceFactory,
-    inquirer,
-})({ baseBranch, releaseBranch });
+    inquirer
+})({ branchPrefix, origin });
 
-test('should define isReleaseRequired method on release instance', (t) => {
+test('should define doesReleasingBranchExists method on release instance', (t) => {
     t.plan(1);
 
-    t.ok(typeof release.isReleaseRequired === 'function', 'The release instance has isReleaseRequired method');
+    t.ok(typeof release.doesReleasingBranchExists === 'function', 'The release instance has doesReleasingBranchExists method');
 
     t.end();
 });
@@ -75,71 +75,53 @@ test('should log doing message', async (t) => {
 
     await release.selectTaoInstance();
     await release.selectExtension();
+    await release.verifyBranches();
 
     sandbox.stub(log, 'doing');
 
-    await release.isReleaseRequired();
+    console.log(`Check if branch remotes/${origin}/${branchPrefix}-${version} exists`);
+
+    await release.doesReleasingBranchExists();
 
     t.equal(log.doing.callCount, 1, 'Doing has been logged');
-    t.ok(log.doing.calledWith(`Diff ${baseBranch}..${releaseBranch}`), 1, 'Doing has been logged with apropriate message');
+    t.ok(log.doing.calledWith(`Check if branch remotes/${origin}/${branchPrefix}-${version} exists`), 'Doing has been logged with appropriate message');
 
     sandbox.restore();
     t.end();
 });
 
-test('should check for diffs between base and release branches', async (t) => {
+test('should check if release branch exists', async (t) => {
     t.plan(2);
 
     await release.selectTaoInstance();
     await release.selectExtension();
+    await release.verifyBranches();
 
-    sandbox.stub(gitClientInstance, 'hasDiff').returns(true);
+    sandbox.stub(gitClientInstance, 'hasBranch');
 
-    await release.isReleaseRequired();
+    await release.doesReleasingBranchExists();
 
-    t.equal(gitClientInstance.hasDiff.callCount, 1, 'Diffs has been checked');
-    t.ok(gitClientInstance.hasDiff.calledWith(baseBranch, releaseBranch), 1, 'Diffs has been checked between apropriate branches');
-
-    sandbox.restore();
-    t.end();
-});
-
-test('should prompt about release if there is no diffs', async (t) => {
-    t.plan(4);
-
-    await release.selectTaoInstance();
-    await release.selectExtension();
-
-    sandbox.stub(gitClientInstance, 'hasDiff').returns(false);
-    sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message }) => {
-        t.equal(type, 'confirm', 'The type should be "confirm"');
-        t.equal(name, 'diff', 'The param name should be diff');
-        t.equal(message, `It seems there is no changes between ${baseBranch} and ${releaseBranch}. Do you want to release anyway?`, 'Should disaplay appropriate message');
-
-        return { diff: true };
-    });
-
-    await release.isReleaseRequired();
-
-    t.equal(inquirer.prompt.callCount, 1, 'Prompt has been initialised');
+    t.equal(gitClientInstance.hasBranch.callCount, 1, 'Release has been checked');
+    t.ok(gitClientInstance.hasBranch.calledWith(`remotes/${origin}/${branchPrefix}-${version}`), 'Appropriate release has been checked');
 
     sandbox.restore();
     t.end();
 });
 
-test('should log exit', async (t) => {
-    t.plan(1);
+test('should log exit if release branch exists', async (t) => {
+    t.plan(2);
 
     await release.selectTaoInstance();
     await release.selectExtension();
+    await release.verifyBranches();
 
-    sandbox.stub(gitClientInstance, 'hasDiff').returns(false);
-    sandbox.stub(inquirer, 'prompt').returns({ diff: false });
     sandbox.stub(log, 'exit');
+    sandbox.stub(gitClientInstance, 'hasBranch').returns(true);
 
-    await release.isReleaseRequired();
+    await release.doesReleasingBranchExists();
 
     t.equal(log.exit.callCount, 1, 'Exit has been logged');
+    t.ok(log.exit.calledWith(`The remote branch remotes/${origin}/${branchPrefix}-${version} already exists.`), 'Exit has been logged with appropriate message');
 
     sandbox.restore();
     t.end();
@@ -150,10 +132,11 @@ test('should log done message', async (t) => {
 
     await release.selectTaoInstance();
     await release.selectExtension();
+    await release.verifyBranches();
 
     sandbox.stub(log, 'done');
 
-    await release.isReleaseRequired();
+    await release.doesReleasingBranchExists();
 
     t.equal(log.done.callCount, 1, 'Done has been logged');
 

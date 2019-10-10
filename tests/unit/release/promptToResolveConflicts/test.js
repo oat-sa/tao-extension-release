@@ -16,11 +16,10 @@
  * Copyright (c) 2019 Open Assessment Technologies SA;
  */
 
- /**
+/**
  *
- * Unit test the confirmRelease method of module src/release.js
+ * Unit test the promptToResolveConflicts method of module src/release.js
  *
- * @author Anton Tsymuk <anton@taotesting.com>
  */
 
 const proxyquire = require('proxyquire');
@@ -29,6 +28,7 @@ const test = require('tape');
 
 const sandbox = sinon.sandbox.create();
 
+const origin = 'origin';
 const config = {
     write: () => { },
 };
@@ -60,52 +60,34 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './log.js': log,
     './taoInstance.js': taoInstanceFactory,
     inquirer,
-})();
+})({ origin });
 
-test('should define confirmRelease method on release instance', (t) => {
+test('should define promptToResolveConflicts method on release instance', (t) => {
     t.plan(1);
 
-    t.ok(typeof release.confirmRelease === 'function', 'The release instance has confirmRelease method');
+    t.ok(typeof release.promptToResolveConflicts === 'function', 'The release instance has promptToResolveConflicts method');
 
     t.end();
 });
 
-test('should prompt to confirm release', async (t) => {
-    t.plan(4);
+test('should prompt to confirm resolution', async (t) => {
+    t.plan(5);
 
     await release.selectTaoInstance();
     await release.selectExtension();
-    await release.verifyBranches();
 
-    sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message }) => {
+    sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message, default: defaultValue }) => {
         t.equal(type, 'confirm', 'The type should be "confirm"');
-        t.equal(name, 'go', 'The param name should be go');
-        t.equal(message, `Let's release version ${extension}@${version} 🚀 ?`, 'Should disaplay appropriate message');
+        t.equal(name, 'isMergeDone', 'The param name should be isMergeDone');
+        t.equal(message, 'Has the merge been completed manually? I need to push the branch to origin.', 'Should display appropriate message');
+        t.equal(defaultValue, false, 'The default response should be false');
 
-        return { go: true };
+        return { mergeDone: false };
     });
 
-    await release.confirmRelease();
+    await release.promptToResolveConflicts();
 
     t.equal(inquirer.prompt.callCount, 1, 'Prompt has been initialised');
-
-    sandbox.restore();
-    t.end();
-});
-
-test('should log exit if release was not confirmed', async (t) => {
-    t.plan(1);
-
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
-
-    sandbox.stub(inquirer, 'prompt').returns({ go: false });
-    sandbox.stub(log, 'exit');
-
-    await release.confirmRelease();
-
-    t.equal(log.exit.callCount, 1, 'Exit has been logged');
 
     sandbox.restore();
     t.end();

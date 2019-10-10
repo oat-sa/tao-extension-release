@@ -1,8 +1,25 @@
 /**
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; under version 2
+ * of the License (non-upgradable).
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ *
+ * Copyright (c) 2019 Open Assessment Technologies SA;
+ */
+
+ /**
  *
  * Unit test the selectTaoInstance method of module src/release.js
  *
- * @copyright 2019 Open Assessment Technologies SA;
  * @author Anton Tsymuk <anton@taotesting.com>
  */
 
@@ -14,6 +31,12 @@ const sandbox = sinon.sandbox.create();
 
 const config = {
     write: () => { },
+};
+const log = {
+    exit: () => { },
+    doing: () => { },
+    done: () => { },
+    info: () => { },
 };
 const gitClientFactory = sandbox.stub();
 const origin = 'testOrigin';
@@ -30,9 +53,10 @@ const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './config.js': () => config,
     './git.js': gitClientFactory,
+    './log.js': log,
     './taoInstance.js': taoInstanceFactory,
     inquirer,
-})(null, null, origin);
+})({ origin });
 
 test('should define selectExtension method on release instance', (t) => {
     t.plan(1);
@@ -124,7 +148,55 @@ test('should save selected extension to config', async (t) => {
             name: extension,
         },
         taoRoot,
-    }), 'Extesion has been saved to config');
+    }), 'Extension has been saved to config');
+
+    sandbox.restore();
+    t.end();
+});
+
+const releaseWithCliOption = proxyquire.noCallThru().load('../../../../src/release.js', {
+    './config.js': () => config,
+    './git.js': gitClientFactory,
+    './log.js': log,
+    './taoInstance.js': taoInstanceFactory,
+    inquirer,
+})({ origin, extensionToRelease: 'testExtensionFoo' });
+
+test('should use CLI extension instead of prompting', async (t) => {
+    t.plan(3);
+
+    const availableExtensions = ['testExtensionFoo', 'testExtensionBar'];
+
+    await releaseWithCliOption.selectTaoInstance();
+
+    sandbox.stub(inquirer, 'prompt');
+    sandbox.stub(taoInstance, 'getExtensions').returns(availableExtensions);
+    gitClientFactory.resetHistory();
+
+    await releaseWithCliOption.selectExtension();
+
+    t.ok(inquirer.prompt.notCalled, 'No prompt shown');
+    t.equal(gitClientFactory.callCount, 1, 'gitClient instance has been created');
+    t.ok(gitClientFactory.calledWith(`${taoRoot}/testExtensionFoo`, origin, 'testExtensionFoo'), 'gitClient instance has been passed CLI extension');
+
+    sandbox.restore();
+    t.end();
+});
+
+test('should log exit message when bad CLI extension provided', async (t) => {
+    t.plan(2);
+
+    const availableExtensions = ['testExtensionBaz', 'testExtensionBar'];
+
+    await releaseWithCliOption.selectTaoInstance();
+
+    sandbox.stub(taoInstance, 'getExtensions').returns(availableExtensions);
+    sandbox.stub(log, 'exit');
+
+    await releaseWithCliOption.selectExtension();
+
+    t.equal(log.exit.callCount, 1, 'Exit has been logged');
+    t.ok(log.exit.calledWith('Specified extension testExtensionFoo not found in testRoot'), 'Error has been logged with apropriate message');
 
     sandbox.restore();
     t.end();

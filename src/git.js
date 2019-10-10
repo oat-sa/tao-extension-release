@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2017 Open Assessment Technologies SA;
+ * Copyright (c) 2017-2019 Open Assessment Technologies SA;
  */
 
 /**
@@ -99,6 +99,34 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
         },
 
         /**
+         * Checks out the supplied tag, revision or branch.
+         * @param {String} branchName - the branch name
+         * @returns {Promise}
+         */
+        checkout(branchName){
+            return git(repository).checkout(branchName);
+        },
+
+        /**
+         * Checks out the supplied tag, revision or branch from a remote tracking branch.
+         * @param {String} branchName - the branch name
+         * @param {String} remote - the remote name
+         * @returns {Promise}
+         */
+        checkoutNonLocal(branchName, remote) {
+            return git(repository).checkout(['--track', `${remote}/${branchName}`]);
+        },
+
+        /**
+         * Gets any new commits, references (like tags), branches and files from a remote repository
+         * @param options
+         * @returns {Promise}
+         */
+        fetch(options) {
+            return git(repository).fetch(options);
+        },
+
+        /**
          * Full pull (fetch, checkout branch from remote if not there, and pull)
          * @param {String} branchName - the branch name
          * @returns {Promise}
@@ -129,6 +157,16 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
         },
 
         /**
+         * Does the given branch exists
+         * @param {String} branchName
+         * @returns {Promise<Boolean>}
+         */
+        hasBranch(branchName){
+            return git(repository).branch()
+                .then(branches => branches && branches.all && branches.all.indexOf(branchName) > -1);
+        },
+
+        /**
          * Create and push the given tag
          * @param {String} tagBranch - the branch to create the tag from
          * @param {String} tagName - the name of the tag to create and push
@@ -155,7 +193,7 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
         /**
          * Merge and push branches in a Pull Request style layout
          * @param {String} baseBranch - the branch that receive the feature
-         * @param {String} releaseBranch - the branch that contain the feature
+         * @param {String} featureBranch - the branch that contain the feature
          * @returns {Promise}
          */
         mergePr(baseBranch, featureBranch){
@@ -167,13 +205,12 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
         },
 
         /**
-         * Operation to merge a released branch merged back in a base branch
+         * Operation to merge a released branch merged back into a base branch
          * @param {String} baseBranch - the branch used to create the release (develop)
          * @param {String} releaseBranch - the branch that received the release (master)
          * @returns {Promise}
          */
         mergeBack(baseBranch, releaseBranch){
-
             return git(repository).checkout(baseBranch)
                 .then( () => git(repository).pull(origin, baseBranch) )
                 .then( () => git(repository).merge([releaseBranch]) )
@@ -181,7 +218,36 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
         },
 
         /**
-         * Commit and push every changes on the current branch
+         * Push a branch to the given remote
+         * @param {String} origin - name of the remote
+         * @param {String} branchName - name of the branch to push to
+         * @returns {Promise}
+         */
+        push(origin, branchName) {
+            return git(repository).push(origin, branchName);
+        },
+
+        /**
+         * Merge targetBranch into your current branch
+         *
+         * @param {String} targetBranch - the branch to merge into the current branch
+         * @returns {Promise}
+         */
+        merge(targetBranch){
+            return git(repository).merge([targetBranch]);
+        },
+
+        /**
+         * Aborts a merge
+         * @param {String} targetBranch - the branch currently being merged into the current branch
+         * @returns {Promise}
+         */
+        abortMerge(targetBranch) {
+            return git(repository).merge([targetBranch], {'--abort': true});
+        },
+
+        /**
+         * Commit and push every change on the current branch
          * @param {String} branchName - name of the branch to push to
          * @param {String} comment - commit comment
          * @returns {Promise}
