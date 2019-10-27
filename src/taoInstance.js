@@ -280,7 +280,7 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
 
             /**
              * run `npm install` on the TAO build folder at least once
-             * 
+             *
              * @param {object} options - options to perform npm install
              * @param {bool} checkIfCanRunNpmInstall - should perform a check if it is possible to run npm
              */
@@ -290,7 +290,8 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
                         resolve();
                         return;
                     }
-                    
+
+                    process.env['PUPPETEER_SKIP_CHROMIUM_DOWNLOAD'] = 1;
                     const spawned = crossSpawn('npm', ['ci'], options);
                     spawned.on('close', code => code === 0 ? resolve() : reject());
                 });
