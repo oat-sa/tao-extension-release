@@ -230,12 +230,16 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
          * @returns {Promise} resolves once done
          */
         buildAssets(extensionName = ''){
-            const options = {
-                cwd : normalize(`${rootDir}/tao/views/build`)
+            const getOptions = (cwd) => {
+                const options = {
+                    cwd : cwd || normalize(`${rootDir}/tao/views/build`)
+                };
+                if(!quiet){
+                    options.stdio = 'inherit';
+                }
+
+                return options;
             };
-            if(!quiet){
-                options.stdio = 'inherit';
-            }
 
             /**
              * Touch the mathjax fallback if needed to prevent build to fail
@@ -269,17 +273,26 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
              */
             const runGruntTask = task => {
                 return new Promise( (resolve, reject) => {
-                    const spawned = crossSpawn(normalize(`${options.cwd}/node_modules/.bin/grunt`), [`${extensionName.toLowerCase()}${task}`], options);
+                    const spawned = crossSpawn(normalize(`${getOptions().cwd}/node_modules/.bin/grunt`), [`${extensionName.toLowerCase()}${task}`], getOptions());
                     spawned.on('close', code => code === 0 ? resolve() : reject());
                 });
             };
 
             /**
              * run `npm install` on the TAO build folder at least once
+             *
+             * @param {object} options - options to perform npm install
+             * @param {bool} checkIfCanRunNpmInstall - should perform a check if it is possible to run npm
              */
-            const installNpm = () => {
+            const installNpm = (options, checkIfCanRunNpmInstall = false) => {
                 return new Promise( (resolve, reject) => {
-                    const spawned = crossSpawn('npm', ['install'], options);
+                    if (checkIfCanRunNpmInstall && !fs.existsSync(`${options.cwd}/package.json`)) {
+                        resolve();
+                        return;
+                    }
+
+                    process.env['PUPPETEER_SKIP_CHROMIUM_DOWNLOAD'] = 1;
+                    const spawned = crossSpawn('npm', ['ci'], options);
                     spawned.on('close', code => code === 0 ? resolve() : reject());
                 });
             };
@@ -295,7 +308,6 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
                 );
 
             return new Promise( resolve => {
-
                 const buildConfigPath = normalize(`${rootDir}/${extensionName}/views/build/grunt`);
                 fs.readdir(buildConfigPath, (err, files) => {
                     const availableTasks = [];
@@ -314,7 +326,8 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
             }).then( tasks => {
                 if(tasks.length){
                     return mathJaxFallback()
-                        .then( () => installNpm() )
+                        .then( () => installNpm(getOptions(normalize(`${rootDir}/${extensionName}/views/`)), true))
+                        .then( () => installNpm(getOptions()))
                         .then( () => runTasks(tasks));
                 }
             });

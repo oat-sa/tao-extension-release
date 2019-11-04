@@ -1,6 +1,6 @@
 {
   "name": "@oat-sa/tao-extension-release",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Helps you to release TAO extensions",
   "main": "index.js",
   "scripts": {
