@@ -478,6 +478,43 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
+         * Select and initialise the npm package to release
+         */
+        async selectPackage() {
+            ( { pathToPackage } = await inquirer.prompt({
+                type: 'input',
+                name: 'pathToPackage',
+                message: 'What is the relative path to the package you want to release ? ',
+                default: data.taoRoot || process.cwd()
+            }) );
+            if (!pathToPackage) {
+                log.exit();
+            }
+            // Verify package.json
+            const absolutePathToPackage = path.resolve(process.cwd(), pathToPackage);
+            if (!fs.existsSync(`${absolutePathToPackage}/package.json`)) {
+                log.error(`No package.json found in ${absolutePathToPackage}`)
+                    .exit();
+            }
+            // Verify validity of chosen package
+            const package = npmPackageFactory(absolutePathToPackage);
+            if (!await package.isValidPackage()) {
+                log.error(`There doesn't appear to be a valid npm package in ${absolutePathToPackage}`)
+                    .exit();
+            }
+
+            gitClient = gitClientFactory(absolutePathToPackage, origin);
+
+            data.package = {
+                name: package.name, // no
+                path: absolutePathToPackage,
+            };
+
+            console.log('6', data); // looks good
+            await config.write(data);
+        },
+
+        /**
          * Select releasing branch
          * - picking version-to-release CLI option and find branch with version on it
          * - or find the biggest version and find branch with version on it
