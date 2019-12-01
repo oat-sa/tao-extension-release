@@ -22,16 +22,19 @@
  * @author Anton Tsymuk <anton@taotesting.com>
  */
 
+const fs = require('fs');
 const inquirer = require('inquirer');
 const opn = require('opn');
 const path = require('path');
 const compareVersions = require('compare-versions');
+const crossSpawn = require('cross-spawn');
 
 const config = require('./config.js')();
 const gitClientFactory = require('./git.js');
 const github = require('./github.js');
 const log = require('./log.js');
 const taoInstanceFactory = require('./taoInstance.js');
+const npmPackageFactory = require('./npmPackage.js');
 
 /**
  * Get the taoExtensionRelease
@@ -58,6 +61,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
     let gitClient;
     let githubClient;
     let taoInstance;
+    let npmPackage;
 
     return {
 
@@ -435,6 +439,30 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
+         * Show a prompt and then run `npm publish`
+         * @returns {Promise}
+         */
+        async publishToNpm() {
+            // checkout master
+            await gitClient.checkout(releaseBranch);
+
+            const { confirmPublish } = await inquirer.prompt({
+                name: 'confirmPublish',
+                type: 'confirm',
+                message: `Do you want to proceed with the 'npm publish' command?`,
+                default: false
+            });
+            if (confirmPublish) {
+                log.doing(`Publishing package ${data.package.name} @ ${data.package.version}`);
+                return new Promise( (resolve, reject) => {
+                    const spawned = crossSpawn('npm', ['publish']);
+                    spawned.on('close', code => code === 0 ? resolve() : reject());
+                });
+            }
+            return Promise.reject();
+        },
+
+        /**
          * Remove releasing branch
          */
         async removeReleasingBranch() {
@@ -497,8 +525,8 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                     .exit();
             }
             // Verify validity of chosen package
-            const package = npmPackageFactory(absolutePathToPackage);
-            if (!await package.isValidPackage()) {
+            npmPackage = npmPackageFactory(absolutePathToPackage);
+            if (!await npmPackage.isValidPackage()) {
                 log.error(`There doesn't appear to be a valid npm package in ${absolutePathToPackage}`)
                     .exit();
             }
@@ -506,11 +534,11 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             gitClient = gitClientFactory(absolutePathToPackage, origin);
 
             data.package = {
-                name: package.name, // no
+                name: npmPackage.name,
                 path: absolutePathToPackage,
             };
 
-            console.log('6', data); // looks good
+            console.log('package data', data); // looks good
             await config.write(data);
         },
 
@@ -632,7 +660,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         /**
          * Fetch and pull branches, extract manifests and repo name
          */
-        async verifyBranches() {
+        async verifyBranches({ subject = 'extension' }) {
             const { pull } = await inquirer.prompt({
                 type: 'confirm',
                 name: 'pull',
@@ -643,19 +671,27 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 log.exit();
             }
 
-            log.doing(`Updating ${data.extension.name}`);
+            log.doing(`Updating ${data[subject].name}`);
+
+            if (subject === 'extension') {
+                getMetadata = taoInstance.parseManifest.bind(`${data.extension.path}/manifest.php`);
+            }
+            else if (subject === 'package') {
+                getMetadata = npmPackage.parsePackageJson;
+            }
 
             await gitClient.pull(releaseBranch);
 
-            const { version: lastVersion } = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
+            // const { version: lastVersion } = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
+            const { version: lastVersion } = await getMetadata();
             data.lastVersion = lastVersion;
             data.lastTag = `v${lastVersion}`;
 
             await gitClient.pull(baseBranch);
 
-            const manifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
-
-            data.extension = manifest;
+            // const manifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
+            const manifest = await getMetadata();
+            data[subject] = manifest;
             data.version = manifest.version;
             data.tag = `v${manifest.version}`;
             data.releasingBranch = `${branchPrefix}-${manifest.version}`;
@@ -664,14 +700,14 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         /**
          * Verify if local branch has no uncommied changes
          */
-        async verifyLocalChanges() {
-            log.doing('Checking extension status');
+        async verifyLocalChanges({ subject = 'extension' }) {
+            log.doing(`Checking ${subject} status`);
 
             if (await gitClient.hasLocalChanges()) {
-                log.exit(`The extension ${data.extension.name} has local changes, please clean or stash them before releasing`);
+                log.exit(`The ${subject} ${data[subject].name} has local changes, please clean or stash them before releasing`);
             }
 
-            log.done(`${data.extension.name} is clean`);
+            log.done(`${data[subject].name} is clean`);
         },
 
         /**

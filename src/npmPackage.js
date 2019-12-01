@@ -63,7 +63,7 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
          * @returns {Object}
          */
         async parsePackageJson(folderName = rootDir) {
-            const { name, version, repository } = await readPkg({ cwd: '/Users/martinnicholson/work/htdocs/taorelease/tao-foobaz-fe' }); //
+            const { name, version, repository } = await readPkg({ cwd: folderName });
             _name = name;
             _version = version;
             _repository = repository;

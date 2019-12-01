@@ -42,6 +42,7 @@
     "octonode": "^0.9.4",
     "opn": "^5.1.0",
     "php-parser": "^2.0.7",
+    "read-pkg": "^5.2.0",
     "simple-git": "^1.126.0",
     "update-notifier": "^2.3.0"
   },
