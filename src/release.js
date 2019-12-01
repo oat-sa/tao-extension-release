@@ -108,11 +108,11 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Prompt user to confirm release
          * @deprecated - only used in oldWayRelease for backward compatibility / user experience
          */
-        async confirmRelease() {
+        async confirmRelease({ subject = 'extension' }) {
             const { go } = await inquirer.prompt({
                 type: 'confirm',
                 name: 'go',
-                message: `Let's release version ${data.extension.name}@${data.version} 🚀 ?`
+                message: `Let's release version ${data[subject].name}@${data.version} 🚀 ?`
             });
 
             if (!go) {

@@ -59,7 +59,7 @@ async function createRelease() {
         await release.doesTagExists();
         await release.doesReleasingBranchExists();
         await release.isReleaseRequired();
-        // await release.confirmRelease(); // uses data.extension.name
+        await release.confirmRelease({ subject: 'package' }); // generalise text
         // await release.createReleasingBranch();
         // await release.compileAssets(); // -> [new] buildPackage()
         // // await release.updateTranslations(); // skip?
