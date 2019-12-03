@@ -67,6 +67,13 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
     return {
 
         /**
+         * Run the build command of the package so we release latest build
+         */
+        async buildPackage() {
+            await npmPackage.build();
+        },
+
+        /**
          * Check out the predefined releasing branch
          */
         async checkoutReleasingBranch() {

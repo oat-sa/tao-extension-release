@@ -85,15 +85,19 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
         /**
          * Run any npm command and wrap result in a Promise
          * @param {String} command
-         * @returns {Promise}
+         * @returns {Promise} - resolves if command ran without errors
          */
-        npmCommand(command) {
+        npmCommand(command, prefix = rootDir) {
             return new Promise( (resolve, reject) => {
                 if (typeof command !== 'string') {
                     reject();
                 }
+                // Run command in the given directory:
+                command += ` --prefix ${prefix}`;
                 const spawned = crossSpawn('npm', command.split(' '));
-                spawned.on('close', code => code === 0 ? resolve() : reject());
+                spawned.on('close', code => {
+                    code === 0 ? resolve() : reject();
+                });
             });
         },
 

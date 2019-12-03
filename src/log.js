@@ -51,10 +51,10 @@ module.exports = {
         return this;
     },
     error(err){
-        if(err.message){
+        if(err && err.message){
             console.log(chalk.red(`❎ ${err.message}`));
         }
-        console.error(err);
+        console.error(`Error: ${err}`);
         return this;
     },
     exit(msg){

@@ -57,9 +57,11 @@ async function createRelease() {
         await release.doesReleasingBranchExists();
         await release.isReleaseRequired();
         await release.confirmRelease('package'); // generalise text
-        // await release.createReleasingBranch();
-        // await release.compileAssets(); // -> [new] buildPackage()
-        // // await release.updateTranslations(); // skip?
+        await release.createReleasingBranch();
+        // await release.compileAssets(); // -> skip
+        await release.buildPackage(); // -> [new] npm run build
+        // await release.updateTranslations(); // -> skip
+
         // await release.initialiseGithubClient(); // uses data.extension.name // get repo from package.json
         // await release.createPullRequest();
         // await release.extractReleaseNotes();
@@ -68,7 +70,7 @@ async function createRelease() {
         // await release.createGithubRelease();
         // await release.mergeBack();
         // await release.removeReleasingBranch();
-        // await release.publishToNpm(); // [new]
+        // await release.publishToNpm(); // -> [new]
 
         log.done('Good job!').exit();
     } catch (error) {
