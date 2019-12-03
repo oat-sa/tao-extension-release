@@ -45,6 +45,7 @@ const npmPackageFactory = require('./npmPackage.js');
  * @param {String} [params.origin] - git repository origin
  * @param {String} [params.releaseBranch] - branch to release to
  * @param {String} [params.wwwUser] - name of the www user
+ * @param {String} [params.pathToPackage] - path to the npm package
  * @param {String} [params.pathToTao] - path to the instance root
  * @param {String} [params.extensionToRelease] - name of the extension
  * @param {String} [params.versionToRelease] - version in xx.x.x format
@@ -55,7 +56,7 @@ const npmPackageFactory = require('./npmPackage.js');
 module.exports = function taoExtensionReleaseFactory(params = {}) {
     const { baseBranch, branchPrefix, origin, releaseBranch, wwwUser,
         extensionToRelease, versionToRelease, updateTranslations } = params;
-    let { pathToTao, releaseComment } = params;
+    let { pathToPackage, pathToTao, releaseComment } = params;
 
     let data = {};
     let gitClient;
@@ -108,7 +109,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Prompt user to confirm release
          * @deprecated - only used in oldWayRelease for backward compatibility / user experience
          */
-        async confirmRelease({ subject = 'extension' }) {
+        async confirmRelease(subject = 'extension') {
             const { go } = await inquirer.prompt({
                 type: 'confirm',
                 name: 'go',
@@ -509,17 +510,10 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Select and initialise the npm package to release
          */
         async selectPackage() {
-            ( { pathToPackage } = await inquirer.prompt({
-                type: 'input',
-                name: 'pathToPackage',
-                message: 'What is the relative path to the package you want to release ? ',
-                default: data.taoRoot || process.cwd()
-            }) );
-            if (!pathToPackage) {
-                log.exit();
-            }
-            // Verify package.json
+            // Start with CLI option, if missing it defaults to current dir
             const absolutePathToPackage = path.resolve(process.cwd(), pathToPackage);
+
+            // Verify package.json
             if (!fs.existsSync(`${absolutePathToPackage}/package.json`)) {
                 log.error(`No package.json found in ${absolutePathToPackage}`)
                     .exit();
@@ -658,9 +652,24 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
-         * Fetch and pull branches, extract manifests and repo name
+         * Fetch metadata about the extension or package from its local metafile
+         * @param {string} [subject=extension] extension or package
+         * @returns {Promise} object containing metadata
          */
-        async verifyBranches({ subject = 'extension' }) {
+        async getMetadata(subject = 'extension') {
+            if (subject === 'extension') {
+                return taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
+            }
+            else if (subject === 'package') {
+                return npmPackage.parsePackageJson();
+            }
+        },
+
+        /**
+         * Fetch and pull branches, extract manifests and repo name
+         * @param {string} [subject=extension] extension or package
+         */
+        async verifyBranches(subject = 'extension') {
             const { pull } = await inquirer.prompt({
                 type: 'confirm',
                 name: 'pull',
@@ -673,24 +682,17 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
             log.doing(`Updating ${data[subject].name}`);
 
-            if (subject === 'extension') {
-                getMetadata = taoInstance.parseManifest.bind(`${data.extension.path}/manifest.php`);
-            }
-            else if (subject === 'package') {
-                getMetadata = npmPackage.parsePackageJson;
-            }
-
             await gitClient.pull(releaseBranch);
 
             // const { version: lastVersion } = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
-            const { version: lastVersion } = await getMetadata();
+            const { version: lastVersion } = await this.getMetadata(subject);
             data.lastVersion = lastVersion;
             data.lastTag = `v${lastVersion}`;
 
             await gitClient.pull(baseBranch);
 
             // const manifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
-            const manifest = await getMetadata();
+            const manifest = await this.getMetadata(subject);
             data[subject] = manifest;
             data.version = manifest.version;
             data.tag = `v${manifest.version}`;
@@ -700,7 +702,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         /**
          * Verify if local branch has no uncommied changes
          */
-        async verifyLocalChanges({ subject = 'extension' }) {
+        async verifyLocalChanges(subject = 'extension') {
             log.doing(`Checking ${subject} status`);
 
             if (await gitClient.hasLocalChanges()) {

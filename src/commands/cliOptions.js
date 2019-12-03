@@ -29,6 +29,7 @@ module.exports = {
     origin: ['--origin <remotename>', 'the name of the remote repo', 'origin'],
     releaseBranch: ['--release-branch <branch>', 'the target branch for the release PR', 'master'],
     wwwUser: ['--www-user <user>', 'the user who runs php commands', 'www-data'],
+    pathToPackage: ['--path-to-package <path>', 'path to npm package', ''],
     // options which fall back to user prompts if undefined
     pathToTao: ['--path-to-tao <path>', 'path to local TAO instance'],
     extensionToRelease: ['--extension-to-release <extension>', 'camelCase name of the extension to release'],
