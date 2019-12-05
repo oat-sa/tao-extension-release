@@ -22,9 +22,7 @@
  * @author Martin Nicholson <martin@taotesting.com>
  */
 
-const fs                      = require('fs');
 const { normalize, basename } = require('path');
-const { exec }                = require('child_process');
 const crossSpawn              = require('cross-spawn');
 const readPkg                 = require('read-pkg');
 
@@ -42,6 +40,7 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
     let _name;
     let _version;
     let _repository;
+    let _repoName;
 
     return {
 
@@ -67,7 +66,8 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
             _name = name;
             _version = version;
             _repository = repository;
-            return { name, version, repository };
+            _repoName = this.extractRepoName();
+            return { name, version, repository, repoName: _repoName };
         },
 
         get name() {
@@ -80,6 +80,19 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
 
         get repository() {
             return _repository;
+        },
+
+        get repoName() {
+            return _repoName;
+        },
+
+        extractRepoName() {
+            const matches = _repository.url.match(/([\w-]+\/[\w-]+)\.git$/);
+            console.log(matches);
+            if (matches) {
+                return matches[1];
+            }
+            return null;
         },
 
         /**

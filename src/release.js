@@ -70,7 +70,22 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Run the build command of the package so we release latest build
          */
         async buildPackage() {
-            await npmPackage.build();
+            log.doing('Building package');
+
+            try {
+                await npmPackage.build();
+
+                const changes = await gitClient.commitAndPush(data.releasingBranch, 'build package');
+
+                if (changes && changes.length) {
+                    log.info(`Commit : [built package - ${changes.length} files]`); // should be 2
+                    changes.forEach(file => log.info(`  - ${file}`));
+                }
+            } catch (error) {
+                log.error(`Unable to build package. ${error.message}. Continue.`);
+            }
+
+            log.done();
         },
 
         /**
@@ -114,6 +129,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Prompt user to confirm release
+         * @param {string} [subject=extension] extension or package
          * @deprecated - only used in oldWayRelease for backward compatibility / user experience
          */
         async confirmRelease(subject = 'extension') {
@@ -248,12 +264,14 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Initialise github client for the extension to release repository
+         * @param {string} [subject=extension] extension or package
          */
-        async initialiseGithubClient() {
-            const repoName = await taoInstance.getRepoName(data.extension.name);
+        async initialiseGithubClient(subject = 'extension') {
+            const metadata = await this.getMetadata(subject);
+            console.log('meta', metadata);
 
-            if (repoName) {
-                githubClient = github(data.token, repoName);
+            if (metadata.repoName) {
+                githubClient = github(data.token, metadata.repoName);
             } else {
                 log.exit('Unable to find the github repository name');
             }
@@ -457,7 +475,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             const { confirmPublish } = await inquirer.prompt({
                 name: 'confirmPublish',
                 type: 'confirm',
-                message: `Do you want to proceed with the 'npm publish' command?`,
+                message: 'Do you want to proceed with the \'npm publish\' command?',
                 default: false
             });
             if (confirmPublish) {
@@ -536,10 +554,9 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
             data.package = {
                 name: npmPackage.name,
-                path: absolutePathToPackage,
+                path: absolutePathToPackage, // not used
             };
 
-            console.log('package data', data); // looks good
             await config.write(data);
         },
 
@@ -665,7 +682,11 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          */
         async getMetadata(subject = 'extension') {
             if (subject === 'extension') {
-                return taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
+                console.log('getMeta', subject, data);
+
+                const manifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
+                const repoName = await taoInstance.getRepoName(data.extension.name);
+                return { ...manifest, repoName };
             }
             else if (subject === 'package') {
                 return npmPackage.parsePackageJson();
@@ -689,18 +710,20 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
             log.doing(`Updating ${data[subject].name}`);
 
+            // Get last released version:
             await gitClient.pull(releaseBranch);
-
             // const { version: lastVersion } = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
             const { version: lastVersion } = await this.getMetadata(subject);
             data.lastVersion = lastVersion;
             data.lastTag = `v${lastVersion}`;
 
+            // Get version to release:
             await gitClient.pull(baseBranch);
-
             // const manifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
-            const manifest = await this.getMetadata(subject);
-            data[subject] = manifest;
+            const manifest = await this.getMetadata(subject); // name, version, repoName
+            // console.log(manifest);
+            // data[subject] = Object.assign({}, data[subject], manifest); // putting too much into data.extension?
+            // data[subject].repoName = manifest.repoName; // not used
             data.version = manifest.version;
             data.tag = `v${manifest.version}`;
             data.releasingBranch = `${branchPrefix}-${manifest.version}`;
@@ -708,6 +731,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Verify if local branch has no uncommied changes
+         * @param {string} [subject=extension] extension or package
          */
         async verifyLocalChanges(subject = 'extension') {
             log.doing(`Checking ${subject} status`);

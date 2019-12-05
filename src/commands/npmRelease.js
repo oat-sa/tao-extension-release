@@ -23,7 +23,7 @@ const program = new commander.Command();
 
 const cliOptions =  require('./cliOptions');
 
-program // CLI OPTIONS TBD
+program // TODO: CLI OPTIONS TBD
     .name('taoRelease npmRelease')
     .usage('[options]')
     .option(...cliOptions.debug)
@@ -34,7 +34,6 @@ program // CLI OPTIONS TBD
     .option(...cliOptions.releaseBranch)
     .option(...cliOptions.pathToPackage)
     // options which fall back to user prompts if undefined
-    .option(...cliOptions.versionToRelease)
     .option(...cliOptions.releaseComment)
     .parse(process.argv);
 
@@ -42,35 +41,35 @@ if (program.debug) console.log(program.opts());
 
 const release = require('../release')(program.opts());
 
-async function createRelease() {
+async function npmRelease() {
     try {
         log.title('TAO Extension Release: npmRelease');
 
+        // await npm.verifyUser();
         await release.loadConfig();
-        // await release.selectTaoInstance(); // -> skip? // creates taoInstance, sets data.taoRoot
-        // await release.selectExtension();
+        // await release.selectTaoInstance(); // -> skip // creates taoInstance, sets data.taoRoot
+        // await release.selectExtension(); // -> skip // sets data.extension.{name,path}
         await release.selectPackage(); // -> [new] takes path to package and validates it, creates npmPackage, sets data.package.{name,path}
-        await release.verifyLocalChanges('package'); // generalise text
+        await release.verifyLocalChanges('package'); // generalised text
         await release.signTags();
-        await release.verifyBranches('package'); // parameterise for manifest.php OR package.json
+        await release.verifyBranches('package'); // parameterised for manifest.php OR package.json
         await release.doesTagExists();
         await release.doesReleasingBranchExists();
         await release.isReleaseRequired();
-        await release.confirmRelease('package'); // generalise text
+        await release.confirmRelease('package'); // generalised text
         await release.createReleasingBranch();
         // await release.compileAssets(); // -> skip
         await release.buildPackage(); // -> [new] npm run build
         // await release.updateTranslations(); // -> skip
-
-        // await release.initialiseGithubClient(); // uses data.extension.name // get repo from package.json
-        // await release.createPullRequest();
-        // await release.extractReleaseNotes();
-        // await release.mergePullRequest();
-        // await release.createReleaseTag();
-        // await release.createGithubRelease();
-        // await release.mergeBack();
-        // await release.removeReleasingBranch();
-        // await release.publishToNpm(); // -> [new]
+        await release.initialiseGithubClient('package'); // adapted to get repoName from composer.json OR package.json
+        await release.createPullRequest();
+        await release.extractReleaseNotes();
+        await release.mergePullRequest();
+        await release.createReleaseTag();
+        await release.createGithubRelease();
+        await release.mergeBack();
+        await release.removeReleasingBranch();
+        // await release.publishToNpm(); // -> [new] npm publish
 
         log.done('Good job!').exit();
     } catch (error) {
@@ -78,4 +77,4 @@ async function createRelease() {
     }
 }
 
-createRelease();
+npmRelease();
