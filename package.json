@@ -15,6 +15,9 @@
   "bin": {
     "taoRelease": "./index.js"
   },
+  "files": [
+    "src"
+  ],
   "nyc": {
     "exclude": [
       "tests"
