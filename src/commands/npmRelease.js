@@ -32,7 +32,6 @@ program // TODO: CLI OPTIONS TBD
     .option(...cliOptions.branchPrefix)
     .option(...cliOptions.origin)
     .option(...cliOptions.releaseBranch)
-    .option(...cliOptions.pathToPackage)
     // options which fall back to user prompts if undefined
     .option(...cliOptions.releaseComment)
     .parse(process.argv);
@@ -45,7 +44,6 @@ async function npmRelease() {
     try {
         log.title('TAO Extension Release: npmRelease');
 
-        // await npm.verifyUser();
         await release.loadConfig();
         // await release.selectTaoInstance(); // -> skip // creates taoInstance, sets data.taoRoot
         // await release.selectExtension(); // -> skip // sets data.extension.{name,path}
@@ -69,7 +67,7 @@ async function npmRelease() {
         await release.createGithubRelease();
         await release.mergeBack();
         await release.removeReleasingBranch();
-        // await release.publishToNpm(); // -> [new] npm publish
+        await release.publishToNpm(); // -> [new] npm publish
 
         log.done('Good job!').exit();
     } catch (error) {

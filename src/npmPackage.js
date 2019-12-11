@@ -118,11 +118,9 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
          * Note: `npm publish` does not accept a `--prefix` param (to change dir) like other npm commands
          * @returns {Promise}
          */
-        publish(dryRun = true, myRegistry = true) {
-            const { user } = npmUtil.verifyUser();
-            if (!user) {
-                log.exit();
-            }
+        async publish(dryRun = true, myRegistry = true) {
+            await npmUtil.verifyUser();
+
             // Flags for testing purposes:
             const dryRunFlag = '--dry-run';
             const registryFlag = '--registry http://localhost:4873';

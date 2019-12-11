@@ -44,7 +44,6 @@ const npmPackageFactory = require('./npmPackage.js');
  * @param {String} [params.origin] - git repository origin
  * @param {String} [params.releaseBranch] - branch to release to
  * @param {String} [params.wwwUser] - name of the www user
- * @param {String} [params.pathToPackage] - path to the npm package
  * @param {String} [params.pathToTao] - path to the instance root
  * @param {String} [params.extensionToRelease] - name of the extension
  * @param {String} [params.versionToRelease] - version in xx.x.x format
@@ -55,7 +54,7 @@ const npmPackageFactory = require('./npmPackage.js');
 module.exports = function taoExtensionReleaseFactory(params = {}) {
     const { baseBranch, branchPrefix, origin, releaseBranch, wwwUser,
         extensionToRelease, versionToRelease, updateTranslations } = params;
-    let { pathToPackage, pathToTao, releaseComment } = params;
+    let { pathToTao, releaseComment } = params;
 
     let data = {};
     let gitClient;
@@ -529,18 +528,18 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Select and initialise the npm package to release
          */
         async selectPackage() {
-            // Start with CLI option, if missing it defaults to current dir
-            const absolutePathToPackage = path.resolve(process.cwd(), pathToPackage);
+            // Only the current folder is supported, due to `npm publish` limitation
+            const absolutePathToPackage = process.cwd();
 
             // Verify package.json
             if (!fs.existsSync(`${absolutePathToPackage}/package.json`)) {
-                log.error(`No package.json found in ${absolutePathToPackage}`)
+                log.error(`No package.json found in ${absolutePathToPackage}. Please run the command inside a npm package repo.`)
                     .exit();
             }
             // Verify validity of chosen package
             npmPackage = npmPackageFactory(absolutePathToPackage);
             if (!await npmPackage.isValidPackage()) {
-                log.error(`There doesn't appear to be a valid npm package in ${absolutePathToPackage}`)
+                log.error(`Invalid package.json found in ${absolutePathToPackage}`)
                     .exit();
             }
 
@@ -548,7 +547,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
             data.package = {
                 name: npmPackage.name,
-                path: absolutePathToPackage, // not used
+                path: absolutePathToPackage,
             };
 
             await config.write(data);
