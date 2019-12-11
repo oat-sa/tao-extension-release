@@ -16,7 +16,7 @@
  * Copyright (c) 2019 Open Assessment Technologies SA;
  */
 
- /**
+/**
  *
  * Unit test the verifyBranches method of module src/release.js
  *
@@ -52,6 +52,7 @@ const taoInstance = {
     isInstalled: () => true,
     isRoot: () => ({ root: true, dir: taoRoot }),
     parseManifest: () => ({}),
+    getRepoName: () => ''
 };
 const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
@@ -143,7 +144,7 @@ test('should pull release branch', async (t) => {
     t.end();
 });
 
-test('should parse extension manifes', async (t) => {
+test('should parse extension manifest', async (t) => {
     t.plan(2);
 
     await release.selectTaoInstance();

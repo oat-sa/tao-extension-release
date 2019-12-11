@@ -16,7 +16,7 @@
  * Copyright (c) 2019 Open Assessment Technologies SA;
  */
 
- /**
+/**
  *
  * Unit test the selectTaoInstance method of module src/release.js
  *
@@ -39,6 +39,7 @@ const log = {
 const taoInstance = {
     isInstalled: () => ({}),
     isRoot: () => ({}),
+    getRepoName: () => ''
 };
 const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
 const wwwUser = 'testwwwUser';

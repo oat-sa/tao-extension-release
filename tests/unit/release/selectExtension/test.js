@@ -16,7 +16,7 @@
  * Copyright (c) 2019 Open Assessment Technologies SA;
  */
 
- /**
+/**
  *
  * Unit test the selectTaoInstance method of module src/release.js
  *
@@ -48,6 +48,7 @@ const taoInstance = {
     getExtensions: () => [],
     isInstalled: () => true,
     isRoot: () => ({ root: true, dir: taoRoot }),
+    getRepoName: () => ''
 };
 const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
