@@ -27,7 +27,6 @@ const inquirer = require('inquirer');
 const opn = require('opn');
 const path = require('path');
 const compareVersions = require('compare-versions');
-const crossSpawn = require('cross-spawn');
 
 const config = require('./config.js')();
 const gitClientFactory = require('./git.js');
@@ -468,7 +467,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * @returns {Promise}
          */
         async publishToNpm() {
-            // checkout master
             await gitClient.checkout(releaseBranch);
 
             const { confirmPublish } = await inquirer.prompt({
@@ -479,12 +477,9 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             });
             if (confirmPublish) {
                 log.doing(`Publishing package ${data.package.name} @ ${data.version}`);
-                return new Promise( (resolve, reject) => {
-                    const spawned = crossSpawn('npm', ['publish']);
-                    spawned.on('close', code => code === 0 ? resolve() : reject());
-                });
+                return npmPackage.publish();
             }
-            return Promise.reject();
+            log.exit();
         },
 
         /**

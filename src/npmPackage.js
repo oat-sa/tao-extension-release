@@ -23,10 +23,9 @@
  */
 
 const { normalize, basename } = require('path');
-const crossSpawn              = require('cross-spawn');
-const readPkg                 = require('read-pkg');
-
-const isWin = /^win/.test(process.platform);
+const readPkg = require('read-pkg');
+const npmUtil = require('./npm.js');
+const log = require('./log.js');
 
 /**
  * Get the npmPackage
@@ -43,6 +42,22 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
     let _repoName;
 
     return {
+
+        get name() {
+            return _name;
+        },
+
+        get version() {
+            return _version;
+        },
+
+        get repository() {
+            return _repository;
+        },
+
+        get repoName() {
+            return _repoName;
+        },
 
         /**
          * Does the given folder look like a valid npm package?
@@ -70,25 +85,12 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
             return { name, version, repository, repoName: _repoName };
         },
 
-        get name() {
-            return _name;
-        },
-
-        get version() {
-            return _version;
-        },
-
-        get repository() {
-            return _repository;
-        },
-
-        get repoName() {
-            return _repoName;
-        },
-
+        /**
+         * Extract the github repo name in org/repo format from the package's repository url
+         * @returns {String}
+         */
         extractRepoName() {
             const matches = _repository.url.match(/([\w-]+\/[\w-]+)\.git$/);
-            console.log(matches);
             if (matches) {
                 return matches[1];
             }
@@ -96,30 +98,11 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
         },
 
         /**
-         * Run any npm command and wrap result in a Promise
-         * @param {String} command
-         * @returns {Promise} - resolves if command ran without errors
-         */
-        npmCommand(command, prefix = rootDir) {
-            return new Promise( (resolve, reject) => {
-                if (typeof command !== 'string') {
-                    reject();
-                }
-                // Run command in the given directory:
-                command += ` --prefix ${prefix}`;
-                const spawned = crossSpawn('npm', command.split(' '));
-                spawned.on('close', code => {
-                    code === 0 ? resolve() : reject();
-                });
-            });
-        },
-
-        /**
          * Run `npm ci` command
          * @returns {Promise}
          */
         cleanInstall() {
-            return this.npmCommand('ci');
+            return npmUtil.npmCommand('ci');
         },
 
         /**
@@ -127,15 +110,24 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
          * @returns {Promise}
          */
         build() {
-            return this.npmCommand('run build');
+            return npmUtil.npmCommand('run build');
         },
 
         /**
          * Run `npm publish` command
+         * Note: `npm publish` does not accept a `--prefix` param (to change dir) like other npm commands
          * @returns {Promise}
          */
-        publish() {
-            return this.npmCommand('publish --registry http://localhost:4873');
+        publish(dryRun = true, myRegistry = true) {
+            const { user } = npmUtil.verifyUser();
+            if (!user) {
+                log.exit();
+            }
+            // Flags for testing purposes:
+            const dryRunFlag = '--dry-run';
+            const registryFlag = '--registry http://localhost:4873';
+            const publishCommand = `publish --otp --access public ${dryRun && dryRunFlag} ${myRegistry && registryFlag}`;
+            return npmUtil.npmCommand(publishCommand, false);
         }
     };
 };
