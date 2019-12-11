@@ -18,14 +18,15 @@
 
 /**
  *
- * Unit test the initialiseGithubClient method of module src/release.js
+ * Unit test the getMetadata method of module src/release.js
  *
- * @author Anton Tsymuk <anton@taotesting.com>
+ * @author Martin Nicholson <martin@taotesting.com>
  */
 
 const proxyquire = require('proxyquire');
 const sinon = require('sinon');
 const test = require('tape');
+const path = require('path');
 
 const sandbox = sinon.sandbox.create();
 
@@ -40,11 +41,14 @@ const log = {
     exit: () => { },
 };
 const taoRoot = 'testRoot';
+const manifestPath = path.join(taoRoot, extension, 'manifest.php'); //
+
 const inquirer = {
     prompt: () => ({ extension, taoRoot }),
 };
 const repositoryName = 'testRepository';
 const version = '1.1.1';
+
 const taoInstance = {
     getExtensions: () => [],
     getRepoName: () => repositoryName,
@@ -53,32 +57,45 @@ const taoInstance = {
     parseManifest: () => ({ version, name: extension })
 };
 const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
+
+const npmPackage = {
+    isValidPackage: () => true,
+    parsePackageJson: () => ({ version }),
+    extractRepoName: () => repositoryName
+};
+const npmPackageFactory = sandbox.stub().callsFake(() => npmPackage);
+
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './config.js': () => config,
     './git.js': gitClientFactory,
     './github.js': githubFactory,
     './log.js': log,
     './taoInstance.js': taoInstanceFactory,
+    './npmPackage.js': npmPackageFactory,
     inquirer,
 })();
 
-test('should define initialiseGithubClient method on release instance', (t) => {
+test('should define getMetadata method on release instance', (t) => {
     t.plan(1);
 
-    t.ok(typeof release.initialiseGithubClient === 'function', 'The release instance has initialiseGithubClient method');
+    t.ok(typeof release.getMetadata === 'function', 'The release instance has getMetadata method');
 
     t.end();
 });
 
-test('should get repository name', async (t) => {
-    t.plan(2);
+test('should get extension metadata', async (t) => {
+    t.plan(4);
 
     await release.selectTaoInstance();
     await release.selectExtension();
 
+    sandbox.stub(taoInstance, 'parseManifest').returns({ version, name: extension });
     sandbox.stub(taoInstance, 'getRepoName').returns(repositoryName);
 
-    await release.initialiseGithubClient();
+    await release.getMetadata();
+
+    t.equal(taoInstance.parseManifest.callCount, 1, 'Parsing of manifest');
+    t.ok(taoInstance.parseManifest.calledWith(manifestPath), 'Parsing of manifest of apropriate extension');
 
     t.equal(taoInstance.getRepoName.callCount, 1, 'Getting of repository name');
     t.ok(taoInstance.getRepoName.calledWith(extension), 'Getting of repository name of apropriate extension');
@@ -87,36 +104,36 @@ test('should get repository name', async (t) => {
     t.end();
 });
 
-test('should create github instance', async (t) => {
-    t.plan(2);
+test('should get package metadata', async (t) => {
+    t.plan(1);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
+    await release.selectPackage();
 
-    githubFactory.resetHistory();
+    sandbox.stub(npmPackage, 'parsePackageJson').returns({ version });
 
-    await release.initialiseGithubClient();
+    await release.getMetadata('package');
 
-    t.equal(githubFactory.callCount, 1, 'Github client has been initialised');
-    t.ok(githubFactory.calledWith(sinon.match.any, repositoryName), 'Github client has been initialised with apropriate repository');
+    t.equal(npmPackage.parsePackageJson.callCount, 1, 'Parsing of package.json');
 
     sandbox.restore();
     t.end();
 });
 
-test('should log exit message if can not get repository name', async (t) => {
-    t.plan(2);
+test('should return metadata object', async (t) => {
+    t.plan(4);
 
     await release.selectTaoInstance();
     await release.selectExtension();
 
-    sandbox.stub(log, 'exit');
-    sandbox.stub(taoInstance, 'getRepoName').returns(null);
+    sandbox.stub(taoInstance, 'parseManifest').returns({ version, name: extension });
+    sandbox.stub(taoInstance, 'getRepoName').returns(repositoryName);
 
-    await release.initialiseGithubClient();
+    const result = await release.getMetadata();
 
-    t.equal(log.exit.callCount, 1, 'Exit has been logged');
-    t.ok(log.exit.calledWith('Unable to find the github repository name'), 'Exit has been logged with apropriate message');
+    t.ok(typeof result === 'object', 'Returns an object');
+    t.ok(result.name, 'Returns an object.name');
+    t.ok(result.version, 'Returns an object.version');
+    t.ok(result.repoName, 'Returns an object.repoName');
 
     sandbox.restore();
     t.end();
