@@ -268,7 +268,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          */
         async initialiseGithubClient(subject = 'extension') {
             const metadata = await this.getMetadata(subject);
-            console.log('meta', metadata);
 
             if (metadata.repoName) {
                 githubClient = github(data.token, metadata.repoName);
@@ -479,7 +478,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 default: false
             });
             if (confirmPublish) {
-                log.doing(`Publishing package ${data.package.name} @ ${data.package.version}`);
+                log.doing(`Publishing package ${data.package.name} @ ${data.version}`);
                 return new Promise( (resolve, reject) => {
                     const spawned = crossSpawn('npm', ['publish']);
                     spawned.on('close', code => code === 0 ? resolve() : reject());
