@@ -76,7 +76,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 const changes = await gitClient.commitAndPush(data.releasingBranch, 'build package');
 
                 if (changes && changes.length) {
-                    log.info(`Commit : [built package - ${changes.length} files]`); // should be 2
+                    log.info(`Commit : [built package - ${changes.length} files]`);
                     changes.forEach(file => log.info(`  - ${file}`));
                 }
             } catch (error) {
@@ -705,18 +705,13 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
             // Get last released version:
             await gitClient.pull(releaseBranch);
-            // const { version: lastVersion } = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
             const { version: lastVersion } = await this.getMetadata(subject);
             data.lastVersion = lastVersion;
             data.lastTag = `v${lastVersion}`;
 
             // Get version to release:
             await gitClient.pull(baseBranch);
-            // const manifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
             const manifest = await this.getMetadata(subject); // name, version, repoName
-            // console.log(manifest);
-            // data[subject] = Object.assign({}, data[subject], manifest); // putting too much into data.extension?
-            // data[subject].repoName = manifest.repoName; // not used
             data.version = manifest.version;
             data.tag = `v${manifest.version}`;
             data.releasingBranch = `${branchPrefix}-${manifest.version}`;
