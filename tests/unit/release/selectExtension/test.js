@@ -18,7 +18,7 @@
 
 /**
  *
- * Unit test the selectTaoInstance method of module src/release.js
+ * Unit test the selectExtension method of module src/release.js
  *
  * @author Anton Tsymuk <anton@taotesting.com>
  */
