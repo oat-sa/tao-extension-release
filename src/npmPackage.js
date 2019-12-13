@@ -22,10 +22,8 @@
  * @author Martin Nicholson <martin@taotesting.com>
  */
 
-const { normalize, basename } = require('path');
 const readPkg = require('read-pkg');
 const npmUtil = require('./npm.js');
-const log = require('./log.js');
 
 /**
  * Get the npmPackage
@@ -90,7 +88,7 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
          * @returns {String}
          */
         extractRepoName() {
-            const matches = _repository.url.match(/([\w-]+\/[\w-]+)\.git$/);
+            const matches = this.repository.url.match(/([\w-]+\/[\w-]+)\.git$/);
             if (matches) {
                 return matches[1];
             }
