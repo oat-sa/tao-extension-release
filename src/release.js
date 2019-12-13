@@ -230,7 +230,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 log.info(data.pr.notes);
                 log.done();
             } else {
-                log.exit('Unable to create the release notes');
+                log.error('Unable to create the release notes. Continue.');
             }
         },
 
