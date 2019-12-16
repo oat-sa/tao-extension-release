@@ -46,6 +46,7 @@ const gitClientInstance = {
 const gitClientFactory = sandbox.stub().callsFake(() => gitClientInstance);
 const log = {
     exit: () => { },
+    error: () => { },
     doing: () => { },
     done: () => { },
     info: () => { },
@@ -166,7 +167,7 @@ test('should log done message', async (t) => {
     t.end();
 });
 
-test('should log exit message if can not extract release notes', async (t) => {
+test('should log error message if can not extract release notes', async (t) => {
     t.plan(2);
 
     await release.selectTaoInstance();
@@ -175,12 +176,12 @@ test('should log exit message if can not extract release notes', async (t) => {
     await release.initialiseGithubClient();
     await release.createPullRequest();
 
-    sandbox.stub(log, 'exit');
+    sandbox.stub(log, 'error');
 
     await release.extractReleaseNotes();
 
-    t.equal(log.exit.callCount, 1, 'Exit has been logged');
-    t.ok(log.exit.calledWith('Unable to create the release notes'), 'Exit has been logged with apropriate message');
+    t.equal(log.error.callCount, 1, 'Error has been logged');
+    t.ok(log.error.calledWith('Unable to create the release notes. Continue.'), 'Error has been logged with apropriate message');
 
     sandbox.restore();
     t.end();
