@@ -87,6 +87,29 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
+         * Ensure the user's npm token is set, or prompt to paste in a new one
+         */
+        async checkNpmToken() {
+            if (!data.npmToken) {
+                setTimeout(() => opn('https://www.npmjs.com/settings/oat-sa/packages'), 2000);
+
+                const { npmToken } = await inquirer.prompt({
+                    type: 'input',
+                    name: 'npmToken',
+                    message: 'I need a NPM token for a member of the @oat-sa org (check your browser)  : ',
+                    validate: npmToken => /[a-f0-9-]{36}/i.test(npmToken),
+                    filter: npmToken => npmToken.trim()
+                });
+
+                data.npmToken = npmToken;
+
+                await config.write(data);
+
+                log.done('NPM token stored.');
+            }
+        },
+
+        /**
          * Check out the predefined releasing branch
          */
         async checkoutReleasingBranch() {
