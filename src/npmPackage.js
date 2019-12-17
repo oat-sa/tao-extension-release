@@ -23,7 +23,9 @@
  */
 
 const readPkg = require('read-pkg');
-const npmUtil = require('./npm.js');
+// const npmUtil = require('./npm.js');
+const crossSpawn = require('cross-spawn');
+const log = require('./log.js');
 
 /**
  * Get the npmPackage
@@ -38,6 +40,11 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
     let _version;
     let _repository;
     let _repoName;
+
+    const getOptions = (cwd = rootDir) => ({
+        cwd,
+        stdio: quiet ? 'ignore' : 'inherit'
+    });
 
     return {
 
@@ -96,11 +103,31 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
         },
 
         /**
+         * Run any npm command and wrap result in a Promise
+         * @param {String} command
+         * @returns {Promise} - resolves if command ran without errors
+         */
+        async npmCommand(command) {
+            return new Promise( (resolve, reject) => {
+                if (typeof command !== 'string') {
+                    reject();
+                }
+                const opts = getOptions();
+                log.info('npm ' + command, opts);
+
+                const spawned = crossSpawn('npm', command.split(' '), opts);
+                spawned.on('close', code => {
+                    code === 0 ? resolve() : reject();
+                });
+            });
+        },
+
+        /**
          * Run `npm ci` command
          * @returns {Promise}
          */
-        cleanInstall() {
-            return npmUtil.npmCommand('ci');
+        ci() {
+            return this.npmCommand('ci');
         },
 
         /**
@@ -108,22 +135,19 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
          * @returns {Promise}
          */
         build() {
-            return npmUtil.npmCommand('run build');
+            return this.npmCommand('run build');
         },
 
         /**
          * Run `npm publish` command
-         * Note: `npm publish` does not accept a `--prefix` param (to change dir) like other npm commands
          * @returns {Promise}
          */
         async publish(dryRun = true, myRegistry = true) {
-            await npmUtil.verifyUser();
-
             // Flags for testing purposes:
             const dryRunFlag = '--dry-run';
             const registryFlag = '--registry http://localhost:4873';
             const publishCommand = `publish --otp --access public ${dryRun && dryRunFlag} ${myRegistry && registryFlag}`;
-            return npmUtil.npmCommand(publishCommand, false);
+            return this.npmCommand(publishCommand);
         }
     };
 };

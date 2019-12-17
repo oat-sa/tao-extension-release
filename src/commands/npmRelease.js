@@ -45,20 +45,16 @@ async function npmRelease() {
         log.title('TAO Extension Release: npmRelease');
 
         await release.loadConfig();
-        // await release.selectTaoInstance(); // -> skip // creates taoInstance, sets data.taoRoot
-        // await release.selectExtension(); // -> skip // sets data.extension.{name,path}
         await release.selectPackage(); // -> [new] takes path to package and validates it, creates npmPackage, sets data.package.{name,path}
-        await release.verifyLocalChanges('package'); // generalised text
+        await release.verifyLocalChanges('package');
         await release.signTags();
         await release.verifyBranches('package'); // parameterised for manifest.php OR package.json
         await release.doesTagExists();
         await release.doesReleasingBranchExists();
         await release.isReleaseRequired();
-        await release.confirmRelease('package'); // generalised text
+        await release.confirmRelease('package');
         await release.createReleasingBranch();
-        // await release.compileAssets(); // -> skip
         await release.buildPackage(); // -> [new] npm run build
-        // await release.updateTranslations(); // -> skip
         await release.initialiseGithubClient('package'); // adapted to get repoName from composer.json OR package.json
         await release.createPullRequest();
         await release.extractReleaseNotes();
@@ -67,7 +63,8 @@ async function npmRelease() {
         await release.createGithubRelease();
         await release.mergeBack();
         await release.removeReleasingBranch();
-        await release.publishToNpm(); // -> [new] npm publish
+        await release.checkNpmToken();
+        await release.publishToNpm();
 
         log.done('Good job!').exit();
     } catch (error) {
