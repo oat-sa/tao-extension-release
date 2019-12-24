@@ -87,29 +87,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
-         * Ensure the user's npm token is set, or prompt to paste in a new one
-         */
-        async checkNpmToken() {
-            if (!data.npmToken) {
-                setTimeout(() => opn('https://www.npmjs.com/settings/oat-sa/packages'), 2000);
-
-                const { npmToken } = await inquirer.prompt({
-                    type: 'input',
-                    name: 'npmToken',
-                    message: 'I need a NPM token for a member of the @oat-sa org (check your browser)  : ',
-                    validate: npmToken => /[a-f0-9-]{36}/i.test(npmToken),
-                    filter: npmToken => npmToken.trim()
-                });
-
-                data.npmToken = npmToken;
-
-                await config.write(data);
-
-                log.done('NPM token stored.');
-            }
-        },
-
-        /**
          * Check out the predefined releasing branch
          */
         async checkoutReleasingBranch() {
@@ -281,6 +258,24 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             } else {
                 data.pr.notes = '';
                 log.error('Unable to create the release notes. Continue.');
+            }
+        },
+
+        /**
+         * Fetch metadata about the extension or package from its local metafile
+         * @param {string} [subject=extension] extension or package
+         * @returns {Promise} object containing metadata
+         */
+        async getMetadata(subject = 'extension') {
+            if (subject === 'extension') {
+                console.log('getMeta', subject, data);
+
+                const manifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
+                const repoName = await taoInstance.getRepoName(data.extension.name);
+                return { ...manifest, repoName };
+            }
+            else if (subject === 'package') {
+                return npmPackage.parsePackageJson();
             }
         },
 
@@ -495,7 +490,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             const { confirmPublish } = await inquirer.prompt({
                 name: 'confirmPublish',
                 type: 'confirm',
-                message: 'Do you want to proceed with the \'npm publish\' command?',
+                message: 'Do you want to proceed with the \'npm publish\' command? (Please be sure your npm account is configured and is a member of @oat-sa or @oat-sa-private)',
                 default: false
             });
             if (confirmPublish) {
@@ -690,24 +685,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             }
 
             log.done();
-        },
-
-        /**
-         * Fetch metadata about the extension or package from its local metafile
-         * @param {string} [subject=extension] extension or package
-         * @returns {Promise} object containing metadata
-         */
-        async getMetadata(subject = 'extension') {
-            if (subject === 'extension') {
-                console.log('getMeta', subject, data);
-
-                const manifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
-                const repoName = await taoInstance.getRepoName(data.extension.name);
-                return { ...manifest, repoName };
-            }
-            else if (subject === 'package') {
-                return npmPackage.parsePackageJson();
-            }
         },
 
         /**

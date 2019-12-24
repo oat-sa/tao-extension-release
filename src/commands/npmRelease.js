@@ -63,7 +63,6 @@ async function npmRelease() {
         await release.createGithubRelease();
         await release.mergeBack();
         await release.removeReleasingBranch();
-        await release.checkNpmToken();
         await release.publishToNpm();
 
         log.done('Good job!').exit();

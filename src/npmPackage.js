@@ -142,11 +142,11 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
          * Run `npm publish` command
          * @returns {Promise}
          */
-        async publish(dryRun = true, myRegistry = true) {
+        publish(dryRun = true, myRegistry = true) {
             // Flags for testing purposes:
             const dryRunFlag = '--dry-run';
             const registryFlag = '--registry http://localhost:4873';
-            const publishCommand = `publish --otp --access public ${dryRun && dryRunFlag} ${myRegistry && registryFlag}`;
+            const publishCommand = `publish --access public ${dryRun && dryRunFlag} ${myRegistry && registryFlag}`;
             return this.npmCommand(publishCommand);
         }
     };
