@@ -22,7 +22,7 @@
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
 
-const githubApiClientFactory = require('./githubApiClient');
+const githubApiClientFactory = require('./githubApiClient.js');
 const validate = require('./validate.js');
 
 /**

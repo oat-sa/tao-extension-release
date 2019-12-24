@@ -21,7 +21,7 @@ const log = require('../log.js');
 const commander = require('commander');
 const program = new commander.Command();
 
-const cliOptions =  require('./cliOptions');
+const cliOptions =  require('./cliOptions.js');
 
 program
     .name('taoRelease prepareRelease')
@@ -41,7 +41,7 @@ program
 
 if (program.debug) console.log(program.opts());
 
-const release = require('../release')(program.opts());
+const release = require('../release.js')(program.opts());
 
 async function prepareRelease() {
     try {
