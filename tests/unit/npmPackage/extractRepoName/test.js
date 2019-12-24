@@ -18,7 +18,7 @@
 
 /**
  *
- * Unit test the module src/npm.js
+ * Unit test the extractRepoName method of module src/npmPackage.js
  *
  * @author Martin Nicholson <martin@taotesting.com>
  */
@@ -26,14 +26,14 @@
 const test = require('tape');
 const sinon = require('sinon');
 const npmPackageFactory = require('../../../../src/npmPackage.js');
+const npmPackage = npmPackageFactory();
 
 const sandbox = sinon.sandbox.create();
 
-test('the module api', t => {
-    t.plan(2);
+test('should define extractRepoName method on release instance', (t) => {
+    t.plan(1);
 
-    t.ok(typeof npmPackageFactory === 'function', 'The module exports a function');
-    t.ok(typeof npmPackageFactory() === 'object', 'The module function creates an object');
+    t.ok(typeof npmPackage.extractRepoName === 'function', 'The release instance has extractRepoName method');
 
     t.end();
 });
@@ -45,8 +45,6 @@ const goodUrls = [
 
 test('the repoName can be extracted', (t) => {
     t.plan(goodUrls.length);
-
-    const npmPackage = npmPackageFactory();
 
     for (let url of goodUrls) {
         sandbox.stub(npmPackage, 'repository').get(() => ({ url }));
@@ -67,8 +65,6 @@ const badUrls = [
 
 test('the repoName cannot be extracted', (t) => {
     t.plan(badUrls.length);
-
-    const npmPackage = npmPackageFactory();
 
     for (let url of badUrls) {
         sandbox.stub(npmPackage, 'repository').get(() => ({ url }));

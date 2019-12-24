@@ -70,7 +70,7 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
          */
         async isValidPackage(folderName = rootDir) {
             const pkg = await this.parsePackageJson(folderName);
-            return pkg.name && pkg.version && pkg.repository.url;
+            return !!(pkg.name && pkg.version && pkg.repository && pkg.repository.url);
         },
 
         /**
