@@ -268,8 +268,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          */
         async getMetadata(subject = 'extension') {
             if (subject === 'extension') {
-                console.log('getMeta', subject, data);
-
                 const manifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
                 const repoName = await taoInstance.getRepoName(data.extension.name);
                 return { ...manifest, repoName };
@@ -487,10 +485,16 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         async publishToNpm() {
             await gitClient.checkout(releaseBranch);
 
+            log.doing('Preparing for npm publish');
+            log.info(`
+Before publishing, please be sure your npm account is configured and is a member of @oat-sa or @oat-sa-private
+https://docs.npmjs.com/getting-started/setting-up-your-npm-user-account
+https://www.npmjs.com/settings/oat-sa/packages
+            `);
             const { confirmPublish } = await inquirer.prompt({
                 name: 'confirmPublish',
                 type: 'confirm',
-                message: 'Do you want to proceed with the \'npm publish\' command? (Please be sure your npm account is configured and is a member of @oat-sa or @oat-sa-private)',
+                message: 'Do you want to proceed with the \'npm publish\' command?',
                 default: false
             });
             if (confirmPublish) {
@@ -556,7 +560,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                     .exit();
             }
             // Verify validity of chosen package
-            npmPackage = npmPackageFactory(absolutePathToPackage);
+            npmPackage = npmPackageFactory(absolutePathToPackage, false);
             if (!await npmPackage.isValidPackage()) {
                 log.error(`Invalid package.json found in ${absolutePathToPackage}`)
                     .exit();

@@ -30,6 +30,9 @@ const fs = require('fs');
 
 const sandbox = sinon.sandbox.create();
 
+const config = {
+    write: () => { },
+};
 const gitClientInstance = {
     checkout: () => { },
 };
@@ -37,6 +40,7 @@ const gitClientFactory = sandbox.stub().callsFake(() => gitClientInstance);
 const log = {
     exit: () => { },
     doing: () => { },
+    info: () => { },
     done: () => { },
 };
 const inquirer = {
@@ -53,6 +57,7 @@ const npmPackage = {
 const npmPackageFactory = sandbox.stub().callsFake(() => npmPackage);
 
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
+    './config.js': () => config,
     './git.js': gitClientFactory,
     './log.js': log,
     './npmPackage.js': npmPackageFactory,
@@ -121,8 +126,8 @@ test('should call npmPackage.publish', async (t) => {
     await release.selectPackage();
     await release.publishToNpm();
 
-    t.equal(log.doing.callCount, 1, 'Doing has been logged');
-    t.ok(log.doing.getCall(0).args[0].startsWith('Publishing package'), 'Doing has been logged with appropriate message');
+    t.equal(log.doing.callCount, 2, 'Doing has been logged');
+    t.ok(log.doing.getCall(1).args[0].startsWith('Publishing package'), 'Doing has been logged with appropriate message');
     t.equal(npmPackage.publish.callCount, 1, 'npmPackage.publish has been called');
 
     sandbox.restore();

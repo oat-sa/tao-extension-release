@@ -23,7 +23,6 @@
  */
 
 const readPkg = require('read-pkg');
-// const npmUtil = require('./npm.js');
 const crossSpawn = require('cross-spawn');
 const log = require('./log.js');
 
@@ -70,9 +69,7 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
          * @returns {Boolean}
          */
         async isValidPackage(folderName = rootDir) {
-            console.log('rootDir', rootDir, 'folderName', folderName);
             const pkg = await this.parsePackageJson(folderName);
-            console.log('pkg', pkg);
             return pkg.name && pkg.version && pkg.repository.url;
         },
 
