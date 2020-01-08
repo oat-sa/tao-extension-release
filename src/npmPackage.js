@@ -137,13 +137,15 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
 
         /**
          * Run `npm publish` command
+         * Parameters are mainly for ease of development/testing
+         * @param {Boolean} [dryRun=false]
+         * @param {String} [registry='https://registry.npmjs.org']
          * @returns {Promise}
          */
-        publish(dryRun = true, myRegistry = true) {
-            // Flags for testing purposes:
+        publish(dryRun = false, registry = 'https://registry.npmjs.org') {
             const dryRunFlag = '--dry-run';
-            const registryFlag = '--registry http://localhost:4873';
-            const publishCommand = `publish --access public ${dryRun && dryRunFlag} ${myRegistry && registryFlag}`;
+            const registryFlag = `--registry ${registry}`;
+            const publishCommand = `publish ${dryRun && dryRunFlag} ${registry && registryFlag}`;
             return this.npmCommand(publishCommand);
         }
     };
