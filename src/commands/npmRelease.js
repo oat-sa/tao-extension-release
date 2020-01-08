@@ -47,17 +47,17 @@ async function npmRelease() {
         log.title('TAO Extension Release: npmRelease');
 
         await release.loadConfig();
-        await release.selectPackage(); // -> [new] takes path to package and validates it, creates npmPackage, sets data.package.{name,path}
+        await release.selectPackage();
         await release.verifyLocalChanges('package');
         await release.signTags();
-        await release.verifyBranches('package'); // parameterised for manifest.php OR package.json
+        await release.verifyBranches('package');
         await release.doesTagExists();
         await release.doesReleasingBranchExists();
         await release.isReleaseRequired();
         await release.confirmRelease('package');
         await release.createReleasingBranch();
-        await release.buildPackage(); // -> [new] npm run build
-        await release.initialiseGithubClient('package'); // adapted to get repoName from composer.json OR package.json
+        await release.buildPackage();
+        await release.initialiseGithubClient('package');
         await release.createPullRequest();
         await release.extractReleaseNotes();
         await release.mergePullRequest();
