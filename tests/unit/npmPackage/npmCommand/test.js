@@ -24,13 +24,9 @@
  */
 
 const proxyquire = require('proxyquire');
-const sinon = require('sinon');
-// const test = require('tape');
 const tape = require('tape');
 const _test = require('tape-promise').default;
 const test = _test(tape); // decorate tape
-
-const sandbox = sinon.sandbox.create();
 
 const log = {
     doing: () => { },

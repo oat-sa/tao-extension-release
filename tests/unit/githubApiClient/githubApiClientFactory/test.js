@@ -16,7 +16,7 @@
  * Copyright (c) 2019 Open Assessment Technologies SA;
  */
 
- /**
+/**
  *
  * Unit test the githubApiClientFactory from module src/githubApiClient.js
  *

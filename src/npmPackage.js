@@ -104,17 +104,17 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
          * @param {String} command
          * @returns {Promise} - resolves if command ran without errors
          */
-        async npmCommand(command) {
+        npmCommand(command) {
             return new Promise( (resolve, reject) => {
                 if (typeof command !== 'string') {
-                    reject();
+                    reject(new TypeError(`Invalid argument type: ${typeof command} for npmCommand (should be string)`));
                 }
                 const opts = getOptions();
-                log.info('npm ' + command, opts);
+                log.info(`npm ${command}`, opts);
 
                 const spawned = crossSpawn('npm', command.split(' '), opts);
                 spawned.on('close', code => {
-                    code === 0 ? resolve() : reject();
+                    code === 0 ? resolve() : reject(new Error('Error running npm command'));
                 });
             });
         },

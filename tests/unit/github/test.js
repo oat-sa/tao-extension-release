@@ -16,7 +16,7 @@
  * Copyright (c) 2018-2019 Open Assessment Technologies SA;
  */
 
- /**
+/**
  *
  * Unit test the module src/github.js
  *

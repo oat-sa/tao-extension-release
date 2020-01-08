@@ -16,7 +16,7 @@
  * Copyright (c) 2019 Open Assessment Technologies SA;
  */
 
- /**
+/**
  *
  * Unit test the extractReleaseNotes method of module src/release.js
  *

@@ -41,7 +41,9 @@ program
     .option(...cliOptions.releaseComment)
     .parse(process.argv);
 
-if (program.debug) console.log(program.opts());
+if (program.debug) {
+    console.log(program.opts());
+}
 
 const release = require('../release.js')(program.opts());
 

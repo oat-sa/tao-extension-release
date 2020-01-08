@@ -487,7 +487,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
             log.doing('Preparing for npm publish');
             log.info(`
-Before publishing, please be sure your npm account is configured and is a member of @oat-sa or @oat-sa-private
+Before publishing, please be sure your npm account is configured and is a member of the appropriate organisation.
 https://docs.npmjs.com/getting-started/setting-up-your-npm-user-account
 https://www.npmjs.com/settings/oat-sa/packages
             `);
