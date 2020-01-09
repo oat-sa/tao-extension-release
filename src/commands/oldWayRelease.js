@@ -52,8 +52,8 @@ async function releaseExtension() {
 
         await release.warnAboutDeprecation();
         await release.loadConfig();
-        await release.selectTaoInstance();
-        await release.selectExtension();
+        await release.extension.selectTaoInstance();
+        await release.extension.selectExtension();
         await release.verifyLocalChanges();
         await release.signTags();
         await release.verifyBranches();
@@ -62,7 +62,7 @@ async function releaseExtension() {
         await release.isReleaseRequired();
         await release.confirmRelease();
         await release.createReleasingBranch();
-        await release.compileAssets();
+        await release.extension.compileAssets();
         await release.updateTranslations();
         await release.initialiseGithubClient();
         await release.createPullRequest();

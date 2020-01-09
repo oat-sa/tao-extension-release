@@ -35,6 +35,8 @@ const log = require('./log.js');
 const taoInstanceFactory = require('./taoInstance.js');
 const npmPackageFactory = require('./npmPackage.js');
 
+const extensionApi = require('./release/extensionApi.js');
+
 /**
  * Get the taoExtensionRelease
  *
@@ -54,6 +56,7 @@ const npmPackageFactory = require('./npmPackage.js');
 module.exports = function taoExtensionReleaseFactory(params = {}) {
     const { baseBranch, branchPrefix, origin, releaseBranch, wwwUser,
         extensionToRelease, versionToRelease, updateTranslations } = params;
+    const { subjectType = 'extension' } = params;
     let { pathToTao, releaseComment } = params;
 
     let data = {};
@@ -65,29 +68,140 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
     return {
 
         /**
-         * Run the build command of the package so we release latest build
+         * Extension-specific methods group
+         * @external extensionApi accessed via Adapter pattern
          */
-        async buildPackage() {
-            log.doing('Building package');
+        extension: {
+            /**
+             * Select and initialise tao instance
+             * @EXTENSION
+             */
+            async selectTaoInstance() {
+                ({ data, taoInstance } = await extensionApi.selectTaoInstance(params, data));
+            },
 
-            try {
-                await npmPackage.build();
-
-                const changes = await gitClient.commitAndPush(data.releasingBranch, 'build package');
-
-                if (changes && changes.length) {
-                    log.info(`Commit : [built package - ${changes.length} files]`);
-                    changes.forEach(file => log.info(`  - ${file}`));
-                }
-            } catch (error) {
-                log.error(`Unable to build package. ${error.message}. Continue.`);
+            /**
+             * Select and initialise the extension to release
+             * @EXTENSION
+             */
+            async selectExtension() {
+                gitClient = await extensionApi.selectExtension(params, data, taoInstance);
+            },
+            /**
+             * Compile and publish extension assets
+             * @EXTENSION
+             */
+            async compileAssets() {
+                await extensionApi.compileAssets(data, taoInstance, gitClient);
             }
+        },
 
-            log.done();
+        /**
+         * NPM-package-specific methods group
+         * @external packageApi accessed via Adapter pattern
+         */
+        package: {
+            /**
+             * Select and initialise the npm package to release
+             * @PACKAGE
+             */
+            async selectPackage() {
+                // Only the current folder is supported, due to `npm publish` limitation
+                const absolutePathToPackage = process.cwd();
+
+                // Verify package.json
+                if (!fs.existsSync(`${absolutePathToPackage}/package.json`)) {
+                    log.error(`No package.json found in ${absolutePathToPackage}. Please run the command inside a npm package repo.`)
+                        .exit();
+                }
+                // Verify validity of chosen package
+                npmPackage = npmPackageFactory(absolutePathToPackage, false);
+                if (!await npmPackage.isValidPackage()) {
+                    log.error(`Invalid package.json found in ${absolutePathToPackage}`)
+                        .exit();
+                }
+
+                gitClient = gitClientFactory(absolutePathToPackage, origin);
+
+                data.package = {
+                    name: npmPackage.name,
+                    path: absolutePathToPackage,
+                };
+
+                await config.write(data);
+            },
+
+            /**
+             * Run the build command of the package so we release latest build
+             * @PACKAGE
+             */
+            async buildPackage() {
+                log.doing('Building package');
+
+                try {
+                    await npmPackage.build();
+
+                    const changes = await gitClient.commitAndPush(data.releasingBranch, 'build package');
+
+                    if (changes && changes.length) {
+                        log.info(`Commit : [built package - ${changes.length} files]`);
+                        changes.forEach(file => log.info(`  - ${file}`));
+                    }
+                } catch (error) {
+                    log.error(`Unable to build package. ${error.message}. Continue.`);
+                }
+
+                log.done();
+            },
+
+            /**
+             * Show a prompt and then run `npm publish`
+             * @returns {Promise}
+             * @PACKAGE
+             */
+            async publishToNpm() {
+                await gitClient.checkout(releaseBranch);
+
+                log.doing('Preparing for npm publish');
+                log.info(`
+    Before publishing, please be sure your npm account is configured and is a member of the appropriate organisation.
+    https://docs.npmjs.com/getting-started/setting-up-your-npm-user-account
+    https://www.npmjs.com/settings/oat-sa/packages
+                `);
+                const { confirmPublish } = await inquirer.prompt({
+                    name: 'confirmPublish',
+                    type: 'confirm',
+                    message: 'Do you want to proceed with the \'npm publish\' command?',
+                    default: false
+                });
+                if (confirmPublish) {
+                    log.doing(`Publishing package ${data.package.name} @ ${data.version}`);
+                    return npmPackage.publish();
+                }
+                log.exit();
+            }
+        },
+
+        /**
+         * Fetch metadata about the extension or package from its local metafile
+         * @returns {Promise} object containing metadata
+         * @EXTENSION
+         * @PACKAGE
+         */
+        async getMetadata() {
+            if (subjectType === 'extension') {
+                const manifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
+                const repoName = await taoInstance.getRepoName(data.extension.name);
+                return { ...manifest, repoName };
+            }
+            else if (subjectType === 'package') {
+                return npmPackage.parsePackageJson();
+            }
         },
 
         /**
          * Check out the predefined releasing branch
+         * @COMMON
          */
         async checkoutReleasingBranch() {
             const allBranches = await gitClient.getLocalBranches();
@@ -103,38 +217,15 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
-         * Compile and publish extension assets
-         */
-        async compileAssets() {
-            log.doing('Bundling');
-            log.info('Asset build started, this may take a while');
-
-            try {
-                await taoInstance.buildAssets(data.extension.name, false);
-
-                const changes = await gitClient.commitAndPush(data.releasingBranch, 'bundle assets');
-
-                if (changes && changes.length) {
-                    log.info(`Commit : [bundle assets - ${changes.length} files]`);
-                    changes.forEach(file => log.info(`  - ${file}`));
-                }
-            } catch (error) {
-                log.error(`Unable to bundle assets. ${error.message}. Continue.`);
-            }
-
-            log.done();
-        },
-
-        /**
          * Prompt user to confirm release
-         * @param {string} [subject=extension] extension or package
          * @deprecated - only used in oldWayRelease for backward compatibility / user experience
+         * @COMMON
          */
-        async confirmRelease(subject = 'extension') {
+        async confirmRelease() {
             const { go } = await inquirer.prompt({
                 type: 'confirm',
                 name: 'go',
-                message: `Let's release version ${data[subject].name}@${data.version} 🚀 ?`
+                message: `Let's release version ${data[subjectType].name}@${data.version} 🚀 ?`
             });
 
             if (!go) {
@@ -144,6 +235,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Create release on github
+         * @COMMON
          */
         async createGithubRelease() {
             log.doing(`Creating github release ${data.version}`);
@@ -167,6 +259,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Create relase pull request from releasing branch
+         * @COMMON
          */
         async createPullRequest() {
             log.doing('Create the pull request');
@@ -195,6 +288,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Create and publish release tag
+         * @COMMON
          */
         async createReleaseTag() {
             log.doing(`Add and push tag ${data.tag}`);
@@ -206,6 +300,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Create releasing branch
+         * @COMMON
          */
         async createReleasingBranch() {
             log.doing('Create release branch');
@@ -217,6 +312,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Check if release tag exists
+         * @COMMON
          */
         async doesTagExists() {
             log.doing(`Check if tag ${data.tag} exists`);
@@ -230,6 +326,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Check if releasing branch exists on remote
+         * @COMMON
          */
         async doesReleasingBranchExists() {
             log.doing(`Check if branch remotes/${origin}/${data.releasingBranch} exists`);
@@ -243,6 +340,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Extract release notes from release pull request
+         * @COMMON
          */
         async extractReleaseNotes() {
             log.doing('Extract release notes');
@@ -262,27 +360,11 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
-         * Fetch metadata about the extension or package from its local metafile
-         * @param {string} [subject=extension] extension or package
-         * @returns {Promise} object containing metadata
-         */
-        async getMetadata(subject = 'extension') {
-            if (subject === 'extension') {
-                const manifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
-                const repoName = await taoInstance.getRepoName(data.extension.name);
-                return { ...manifest, repoName };
-            }
-            else if (subject === 'package') {
-                return npmPackage.parsePackageJson();
-            }
-        },
-
-        /**
          * Initialise github client for the extension to release repository
-         * @param {string} [subject=extension] extension or package
+         * @COMMON
          */
-        async initialiseGithubClient(subject = 'extension') {
-            const metadata = await this.getMetadata(subject);
+        async initialiseGithubClient() {
+            const metadata = await this.getMetadata(subjectType);
 
             if (metadata.repoName) {
                 githubClient = github(data.token, metadata.repoName);
@@ -295,6 +377,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Gets the branch with highest version
          * @param {String[]} - the list of branches to compare
          * @returns {Object} with the highest branch and version as property
+         * @COMMON
          */
         getHighestVersionBranch(possibleBranches = []) {
             log.doing('Selecting releasing branch from the biggest version found in branches.');
@@ -318,6 +401,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Check if there is any diffs between base and release branches and prompt to confirm release user if there is no diffs
+         * @COMMON
          */
         async isReleaseRequired() {
             log.doing(`Diff ${baseBranch}..${releaseBranch}`);
@@ -339,6 +423,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Load and initialise release extension config
+         * @COMMON
          */
         async loadConfig() {
             data = Object.assign({}, await config.load());
@@ -363,6 +448,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Merge release branch back into base branch
+         * @COMMON
          */
         async mergeBack() {
             log.doing(`Merging back ${releaseBranch} into ${baseBranch}`);
@@ -396,6 +482,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Merge release pull request
+         * @COMMON
          */
         async mergePullRequest() {
             setTimeout(() => opn(data.pr.url), 2000);
@@ -419,6 +506,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Merge release branch into releasing branch and ask user to resolve conflicts manually if any
+         * @COMMON
          */
         async mergeWithReleaseBranch() {
             log.doing(`Merging '${releaseBranch}' into '${data.releasingBranch}'.`);
@@ -466,6 +554,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         /**
          * Show a prompt to pause the program and make them confirm they have resolved conflicts.
          * @returns {Promise}
+         * @COMMON
          */
         async promptToResolveConflicts() {
             const { isMergeDone } = await inquirer.prompt({
@@ -479,33 +568,8 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
-         * Show a prompt and then run `npm publish`
-         * @returns {Promise}
-         */
-        async publishToNpm() {
-            await gitClient.checkout(releaseBranch);
-
-            log.doing('Preparing for npm publish');
-            log.info(`
-Before publishing, please be sure your npm account is configured and is a member of the appropriate organisation.
-https://docs.npmjs.com/getting-started/setting-up-your-npm-user-account
-https://www.npmjs.com/settings/oat-sa/packages
-            `);
-            const { confirmPublish } = await inquirer.prompt({
-                name: 'confirmPublish',
-                type: 'confirm',
-                message: 'Do you want to proceed with the \'npm publish\' command?',
-                default: false
-            });
-            if (confirmPublish) {
-                log.doing(`Publishing package ${data.package.name} @ ${data.version}`);
-                return npmPackage.publish();
-            }
-            log.exit();
-        },
-
-        /**
          * Remove releasing branch
+         * @COMMON
          */
         async removeReleasingBranch() {
             log.doing('Clean up the place');
@@ -516,70 +580,10 @@ https://www.npmjs.com/settings/oat-sa/packages
         },
 
         /**
-         * Select and initialise the extension to release
-         */
-        async selectExtension() {
-            // Start with CLI option, if it's missing we'll prompt user
-            let extension = extensionToRelease;
-            const availableExtensions = await taoInstance.getExtensions();
-
-            if (extension && !availableExtensions.includes(extension)) {
-                log.exit(`Specified extension ${extension} not found in ${data.taoRoot}`);
-            }
-            else if (!extension) {
-                ( { extension } = await inquirer.prompt({
-                    type: 'list',
-                    name: 'extension',
-                    message: 'Which extension you want to release ? ',
-                    pageSize: 12,
-                    choices: availableExtensions,
-                    default: data.extension && data.extension.name,
-                }) );
-            }
-
-            gitClient = gitClientFactory(`${data.taoRoot}/${extension}`, origin, extension);
-
-            data.extension = {
-                name: extension,
-                path: `${data.taoRoot}/${extension}`,
-            };
-
-            await config.write(data);
-        },
-
-        /**
-         * Select and initialise the npm package to release
-         */
-        async selectPackage() {
-            // Only the current folder is supported, due to `npm publish` limitation
-            const absolutePathToPackage = process.cwd();
-
-            // Verify package.json
-            if (!fs.existsSync(`${absolutePathToPackage}/package.json`)) {
-                log.error(`No package.json found in ${absolutePathToPackage}. Please run the command inside a npm package repo.`)
-                    .exit();
-            }
-            // Verify validity of chosen package
-            npmPackage = npmPackageFactory(absolutePathToPackage, false);
-            if (!await npmPackage.isValidPackage()) {
-                log.error(`Invalid package.json found in ${absolutePathToPackage}`)
-                    .exit();
-            }
-
-            gitClient = gitClientFactory(absolutePathToPackage, origin);
-
-            data.package = {
-                name: npmPackage.name,
-                path: absolutePathToPackage,
-            };
-
-            await config.write(data);
-        },
-
-        /**
          * Select releasing branch
          * - picking version-to-release CLI option and find branch with version on it
          * - or find the biggest version and find branch with version on it
+         * @COMMON
          */
         async selectReleasingBranch() {
             // Filter all branches to the ones that have release in the name
@@ -616,38 +620,8 @@ https://www.npmjs.com/settings/oat-sa/packages
         },
 
         /**
-         * Select and initialise tao instance
-         */
-        async selectTaoInstance() {
-            // Start with CLI option, if it's missing we'll prompt user
-            let taoRoot = pathToTao;
-
-            if (!taoRoot) {
-                ( { taoRoot } = await inquirer.prompt({
-                    type: 'input',
-                    name: 'taoRoot',
-                    message: 'Path to the TAO instance : ',
-                    default: data.taoRoot || process.cwd()
-                }) );
-            }
-
-            taoInstance = taoInstanceFactory(path.resolve(taoRoot), false, wwwUser);
-
-            const { dir, root } = await taoInstance.isRoot();
-
-            if (!root) {
-                log.exit(`${dir} is not a TAO instance`);
-            }
-
-            if (!await taoInstance.isInstalled()) {
-                log.exit('It looks like the given TAO instance is not installed.');
-            }
-
-            data.taoRoot = dir;
-        },
-
-        /**
          * Sign tags (todo, not yet implemented)
+         * @COMMON
          */
         async signTags() {
             data.signtags = await gitClient.hasSignKey();
@@ -655,6 +629,7 @@ https://www.npmjs.com/settings/oat-sa/packages
 
         /**
          * Update and publish translations
+         * @COMMON
          */
         async updateTranslations() {
             log.doing('Translations');
@@ -693,9 +668,9 @@ https://www.npmjs.com/settings/oat-sa/packages
 
         /**
          * Fetch and pull branches, extract manifests and repo name
-         * @param {string} [subject=extension] extension or package
+         * @COMMON
          */
-        async verifyBranches(subject = 'extension') {
+        async verifyBranches() {
             const { pull } = await inquirer.prompt({
                 type: 'confirm',
                 name: 'pull',
@@ -706,17 +681,17 @@ https://www.npmjs.com/settings/oat-sa/packages
                 log.exit();
             }
 
-            log.doing(`Updating ${data[subject].name}`);
+            log.doing(`Updating ${data[subjectType].name}`);
 
             // Get last released version:
             await gitClient.pull(releaseBranch);
-            const { version: lastVersion } = await this.getMetadata(subject);
+            const { version: lastVersion } = await this.getMetadata(subjectType);
             data.lastVersion = lastVersion;
             data.lastTag = `v${lastVersion}`;
 
             // Get version to release:
             await gitClient.pull(baseBranch);
-            const manifest = await this.getMetadata(subject); // name, version, repoName
+            const manifest = await this.getMetadata(subjectType); // name, version, repoName
             data.version = manifest.version;
             data.tag = `v${manifest.version}`;
             data.releasingBranch = `${branchPrefix}-${manifest.version}`;
@@ -724,22 +699,23 @@ https://www.npmjs.com/settings/oat-sa/packages
 
         /**
          * Verify if local branch has no uncommied changes
-         * @param {string} [subject=extension] extension or package
+         * @COMMON
          */
-        async verifyLocalChanges(subject = 'extension') {
-            log.doing(`Checking ${subject} status`);
+        async verifyLocalChanges() {
+            log.doing(`Checking ${subjectType} status`);
 
             if (await gitClient.hasLocalChanges()) {
-                log.exit(`The ${subject} ${data[subject].name} has local changes, please clean or stash them before releasing`);
+                log.exit(`The ${subjectType} ${data[subjectType].name} has local changes, please clean or stash them before releasing`);
             }
 
-            log.done(`${data[subject].name} is clean`);
+            log.done(`${data[subjectType].name} is clean`);
         },
 
         /**
          * Verify that the version that we are going to release is valid
          * - is the same on branch name and manifest
          * - is bigger than current release branch version.
+         * @COMMON
          */
         async verifyReleasingBranch() {
             log.doing('Checking out and verifying releasing branch.');
@@ -769,6 +745,7 @@ https://www.npmjs.com/settings/oat-sa/packages
 
         /**
          * Prompt user if he really want to use deprecated way to do the release
+         * @COMMON
          */
         async warnAboutDeprecation() {
             const { isOldWayReleaseSelected } = await inquirer.prompt({
