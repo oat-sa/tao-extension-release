@@ -31,7 +31,7 @@ const log = require('./log.js');
  *
  * @param {String} rootDir - the path of the TAO instance root
  * @param {Boolean} [quiet = true] - if we redirect stdout and stderr to the console
- * @return {Promise} resolves with a result object
+ * @return {NpmPackage}
  */
 module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
 

@@ -40,24 +40,24 @@ if (program.debug) {
     console.log(program.opts());
 }
 
-const release = require('../release.js')(program.opts());
+const release = require('../release.js')({ ...program.opts(), subjectType: 'package' });
 
 async function npmRelease() {
     try {
         log.title('TAO Extension Release: npmRelease');
 
         await release.loadConfig();
-        await release.selectPackage();
-        await release.verifyLocalChanges('package');
+        await release.package.selectPackage();
+        await release.verifyLocalChanges();
         await release.signTags();
-        await release.verifyBranches('package');
+        await release.verifyBranches();
         await release.doesTagExists();
         await release.doesReleasingBranchExists();
         await release.isReleaseRequired();
-        await release.confirmRelease('package');
+        await release.confirmRelease();
         await release.createReleasingBranch();
-        await release.buildPackage();
-        await release.initialiseGithubClient('package');
+        await release.package.buildPackage();
+        await release.initialiseGithubClient();
         await release.createPullRequest();
         await release.extractReleaseNotes();
         await release.mergePullRequest();
@@ -65,7 +65,7 @@ async function npmRelease() {
         await release.createGithubRelease();
         await release.mergeBack();
         await release.removeReleasingBranch();
-        await release.publishToNpm();
+        // await release.package.publishToNpm();
 
         log.done('Good job!').exit();
     } catch (error) {

@@ -43,23 +43,23 @@ if (program.debug) {
     console.log(program.opts());
 }
 
-const release = require('../release.js')(program.opts());
+const release = require('../release.js')({ ...program.opts(), subjectType: 'extension' });
 
 async function prepareRelease() {
     try {
         log.title('TAO Extension Release: prepareRelease');
 
         await release.loadConfig();
-        await release.selectTaoInstance();
-        await release.selectExtension();
+        await release.extension.selectTaoInstance();
+        await release.extension.selectExtension();
         await release.verifyLocalChanges();
         await release.verifyBranches();
         await release.doesTagExists();
         await release.doesReleasingBranchExists();
         await release.isReleaseRequired();
         await release.createReleasingBranch();
-        await release.compileAssets();
-        await release.updateTranslations();
+        await release.extension.compileAssets();
+        await release.extension.updateTranslations();
 
         log.done('Release branch prepared, and pushed to remote.').exit();
     } catch (error) {

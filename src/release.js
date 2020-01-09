@@ -22,20 +22,16 @@
  * @author Anton Tsymuk <anton@taotesting.com>
  */
 
-const fs = require('fs');
 const inquirer = require('inquirer');
 const opn = require('opn');
-const path = require('path');
 const compareVersions = require('compare-versions');
 
 const config = require('./config.js')();
-const gitClientFactory = require('./git.js');
 const github = require('./github.js');
 const log = require('./log.js');
-const taoInstanceFactory = require('./taoInstance.js');
-const npmPackageFactory = require('./npmPackage.js');
 
 const extensionApi = require('./release/extensionApi.js');
+const packageApi = require('./release/packageApi.js');
 
 /**
  * Get the taoExtensionRelease
@@ -54,10 +50,9 @@ const extensionApi = require('./release/extensionApi.js');
  * @return {Object} - instance of taoExtensionRelease
  */
 module.exports = function taoExtensionReleaseFactory(params = {}) {
-    const { baseBranch, branchPrefix, origin, releaseBranch, wwwUser,
-        extensionToRelease, versionToRelease, updateTranslations } = params;
+    const { baseBranch, branchPrefix, origin, releaseBranch, versionToRelease } = params;
     const { subjectType = 'extension' } = params;
-    let { pathToTao, releaseComment } = params;
+    let { releaseComment } = params;
 
     let data = {};
     let gitClient;
@@ -74,7 +69,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         extension: {
             /**
              * Select and initialise tao instance
-             * @EXTENSION
              */
             async selectTaoInstance() {
                 ({ data, taoInstance } = await extensionApi.selectTaoInstance(params, data));
@@ -82,17 +76,30 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
             /**
              * Select and initialise the extension to release
-             * @EXTENSION
              */
             async selectExtension() {
-                gitClient = await extensionApi.selectExtension(params, data, taoInstance);
+                ({ data, gitClient } = await extensionApi.selectExtension(params, data, taoInstance));
             },
+
+            /**
+             * Verify that the version that we are going to release is valid
+             */
+            async verifyReleasingBranch() {
+                data = await extensionApi.verifyReleasingBranch(params, data, gitClient, taoInstance);
+            },
+
             /**
              * Compile and publish extension assets
-             * @EXTENSION
              */
             async compileAssets() {
                 await extensionApi.compileAssets(data, taoInstance, gitClient);
+            },
+
+            /**
+             * Update and publish translations
+             */
+            async updateTranslations() {
+                await extensionApi.updateTranslations(params, data, taoInstance, gitClient);
             }
         },
 
@@ -103,82 +110,23 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         package: {
             /**
              * Select and initialise the npm package to release
-             * @PACKAGE
              */
             async selectPackage() {
-                // Only the current folder is supported, due to `npm publish` limitation
-                const absolutePathToPackage = process.cwd();
-
-                // Verify package.json
-                if (!fs.existsSync(`${absolutePathToPackage}/package.json`)) {
-                    log.error(`No package.json found in ${absolutePathToPackage}. Please run the command inside a npm package repo.`)
-                        .exit();
-                }
-                // Verify validity of chosen package
-                npmPackage = npmPackageFactory(absolutePathToPackage, false);
-                if (!await npmPackage.isValidPackage()) {
-                    log.error(`Invalid package.json found in ${absolutePathToPackage}`)
-                        .exit();
-                }
-
-                gitClient = gitClientFactory(absolutePathToPackage, origin);
-
-                data.package = {
-                    name: npmPackage.name,
-                    path: absolutePathToPackage,
-                };
-
-                await config.write(data);
+                ({ data, gitClient, npmPackage } = await packageApi.selectPackage(params, data));
             },
 
             /**
              * Run the build command of the package so we release latest build
-             * @PACKAGE
              */
             async buildPackage() {
-                log.doing('Building package');
-
-                try {
-                    await npmPackage.build();
-
-                    const changes = await gitClient.commitAndPush(data.releasingBranch, 'build package');
-
-                    if (changes && changes.length) {
-                        log.info(`Commit : [built package - ${changes.length} files]`);
-                        changes.forEach(file => log.info(`  - ${file}`));
-                    }
-                } catch (error) {
-                    log.error(`Unable to build package. ${error.message}. Continue.`);
-                }
-
-                log.done();
+                await packageApi.buildPackage(data, gitClient, npmPackage);
             },
 
             /**
              * Show a prompt and then run `npm publish`
-             * @returns {Promise}
-             * @PACKAGE
              */
             async publishToNpm() {
-                await gitClient.checkout(releaseBranch);
-
-                log.doing('Preparing for npm publish');
-                log.info(`
-    Before publishing, please be sure your npm account is configured and is a member of the appropriate organisation.
-    https://docs.npmjs.com/getting-started/setting-up-your-npm-user-account
-    https://www.npmjs.com/settings/oat-sa/packages
-                `);
-                const { confirmPublish } = await inquirer.prompt({
-                    name: 'confirmPublish',
-                    type: 'confirm',
-                    message: 'Do you want to proceed with the \'npm publish\' command?',
-                    default: false
-                });
-                if (confirmPublish) {
-                    log.doing(`Publishing package ${data.package.name} @ ${data.version}`);
-                    return npmPackage.publish();
-                }
-                log.exit();
+                await packageApi.publishToNpm(params, data, gitClient, npmPackage);
             }
         },
 
@@ -628,45 +576,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
-         * Update and publish translations
-         * @COMMON
-         */
-        async updateTranslations() {
-            log.doing('Translations');
-
-            // Start with CLI option, if it's missing we'll prompt user
-            let translation = updateTranslations;
-
-            if (!translation) {
-                log.warn('Update translations during a release only if you know what you are doing');
-
-                ( { translation } = await inquirer.prompt({
-                    type: 'confirm',
-                    name: 'translation',
-                    message: `${data.extension.name} needs updated translations ? `,
-                    default: false
-                }) );
-            }
-
-            if (translation) {
-                try {
-                    await taoInstance.updateTranslations(data.extension.name);
-
-                    const changes = await gitClient.commitAndPush(data.releasingBranch, 'update translations');
-
-                    if (changes && changes.length) {
-                        log.info(`Commit : [update translations - ${changes.length} files]`);
-                        changes.forEach(file => log.info(`  - ${file}`));
-                    }
-                } catch (error) {
-                    log.error(`Unable to update translations. ${error.message}. Continue.`);
-                }
-            }
-
-            log.done();
-        },
-
-        /**
          * Fetch and pull branches, extract manifests and repo name
          * @COMMON
          */
@@ -709,38 +618,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             }
 
             log.done(`${data[subjectType].name} is clean`);
-        },
-
-        /**
-         * Verify that the version that we are going to release is valid
-         * - is the same on branch name and manifest
-         * - is bigger than current release branch version.
-         * @COMMON
-         */
-        async verifyReleasingBranch() {
-            log.doing('Checking out and verifying releasing branch.');
-
-            await this.checkoutReleasingBranch();
-
-            // Cross check releasing branch version with manifest version
-            const releasingBranchManifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
-            if (compareVersions(releasingBranchManifest.version, data.version) === 0 ) {
-                log.doing(`Branch ${data.releasingBranch} has valid manifest.`);
-            } else {
-                log.exit(`Branch '${data.releasingBranch}' cannot be released because it's branch name does not match its own manifest version (${releasingBranchManifest.version}).`);
-            }
-
-            // Cross check releasing branch wth release branch and make sure new version is highest
-            await gitClient.checkout(releaseBranch);
-            const releaseBranchManifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
-            if (compareVersions(releasingBranchManifest.version, releaseBranchManifest.version) === 1 ) {
-                data.lastVersion = releaseBranchManifest.version;
-                data.lastTag = `v${releaseBranchManifest.version}`;
-
-                log.done(`Branch ${data.releasingBranch} is valid.`);
-            } else {
-                log.exit(`Branch '${data.releasingBranch}' cannot be released because its manifest version (${data.version}) is not greater than the manifest version of '${releaseBranch}' (${releaseBranchManifest.version}).`);
-            }
         },
 
         /**

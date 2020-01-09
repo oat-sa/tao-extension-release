@@ -44,7 +44,7 @@ if (program.debug) {
     console.log(program.opts());
 }
 
-const release = require('../release.js')(program.opts());
+const release = require('../release.js')({ ...program.opts(), subjectType: 'extension' });
 
 async function releaseExtension() {
     try {
@@ -63,7 +63,7 @@ async function releaseExtension() {
         await release.confirmRelease();
         await release.createReleasingBranch();
         await release.extension.compileAssets();
-        await release.updateTranslations();
+        await release.extension.updateTranslations();
         await release.initialiseGithubClient();
         await release.createPullRequest();
         await release.extractReleaseNotes();

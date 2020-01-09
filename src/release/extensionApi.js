@@ -24,6 +24,7 @@
 
 const path = require('path');
 const inquirer = require('inquirer');
+const compareVersions = require('compare-versions');
 
 const taoInstanceFactory = require('../taoInstance.js');
 const gitClientFactory = require('../git.js');
@@ -34,6 +35,8 @@ module.exports = {
     /**
      * Select and initialise tao instance
      * @param {Object} params - command line params
+     * @param {String} [params.pathToTao] - path to the instance root
+     * @param {String} [params.wwwUser] - name of the www user
      * @param {Object} data - release subject data
      * @returns {Object}
      */
@@ -73,6 +76,8 @@ module.exports = {
     /**
      * Select and initialise the extension to release
      * @param {Object} params - command line params
+     * @param {String} [params.extensionToRelease] - name of the extension
+     * @param {String} [params.origin] - git repository origin
      * @param {Object} data - release subject data
      * @param {TaoInstance} taoInstance
      * @returns {GitClient}
@@ -106,7 +111,46 @@ module.exports = {
 
         await config.write(data);
 
-        return gitClient;
+        return {
+            data,
+            gitClient
+        };
+    },
+
+    /**
+     * Verify that the version that we are going to release is valid
+     * - is the same on branch name and manifest
+     * - is bigger than current release branch version.
+     * @param {Object} params - command line params
+     * @param {Object} data - release subject data
+     * @param {TaoInstance} taoInstance
+     * @param {GitClient} gitClient
+     * @returns
+     */
+    async verifyReleasingBranch(params, data, gitClient, taoInstance) {
+        log.doing('Checking out and verifying releasing branch.');
+
+        // Cross check releasing branch version with manifest version
+        const releasingBranchManifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
+        if (compareVersions(releasingBranchManifest.version, data.version) === 0 ) {
+            log.doing(`Branch ${data.releasingBranch} has valid manifest.`);
+        } else {
+            log.exit(`Branch '${data.releasingBranch}' cannot be released because it's branch name does not match its own manifest version (${releasingBranchManifest.version}).`);
+        }
+
+        // Cross check releasing branch wth release branch and make sure new version is highest
+        await gitClient.checkout(params.releaseBranch);
+        const releaseBranchManifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
+        if (compareVersions(releasingBranchManifest.version, releaseBranchManifest.version) === 1 ) {
+            data.lastVersion = releaseBranchManifest.version;
+            data.lastTag = `v${releaseBranchManifest.version}`;
+
+            log.done(`Branch ${data.releasingBranch} is valid.`);
+        } else {
+            log.exit(`Branch '${data.releasingBranch}' cannot be released because its manifest version (${data.version}) is not greater than the manifest version of '${releaseBranch}' (${releaseBranchManifest.version}).`);
+        }
+
+        return data;
     },
 
     /**
@@ -133,5 +177,48 @@ module.exports = {
         }
 
         log.done();
-    }
+    },
+
+    /**
+     * Update and publish translations
+     * @param {Object} params - command line params
+     * @param {Boolean} [params.updateTranslations] - should translations be included?
+     * @param {Object} data - release subject data
+     * @param {TaoInstance} taoInstance
+     * @param {GitClient} gitClient
+     */
+    async updateTranslations(params, data, taoInstance, gitClient) {
+        log.doing('Translations');
+
+        // Start with CLI option, if it's missing we'll prompt user
+        let translation = params.updateTranslations;
+
+        if (!translation) {
+            log.warn('Update translations during a release only if you know what you are doing');
+
+            ( { translation } = await inquirer.prompt({
+                type: 'confirm',
+                name: 'translation',
+                message: `${data.extension.name} needs updated translations ? `,
+                default: false
+            }) );
+        }
+
+        if (translation) {
+            try {
+                await taoInstance.updateTranslations(data.extension.name);
+
+                const changes = await gitClient.commitAndPush(data.releasingBranch, 'update translations');
+
+                if (changes && changes.length) {
+                    log.info(`Commit : [update translations - ${changes.length} files]`);
+                    changes.forEach(file => log.info(`  - ${file}`));
+                }
+            } catch (error) {
+                log.error(`Unable to update translations. ${error.message}. Continue.`);
+            }
+        }
+
+        log.done();
+    },
 };
