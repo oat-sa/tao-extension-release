@@ -140,8 +140,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         /**
          * Fetch metadata about the extension or package from its local metafile
          * @returns {Promise} object containing metadata
-         * @EXTENSION
-         * @PACKAGE
          */
         async getMetadata() {
             if (subjectType === 'extension') {
@@ -156,7 +154,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Check out the predefined releasing branch
-         * @COMMON
          */
         async checkoutReleasingBranch() {
             const allBranches = await gitClient.getLocalBranches();
@@ -190,7 +187,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Create release on github
-         * @COMMON
          */
         async createGithubRelease() {
             log.doing(`Creating github release ${data.version}`);
@@ -214,7 +210,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Create relase pull request from releasing branch
-         * @COMMON
          */
         async createPullRequest() {
             log.doing('Create the pull request');
@@ -243,7 +238,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Create and publish release tag
-         * @COMMON
          */
         async createReleaseTag() {
             log.doing(`Add and push tag ${data.tag}`);
@@ -255,7 +249,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Create releasing branch
-         * @COMMON
          */
         async createReleasingBranch() {
             log.doing('Create release branch');
@@ -267,7 +260,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Check if release tag exists
-         * @COMMON
          */
         async doesTagExists() {
             log.doing(`Check if tag ${data.tag} exists`);
@@ -281,7 +273,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Check if releasing branch exists on remote
-         * @COMMON
          */
         async doesReleasingBranchExists() {
             log.doing(`Check if branch remotes/${origin}/${data.releasingBranch} exists`);
@@ -295,7 +286,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Extract release notes from release pull request
-         * @COMMON
          */
         async extractReleaseNotes() {
             log.doing('Extract release notes');
@@ -316,7 +306,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Initialise github client for the extension to release repository
-         * @COMMON
          */
         async initialiseGithubClient() {
             const metadata = await this.getMetadata(subjectType);
@@ -332,7 +321,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Gets the branch with highest version
          * @param {String[]} - the list of branches to compare
          * @returns {Object} with the highest branch and version as property
-         * @COMMON
          */
         getHighestVersionBranch(possibleBranches = []) {
             log.doing('Selecting releasing branch from the biggest version found in branches.');
@@ -356,7 +344,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Check if there is any diffs between base and release branches and prompt to confirm release user if there is no diffs
-         * @COMMON
          */
         async isReleaseRequired() {
             log.doing(`Diff ${baseBranch}..${releaseBranch}`);
@@ -378,7 +365,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Load and initialise release extension config
-         * @COMMON
          */
         async loadConfig() {
             data = Object.assign({}, await config.load());
@@ -403,7 +389,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Merge release branch back into base branch
-         * @COMMON
          */
         async mergeBack() {
             log.doing(`Merging back ${releaseBranch} into ${baseBranch}`);
@@ -437,7 +422,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Merge release pull request
-         * @COMMON
          */
         async mergePullRequest() {
             setTimeout(() => opn(data.pr.url), 2000);
@@ -461,7 +445,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Merge release branch into releasing branch and ask user to resolve conflicts manually if any
-         * @COMMON
          */
         async mergeWithReleaseBranch() {
             log.doing(`Merging '${releaseBranch}' into '${data.releasingBranch}'.`);
@@ -509,7 +492,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         /**
          * Show a prompt to pause the program and make them confirm they have resolved conflicts.
          * @returns {Promise}
-         * @COMMON
          */
         async promptToResolveConflicts() {
             const { isMergeDone } = await inquirer.prompt({
@@ -535,7 +517,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Remove releasing branch
-         * @COMMON
          */
         async removeReleasingBranch() {
             log.doing('Clean up the place');
@@ -549,7 +530,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Select releasing branch
          * - picking version-to-release CLI option and find branch with version on it
          * - or find the biggest version and find branch with version on it
-         * @COMMON
          */
         async selectReleasingBranch() {
             // Filter all branches to the ones that have release in the name
@@ -587,7 +567,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Sign tags (todo, not yet implemented)
-         * @COMMON
          */
         async signTags() {
             data.signtags = await gitClient.hasSignKey();
@@ -595,7 +574,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Fetch and pull branches, extract manifests and repo name
-         * @COMMON
          */
         async verifyBranches() {
             const { pull } = await inquirer.prompt({
@@ -626,7 +604,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Verify if local branch has no uncommied changes
-         * @COMMON
          */
         async verifyLocalChanges() {
             log.doing(`Checking ${subjectType} status`);
@@ -640,7 +617,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
         /**
          * Prompt user if he really want to use deprecated way to do the release
-         * @COMMON
          */
         async warnAboutDeprecation() {
             const { isOldWayReleaseSelected } = await inquirer.prompt({
