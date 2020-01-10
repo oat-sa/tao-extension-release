@@ -116,7 +116,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             const { go } = await inquirer.prompt({
                 type: 'confirm',
                 name: 'go',
-                message: `Let's release version ${data[subjectType].name}@${data.version} 🚀 ?`
+                message: `Let's release version ${data.name}@${data.version} 🚀 ?`
             });
 
             if (!go) {
@@ -247,7 +247,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Initialise github client for the extension to release repository
          */
         async initialiseGithubClient() {
-            const metadata = await this.getMetadata(subjectType);
+            const metadata = await this.getMetadata();
 
             if (metadata.repoName) {
                 githubClient = github(data.token, metadata.repoName);
@@ -530,17 +530,17 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 log.exit();
             }
 
-            log.doing(`Updating ${data[subjectType].name}`);
+            log.doing(`Updating ${data.name}`);
 
             // Get last released version:
             await gitClient.pull(releaseBranch);
-            const { version: lastVersion } = await this.getMetadata(subjectType);
+            const { version: lastVersion } = await this.getMetadata();
             data.lastVersion = lastVersion;
             data.lastTag = `v${lastVersion}`;
 
             // Get version to release:
             await gitClient.pull(baseBranch);
-            const manifest = await this.getMetadata(subjectType); // name, version, repoName
+            const manifest = await this.getMetadata(); // name, version, repoName
             data.version = manifest.version;
             data.tag = `v${manifest.version}`;
             data.releasingBranch = `${branchPrefix}-${manifest.version}`;
@@ -553,10 +553,10 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             log.doing(`Checking ${subjectType} status`);
 
             if (await gitClient.hasLocalChanges()) {
-                log.exit(`The ${subjectType} ${data[subjectType].name} has local changes, please clean or stash them before releasing`);
+                log.exit(`The ${subjectType} ${data.name} has local changes, please clean or stash them before releasing`);
             }
 
-            log.done(`${data[subjectType].name} is clean`);
+            log.done(`${data.name} is clean`);
         },
 
         /**
