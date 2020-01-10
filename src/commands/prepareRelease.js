@@ -52,6 +52,7 @@ async function prepareRelease() {
         await release.loadConfig();
         await release.extension.selectTaoInstance();
         await release.extension.selectExtension();
+        await release.extension.initialiseGitClient();
         await release.verifyLocalChanges();
         await release.verifyBranches();
         await release.doesTagExists();

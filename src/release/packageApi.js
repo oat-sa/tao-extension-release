@@ -33,12 +33,10 @@ const log = require('../log.js');
 module.exports = {
     /**
      * Select and initialise the npm package to release
-     * @param {Object} params - command line params
-     * @param {String} [params.origin] - git repository origin
      * @param {Object} data - release subject data
      * @returns {Object}
      */
-    async selectPackage(params, data) {
+    async selectPackage(data) {
         // Only the current folder is supported, due to `npm publish` limitation
         const absolutePathToPackage = process.cwd();
 
@@ -58,9 +56,6 @@ module.exports = {
                 .exit();
         }
 
-        // TODO: split
-        const gitClient = gitClientFactory(absolutePathToPackage, params.origin);
-
         data.package = {
             name: npmPackage.name,
             path: absolutePathToPackage,
@@ -70,34 +65,18 @@ module.exports = {
 
         return {
             data,
-            gitClient,
             npmPackage
         };
     },
 
     /**
-     * Run the build command of the package so we release latest build
+     * Initialise and return a git client in the release folder
+     * @param {Object} params - command line params
      * @param {Object} data - release subject data
-     * @param {GitClient} gitClient
-     * @param {NpmPackage} npmPackage
+     * @returns {GitClient}
      */
-    async buildPackage(data, gitClient, npmPackage) {
-        log.doing('Building package');
-
-        try {
-            await npmPackage.build();
-
-            const changes = await gitClient.commitAndPush(data.releasingBranch, 'build package');
-
-            if (changes && changes.length) {
-                log.info(`Commit : [built package - ${changes.length} files]`);
-                changes.forEach(file => log.info(`  - ${file}`));
-            }
-        } catch (error) {
-            log.error(`Unable to build package. ${error.message}. Continue.`);
-        }
-
-        log.done();
+    initialiseGitClient(params, data) {
+        return gitClientFactory(data.package.path, params.origin);
     },
 
     /**

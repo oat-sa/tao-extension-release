@@ -78,7 +78,14 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
              * Select and initialise the extension to release
              */
             async selectExtension() {
-                ({ data, gitClient } = await extensionApi.selectExtension(params, data, taoInstance));
+                ({ data } = await extensionApi.selectExtension(params, data, taoInstance));
+            },
+
+            /**
+             * Initialise and assign a git client in the release folder
+             */
+            initialiseGitClient() {
+                gitClient = extensionApi.initialiseGitClient(params, data);
             },
 
             /**
@@ -112,14 +119,14 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
              * Select and initialise the npm package to release
              */
             async selectPackage() {
-                ({ data, gitClient, npmPackage } = await packageApi.selectPackage(params, data));
+                ({ data, npmPackage } = await packageApi.selectPackage(data));
             },
 
             /**
-             * Run the build command of the package so we release latest build
+             * Initialise and assign a git client in the release folder
              */
-            async buildPackage() {
-                await packageApi.buildPackage(data, gitClient, npmPackage);
+            initialiseGitClient() {
+                gitClient = packageApi.initialiseGitClient(params, data);
             },
 
             /**

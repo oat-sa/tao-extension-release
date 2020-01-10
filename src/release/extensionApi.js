@@ -101,9 +101,6 @@ module.exports = {
             }) );
         }
 
-        // TODO: split
-        const gitClient = gitClientFactory(`${data.taoRoot}/${extension}`, params.origin, extension);
-
         data.extension = {
             name: extension,
             path: `${data.taoRoot}/${extension}`,
@@ -112,9 +109,18 @@ module.exports = {
         await config.write(data);
 
         return {
-            data,
-            gitClient
+            data
         };
+    },
+
+    /**
+     * Initialise and return a git client in the release folder
+     * @param {Object} params - command line params
+     * @param {Object} data - release subject data
+     * @returns {GitClient}
+     */
+    initialiseGitClient(params, data) {
+        return gitClientFactory(`${data.taoRoot}/${data.extension.name}`, params.origin, data.extension.name);
     },
 
     /**
@@ -147,7 +153,7 @@ module.exports = {
 
             log.done(`Branch ${data.releasingBranch} is valid.`);
         } else {
-            log.exit(`Branch '${data.releasingBranch}' cannot be released because its manifest version (${data.version}) is not greater than the manifest version of '${releaseBranch}' (${releaseBranchManifest.version}).`);
+            log.exit(`Branch '${data.releasingBranch}' cannot be released because its manifest version (${data.version}) is not greater than the manifest version of '${params.releaseBranch}' (${releaseBranchManifest.version}).`);
         }
 
         return data;
