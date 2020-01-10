@@ -57,99 +57,40 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
     let data = {};
     let gitClient;
     let githubClient;
-    let taoInstance;
-    let npmPackage;
+
+    const adapteeApi = subjectType === 'package' ? packageApi : extensionApi;
+    const adaptee = adapteeApi(params, data);
 
     return {
 
-        /**
-         * Extension-specific methods group
-         * @external extensionApi accessed via Adapter pattern
-         */
-        extension: {
-            /**
-             * Select and initialise tao instance
-             */
-            async selectTaoInstance() {
-                ({ data, taoInstance } = await extensionApi.selectTaoInstance(params, data));
-            },
-
-            /**
-             * Select and initialise the extension to release
-             */
-            async selectExtension() {
-                ({ data } = await extensionApi.selectExtension(params, data, taoInstance));
-            },
-
-            /**
-             * Initialise and assign a git client in the release folder
-             */
-            initialiseGitClient() {
-                gitClient = extensionApi.initialiseGitClient(params, data);
-            },
-
-            /**
-             * Verify that the version that we are going to release is valid
-             */
-            async verifyReleasingBranch() {
-                data = await extensionApi.verifyReleasingBranch(params, data, gitClient, taoInstance);
-            },
-
-            /**
-             * Compile and publish extension assets
-             */
-            async compileAssets() {
-                await extensionApi.compileAssets(data, taoInstance, gitClient);
-            },
-
-            /**
-             * Update and publish translations
-             */
-            async updateTranslations() {
-                await extensionApi.updateTranslations(params, data, taoInstance, gitClient);
-            }
+        async selectTarget() {
+            const { name, path } = await adaptee.selectTarget();
+            data = { ...data, name, path};
         },
 
-        /**
-         * NPM-package-specific methods group
-         * @external packageApi accessed via Adapter pattern
-         */
-        package: {
-            /**
-             * Select and initialise the npm package to release
-             */
-            async selectPackage() {
-                ({ data, npmPackage } = await packageApi.selectPackage(data));
-            },
+        initialiseGitClient() {
+            gitClient = gitClientFactory(data.path, params.origin);
+            adaptee.gitClient = gitClient;
+        },
 
-            /**
-             * Initialise and assign a git client in the release folder
-             */
-            initialiseGitClient() {
-                gitClient = packageApi.initialiseGitClient(params, data);
-            },
+        check() {
+            return adaptee.check();
+        },
 
-            /**
-             * Show a prompt and then run `npm publish`
-             */
-            async publishToNpm() {
-                await packageApi.publishToNpm(params, data, gitClient, npmPackage);
-            }
+        build() {
+            return adaptee.build();
+        },
+
+        publish(){
+            return adaptee.publish();
         },
 
         /**
          * Fetch metadata about the extension or package from its local metafile
          * @returns {Promise} object containing metadata
          */
-        async getMetadata() {
-            if (subjectType === 'extension') {
-                const manifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
-                const repoName = await taoInstance.getRepoName(data.extension.name);
-                return { ...manifest, repoName };
-            }
-            else if (subjectType === 'package') {
-                return npmPackage.parsePackageJson();
-            }
+        getMetadata() {
+            return adaptee.getMetadata();
         },
 
         /**
@@ -384,6 +325,11 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 await config.write(data);
             }
         },
+
+        async writeConfig() {
+            await config.write(data);
+            return true;
+        }
 
         /**
          * Merge release branch back into base branch

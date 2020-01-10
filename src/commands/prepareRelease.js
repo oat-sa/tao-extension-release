@@ -50,17 +50,16 @@ async function prepareRelease() {
         log.title('TAO Extension Release: prepareRelease');
 
         await release.loadConfig();
-        await release.extension.selectTaoInstance();
-        await release.extension.selectExtension();
-        await release.extension.initialiseGitClient();
+        await release.selectTarget();
+        await release.writeConfig();
+        await release.initialiseGitClient();
         await release.verifyLocalChanges();
         await release.verifyBranches();
         await release.doesTagExists();
         await release.doesReleasingBranchExists();
         await release.isReleaseRequired();
         await release.createReleasingBranch();
-        await release.extension.compileAssets();
-        await release.extension.updateTranslations();
+        await release.build();
 
         log.done('Release branch prepared, and pushed to remote.').exit();
     } catch (error) {

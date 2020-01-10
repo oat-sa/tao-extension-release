@@ -27,204 +27,176 @@ const inquirer = require('inquirer');
 const compareVersions = require('compare-versions');
 
 const taoInstanceFactory = require('../taoInstance.js');
-const gitClientFactory = require('../git.js');
-const config = require('../config.js')();
 const log = require('../log.js');
 
-module.exports = {
-    /**
-     * Select and initialise tao instance
-     * @param {Object} params - command line params
-     * @param {String} [params.pathToTao] - path to the instance root
-     * @param {String} [params.wwwUser] - name of the www user
-     * @param {Object} data - release subject data
-     * @returns {Object}
-     */
-    async selectTaoInstance(params, data) {
-        // Start with CLI option, if it's missing we'll prompt user
-        let taoRoot = params.pathToTao;
+module.exports = function extensionApiFactory(params, data) {
 
-        if (!taoRoot) {
-            ( { taoRoot } = await inquirer.prompt({
-                type: 'input',
-                name: 'taoRoot',
-                message: 'Path to the TAO instance : ',
-                default: data.taoRoot || process.cwd()
-            }) );
-        }
+    return {
+        gitClient: null,
+        taoInstance: null,
 
-        const taoInstance = taoInstanceFactory(path.resolve(taoRoot), false, params.wwwUser);
+        /**
+         * Select the target : the tao instance and the extension
+         * @returns {Object}
+         */
+        async selectTarget() {
+            // Start with CLI option, if it's missing we'll prompt user
+            let taoRoot = params.pathToTao;
 
-        const { dir, root } = await taoInstance.isRoot();
-
-        if (!root) {
-            log.exit(`${dir} is not a TAO instance`);
-        }
-
-        if (!await taoInstance.isInstalled()) {
-            log.exit('It looks like the given TAO instance is not installed.');
-        }
-
-        data.taoRoot = dir;
-
-        return {
-            data,
-            taoInstance
-        };
-    },
-
-    /**
-     * Select and initialise the extension to release
-     * @param {Object} params - command line params
-     * @param {String} [params.extensionToRelease] - name of the extension
-     * @param {String} [params.origin] - git repository origin
-     * @param {Object} data - release subject data
-     * @param {TaoInstance} taoInstance
-     * @returns {GitClient}
-     */
-    async selectExtension(params, data, taoInstance) {
-        // Start with CLI option, if it's missing we'll prompt user
-        let extension = params.extensionToRelease;
-        const availableExtensions = await taoInstance.getExtensions();
-
-        if (extension && !availableExtensions.includes(extension)) {
-            log.exit(`Specified extension ${extension} not found in ${data.taoRoot}`);
-        }
-        else if (!extension) {
-            ( { extension } = await inquirer.prompt({
-                type: 'list',
-                name: 'extension',
-                message: 'Which extension you want to release ? ',
-                pageSize: 12,
-                choices: availableExtensions,
-                default: data.extension && data.extension.name,
-            }) );
-        }
-
-        data.extension = {
-            name: extension,
-            path: `${data.taoRoot}/${extension}`,
-        };
-
-        await config.write(data);
-
-        return {
-            data
-        };
-    },
-
-    /**
-     * Initialise and return a git client in the release folder
-     * @param {Object} params - command line params
-     * @param {Object} data - release subject data
-     * @returns {GitClient}
-     */
-    initialiseGitClient(params, data) {
-        return gitClientFactory(`${data.taoRoot}/${data.extension.name}`, params.origin, data.extension.name);
-    },
-
-    /**
-     * Verify that the version that we are going to release is valid
-     * - is the same on branch name and manifest
-     * - is bigger than current release branch version.
-     * @param {Object} params - command line params
-     * @param {Object} data - release subject data
-     * @param {TaoInstance} taoInstance
-     * @param {GitClient} gitClient
-     * @returns
-     */
-    async verifyReleasingBranch(params, data, gitClient, taoInstance) {
-        log.doing('Checking out and verifying releasing branch.');
-
-        // Cross check releasing branch version with manifest version
-        const releasingBranchManifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
-        if (compareVersions(releasingBranchManifest.version, data.version) === 0 ) {
-            log.doing(`Branch ${data.releasingBranch} has valid manifest.`);
-        } else {
-            log.exit(`Branch '${data.releasingBranch}' cannot be released because it's branch name does not match its own manifest version (${releasingBranchManifest.version}).`);
-        }
-
-        // Cross check releasing branch wth release branch and make sure new version is highest
-        await gitClient.checkout(params.releaseBranch);
-        const releaseBranchManifest = await taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
-        if (compareVersions(releasingBranchManifest.version, releaseBranchManifest.version) === 1 ) {
-            data.lastVersion = releaseBranchManifest.version;
-            data.lastTag = `v${releaseBranchManifest.version}`;
-
-            log.done(`Branch ${data.releasingBranch} is valid.`);
-        } else {
-            log.exit(`Branch '${data.releasingBranch}' cannot be released because its manifest version (${data.version}) is not greater than the manifest version of '${params.releaseBranch}' (${releaseBranchManifest.version}).`);
-        }
-
-        return data;
-    },
-
-    /**
-     * Compile and publish extension assets
-     * @param {Object} data - release subject data
-     * @param {TaoInstance} taoInstance
-     * @param {GitClient} gitClient
-     */
-    async compileAssets(data, taoInstance, gitClient) {
-        log.doing('Bundling');
-        log.info('Asset build started, this may take a while');
-
-        try {
-            await taoInstance.buildAssets(data.extension.name, false);
-
-            const changes = await gitClient.commitAndPush(data.releasingBranch, 'bundle assets');
-
-            if (changes && changes.length) {
-                log.info(`Commit : [bundle assets - ${changes.length} files]`);
-                changes.forEach(file => log.info(`  - ${file}`));
+            if (!taoRoot) {
+                ({
+                    taoRoot
+                } = await inquirer.prompt({
+                    type: 'input',
+                    name: 'taoRoot',
+                    message: 'Path to the TAO instance : ',
+                    default: data.taoRoot || process.cwd()
+                }));
             }
-        } catch (error) {
-            log.error(`Unable to bundle assets. ${error.message}. Continue.`);
-        }
 
-        log.done();
-    },
+            this.taoInstance = taoInstanceFactory(path.resolve(taoRoot), false, params.wwwUser);
 
-    /**
-     * Update and publish translations
-     * @param {Object} params - command line params
-     * @param {Boolean} [params.updateTranslations] - should translations be included?
-     * @param {Object} data - release subject data
-     * @param {TaoInstance} taoInstance
-     * @param {GitClient} gitClient
-     */
-    async updateTranslations(params, data, taoInstance, gitClient) {
-        log.doing('Translations');
+            const {
+                dir,
+                root
+            } = await this.taoInstance.isRoot();
 
-        // Start with CLI option, if it's missing we'll prompt user
-        let translation = params.updateTranslations;
+            if (!root) {
+                log.exit(`${dir} is not a TAO instance`);
+            }
 
-        if (!translation) {
-            log.warn('Update translations during a release only if you know what you are doing');
+            if (!await this.taoInstance.isInstalled()) {
+                log.exit('It looks like the given TAO instance is not installed.');
+            }
 
-            ( { translation } = await inquirer.prompt({
-                type: 'confirm',
-                name: 'translation',
-                message: `${data.extension.name} needs updated translations ? `,
-                default: false
-            }) );
-        }
+            // Start with CLI option, if it's missing we'll prompt user
+            let extension = params.extensionToRelease;
+            const availableExtensions = await this.taoInstance.getExtensions();
 
-        if (translation) {
+            if (extension && !availableExtensions.includes(extension)) {
+                log.exit(`Specified extension ${extension} not found in ${taoRoot}`);
+            } else if (!extension) {
+                ({
+                    extension
+                } = await inquirer.prompt({
+                    type: 'list',
+                    name: 'extension',
+                    message: 'Which extension you want to release ? ',
+                    pageSize: 12,
+                    choices: availableExtensions,
+                    default: data.name
+                }));
+            }
+
+            return {
+                taoRoot,
+                name: extension,
+                path: `${taoRoot}/${extension}`,
+            };
+        },
+
+
+        /**
+         * Verify that the version that we are going to release is valid
+         * - is the same on branch name and manifest
+         * - is bigger than current release branch version.
+         * @returns
+         */
+        async check() {
+            log.doing('Checking out and verifying releasing branch.');
+
+            // Cross check releasing branch version with manifest version
+            const releasingBranchManifest = await this.taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
+            if (compareVersions(releasingBranchManifest.version, data.version) === 0) {
+                log.doing(`Branch ${data.releasingBranch} has valid manifest.`);
+            } else {
+                log.exit(`Branch '${data.releasingBranch}' cannot be released because it's branch name does not match its own manifest version (${releasingBranchManifest.version}).`);
+            }
+
+            // Cross check releasing branch wth release branch and make sure new version is highest
+            await this.gitClient.checkout(params.releaseBranch);
+            const releaseBranchManifest = await this.taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
+            if (compareVersions(releasingBranchManifest.version, releaseBranchManifest.version) === 1) {
+                data.lastVersion = releaseBranchManifest.version;
+                data.lastTag = `v${releaseBranchManifest.version}`;
+
+                log.done(`Branch ${data.releasingBranch} is valid.`);
+            } else {
+                log.exit(`Branch '${data.releasingBranch}' cannot be released because its manifest version (${data.version}) is not greater than the manifest version of '${params.releaseBranch}' (${releaseBranchManifest.version}).`);
+            }
+
+            return data;
+        },
+
+        /**
+         * Compile and publish extension assets
+         * Build and publish translations
+         *
+         */
+        async build() {
+            log.doing('Bundling');
+            log.info('Asset build started, this may take a while');
+
             try {
-                await taoInstance.updateTranslations(data.extension.name);
+                await this.taoInstance.buildAssets(data.extension.name, false);
 
-                const changes = await gitClient.commitAndPush(data.releasingBranch, 'update translations');
+                const changes = await this.gitClient.commitAndPush(data.releasingBranch, 'bundle assets');
 
                 if (changes && changes.length) {
-                    log.info(`Commit : [update translations - ${changes.length} files]`);
+                    log.info(`Commit : [bundle assets - ${changes.length} files]`);
                     changes.forEach(file => log.info(`  - ${file}`));
                 }
             } catch (error) {
-                log.error(`Unable to update translations. ${error.message}. Continue.`);
+                log.error(`Unable to bundle assets. ${error.message}. Continue.`);
             }
-        }
 
-        log.done();
-    },
+            log.done();
+
+            log.doing('Translations');
+
+            // Start with CLI option, if it's missing we'll prompt user
+            let translation = params.updateTranslations;
+
+            if (!translation) {
+                log.warn('Update translations during a release only if you know what you are doing');
+
+                ({
+                    translation
+                } = await inquirer.prompt({
+                    type: 'confirm',
+                    name: 'translation',
+                    message: `${data.extension.name} needs updated translations ? `,
+                    default: false
+                }));
+            }
+
+            if (translation) {
+                try {
+                    await this.taoInstance.updateTranslations(data.extension.name);
+
+                    const changes = await this.gitClient.commitAndPush(data.releasingBranch, 'update translations');
+
+                    if (changes && changes.length) {
+                        log.info(`Commit : [update translations - ${changes.length} files]`);
+                        changes.forEach(file => log.info(`  - ${file}`));
+                    }
+                } catch (error) {
+                    log.error(`Unable to update translations. ${error.message}. Continue.`);
+                }
+            }
+
+            log.done();
+        },
+
+        publish(){
+
+        },
+
+        async getMetadata(){
+            const manifest = await this.taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
+            const repoName = await this.taoInstance.getRepoName(data.extension.name);
+            return { ...manifest, repoName };
+        }
+    };
 };
+

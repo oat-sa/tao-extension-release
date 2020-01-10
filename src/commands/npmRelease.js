@@ -47,8 +47,9 @@ async function npmRelease() {
         log.title('TAO Extension Release: npmRelease');
 
         await release.loadConfig();
-        await release.package.selectPackage();
-        await release.package.initialiseGitClient();
+        await release.selectTarget();
+        await release.writeConfig();
+        await release.initialiseGitClient();
         await release.verifyLocalChanges();
         await release.signTags();
         await release.verifyBranches();
