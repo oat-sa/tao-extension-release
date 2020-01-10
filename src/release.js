@@ -523,6 +523,17 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
+         * Push the releasing branch to the remote repo
+         */
+        async pushReleasingBranch() {
+            log.doing(`Pushing branch ${data.releasingBranch}`);
+
+            await gitClient.push(origin, data.releasingBranch);
+
+            log.done();
+        },
+
+        /**
          * Remove releasing branch
          * @COMMON
          */

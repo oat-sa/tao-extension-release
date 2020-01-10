@@ -57,8 +57,8 @@ async function npmRelease() {
         await release.isReleaseRequired();
         await release.confirmRelease();
         await release.createReleasingBranch();
-        await release.package.buildPackage();
         await release.initialiseGithubClient();
+        await release.pushReleasingBranch();
         await release.createPullRequest();
         await release.extractReleaseNotes();
         await release.mergePullRequest();
