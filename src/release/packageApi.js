@@ -28,17 +28,17 @@ const inquirer = require('inquirer');
 const npmPackageFactory = require('../npmPackage.js');
 const log = require('../log.js');
 
-module.exports = function packageApiFactory(params){
-
+/**
+* @param {Object} params
+* @param {String} [params.releaseBranch] - branch to release to
+*/
+module.exports = function packageApiFactory(params = {}) {
 
     return {
 
-        gitClient : null,
+        gitClient: null,
 
-        /**
-         * @typedef {Object} npmPackage
-         */
-        npmPackage : null,
+        npmPackage: null,
 
         /**
          * Select and initialise the npm package to release
@@ -63,22 +63,26 @@ module.exports = function packageApiFactory(params){
             }
 
             return  {
-                name: this.npmPackage.name,
-                path: absolutePathToPackage,
+                name: this.npmPackage.name
+                // path: absolutePathToPackage,
             };
         },
 
+        /**
+         * Extract package metadata from its metafile
+         * @returns {Object}
+         */
         getMetadata(){
             return this.npmPackage.parsePackageJson();
         },
 
         /**
-         * Show a prompt and then run `npm publish`
+         * Checkout master, show a prompt and then run `npm publish`
+         * TODO: checkout latest tag?
          * @returns {Promise}
          */
         async publish() {
-
-            if(this.gitClient){
+            if (this.gitClient) {
                 await this.gitClient.checkout(params.releaseBranch);
             }
 
@@ -101,12 +105,12 @@ module.exports = function packageApiFactory(params){
             log.exit();
         },
 
-        check(){
-
+        verifyReleasingBranch(){
+            // Not implemented
         },
 
         build(){
-
+            // Not implemented
         }
     };
 };

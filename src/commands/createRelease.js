@@ -52,6 +52,7 @@ async function createRelease() {
         log.title('TAO Extension Release: createRelease');
 
         await release.loadConfig();
+        await release.initialiseAdaptee();
         await release.selectTarget();
         await release.writeConfig();
         await release.initialiseGitClient();
@@ -59,7 +60,7 @@ async function createRelease() {
         await release.signTags();
         await release.selectReleasingBranch();
         await release.checkoutReleasingBranch();
-        await release.check();
+        await release.verifyReleasingBranch();
         await release.mergeWithReleaseBranch();
         await release.build();
         await release.initialiseGithubClient();

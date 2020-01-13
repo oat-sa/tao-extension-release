@@ -28,6 +28,7 @@ const compareVersions = require('compare-versions');
 
 const config = require('./config.js')();
 const github = require('./github.js');
+const gitClientFactory = require('./git.js');
 const log = require('./log.js');
 
 const extensionApi = require('./release/extensionApi.js');
@@ -58,31 +59,40 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
     let gitClient;
     let githubClient;
 
-    const adapteeApi = subjectType === 'package' ? packageApi : extensionApi;
-    const adaptee = adapteeApi(params, data);
+    /**
+     * @typedef adaptee - an instance of a supplemental API with methods specific to the release subject type
+     */
+    let adaptee;
 
     return {
-
-        async selectTarget() {
-            const { name, path } = await adaptee.selectTarget();
-            data = { ...data, name, path};
+        /**
+         * Initialise the Adaptee and give it a copy of the release params and loaded data
+         */
+        initialiseAdaptee() {
+            if (subjectType === 'extension') {
+                adaptee = extensionApi(params, data);
+            }
+            else if (subjectType === 'package') {
+                adaptee = packageApi(params, data);
+            }
         },
 
+        /**
+         * Allows the user to specify the path to what they want to release
+         */
+        async selectTarget() {
+            const { name, path } = await adaptee.selectTarget();
+            data.name = name;
+            data.path = path;
+        },
+
+        /**
+         * Initialise a client to interact with local git commands
+         * The same client will be stored both here and in the adaptee
+         */
         initialiseGitClient() {
             gitClient = gitClientFactory(data.path, params.origin);
             adaptee.gitClient = gitClient;
-        },
-
-        check() {
-            return adaptee.check();
-        },
-
-        build() {
-            return adaptee.build();
-        },
-
-        publish(){
-            return adaptee.publish();
         },
 
         /**
@@ -91,6 +101,31 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          */
         getMetadata() {
             return adaptee.getMetadata();
+        },
+
+        /**
+         * Verify that the version that we are going to release is valid
+         */
+        verifyReleasingBranch() {
+            const { lastVersion, tag } = adaptee.verifyReleasingBranch(data.releasingBranch, data.version);
+            data = { ...data, lastVersion, tag };
+        },
+
+        /**
+         * Build assets, commit them to the releasing branch and push that branch
+         *
+         * @returns
+         */
+        build() {
+            return adaptee.build(data.releasingBranch);
+        },
+
+        /**
+         * Publish the released package
+         * @returns {Promise}
+         */
+        publish() {
+            return adaptee.publish();
         },
 
         /**
@@ -315,7 +350,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 const { token } = await inquirer.prompt({
                     type: 'input',
                     name: 'token',
-                    message: 'I need a Github token, with "repo" rights (check your browser)  : ',
+                    message: 'I need a Github token, with "repo" rights (check your browser) : ',
                     validate: token => /[a-z0-9]{32,48}/i.test(token),
                     filter: token => token.trim()
                 });
@@ -329,7 +364,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         async writeConfig() {
             await config.write(data);
             return true;
-        }
+        },
 
         /**
          * Merge release branch back into base branch

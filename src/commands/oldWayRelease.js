@@ -52,6 +52,7 @@ async function releaseExtension() {
 
         await release.warnAboutDeprecation();
         await release.loadConfig();
+        await release.initialiseAdaptee();
         await release.selectTarget();
         await release.writeConfig();
         await release.initialiseGitClient();
