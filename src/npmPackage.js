@@ -107,7 +107,7 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
         npmCommand(command) {
             return new Promise( (resolve, reject) => {
                 if (typeof command !== 'string') {
-                    reject(new TypeError(`Invalid argument type: ${typeof command} for npmCommand (should be string)`));
+                    return reject(new TypeError(`Invalid argument type: ${typeof command} for npmCommand (should be string)`));
                 }
                 const opts = getOptions();
                 log.info(`npm ${command}`, opts);
