@@ -44,7 +44,7 @@ const log = {
 };
 const taoRoot = 'testRoot';
 const inquirer = {
-    prompt: () => ({ extension, taoRoot }),
+    prompt: () => { },
 };
 const version = '1.1.1';
 const taoInstance = {
@@ -55,12 +55,17 @@ const taoInstance = {
     getRepoName: () => ''
 };
 const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
+const extensionApi = proxyquire.noCallThru().load('../../../../src/release/extensionApi.js', {
+    '../taoInstance.js': taoInstanceFactory,
+    '../log.js': log,
+    inquirer
+});
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './config.js': () => config,
     './git.js': gitClientFactory,
     './log.js': log,
-    './taoInstance.js': taoInstanceFactory,
-    inquirer,
+    './release/extensionApi.js': extensionApi,
+    inquirer
 })();
 
 test('should define confirmRelease method on release instance', (t) => {
@@ -74,8 +79,18 @@ test('should define confirmRelease method on release instance', (t) => {
 test('should prompt to confirm release', async (t) => {
     t.plan(4);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
+    await release.initialiseAdaptee();
+
+    sandbox.stub(log, 'exit');
+    sandbox.stub(inquirer, 'prompt')
+        .onCall(0).returns({ taoRoot })
+        .onCall(1).returns({ extension: '' })
+        .onCall(2).returns({ pull: true });
+    sandbox.stub(taoInstance, 'isInstalled').returns(false);
+    sandbox.stub(taoInstance, 'isRoot').returns({ root: true });
+    sandbox.stub(taoInstance, 'getExtensions').returns([]);
+
+    await release.selectTarget();
     await release.verifyBranches();
 
     sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message }) => {
@@ -97,8 +112,8 @@ test('should prompt to confirm release', async (t) => {
 test('should log exit if release was not confirmed', async (t) => {
     t.plan(1);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
+    await release.initialiseAdaptee();
+    await release.selectTarget();
     await release.verifyBranches();
 
     sandbox.stub(inquirer, 'prompt').returns({ go: false });

@@ -13,12 +13,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019 Open Assessment Technologies SA;
+ * Copyright (c) 2019-2020 Open Assessment Technologies SA;
  */
 
 /**
  *
- * Unit test the selectTaoInstance method of module src/release.js
+ * Unit test the selectTaoInstance method of module src/release/extensionApi.js
  *
  * @author Anton Tsymuk <anton@taotesting.com>
  */
@@ -43,16 +43,16 @@ const taoInstance = {
 };
 const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
 const wwwUser = 'testwwwUser';
-const release = proxyquire.noCallThru().load('../../../../src/release.js', {
-    './log.js': log,
-    './taoInstance.js': taoInstanceFactory,
+const release = proxyquire.noCallThru().load('../../../../src/release/extensionApi.js', {
+    '../log.js': log,
+    '../taoInstance.js': taoInstanceFactory,
     inquirer,
 })({ wwwUser });
 
-test('should define selectTaoInstance method on release instance', (t) => {
+test('should define selectTaoInstance method on extensionApi instance', (t) => {
     t.plan(1);
 
-    t.ok(typeof release.selectTaoInstance === 'function', 'The release instance has selectTaoInstance method');
+    t.ok(typeof release.selectTaoInstance === 'function', 'The extensionApi instance has selectTaoInstance method');
 
     t.end();
 });
@@ -165,9 +165,9 @@ test('should log exit if tao instance is not installed', async (t) => {
     t.end();
 });
 
-const releaseWithCliOption = proxyquire.noCallThru().load('../../../../src/release.js', {
-    './log.js': log,
-    './taoInstance.js': taoInstanceFactory,
+const releaseWithCliOption = proxyquire.noCallThru().load('../../../../src/release/extensionApi.js', {
+    '../log.js': log,
+    '../taoInstance.js': taoInstanceFactory,
     inquirer,
 })({ pathToTao: '/path/to/tao' });
 

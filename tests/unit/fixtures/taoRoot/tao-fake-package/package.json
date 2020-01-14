@@ -1,0 +1,17 @@
+{
+  "name": "@example/tao-fake-package",
+  "version": "0.1.2",
+  "description": "TAO Dummy Package",
+  "files": [
+      "dist",
+      "src"
+  ],
+  "publishConfig": {
+      "access": "public"
+  },
+  "repository": {
+      "type": "git",
+      "url": "git+https://github.com/oatymart/tao-foobaz-fe.git"
+  },
+  "license": "GPL-2.0"
+}

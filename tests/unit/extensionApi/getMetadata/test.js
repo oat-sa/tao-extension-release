@@ -13,12 +13,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019 Open Assessment Technologies SA;
+ * Copyright (c) 2020 Open Assessment Technologies SA;
  */
 
 /**
  *
- * Unit test the getMetadata method of module src/release.js
+ * Unit test the getMetadata method of module src/release/extensionApi.js
  *
  * @author Martin Nicholson <martin@taotesting.com>
  */
@@ -30,19 +30,13 @@ const path = require('path');
 
 const sandbox = sinon.sandbox.create();
 
-const config = {
-    write: () => { },
-};
-const extension = 'testExtension';
-const githubFactory = sandbox.stub();
-const gitClientInstance = {};
-const gitClientFactory = sandbox.stub().callsFake(() => gitClientInstance);
+const taoRoot = path.normalize('../../fixtures/taoRoot');
+const extension = 'taoFakeExtension';
+const manifestPath = path.join(taoRoot, extension, 'manifest.php');
+
 const log = {
     exit: () => { },
 };
-const taoRoot = 'testRoot';
-const manifestPath = path.join(taoRoot, extension, 'manifest.php'); //
-
 const inquirer = {
     prompt: () => ({ extension, taoRoot }),
 };
@@ -58,27 +52,16 @@ const taoInstance = {
 };
 const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
 
-const npmPackage = {
-    isValidPackage: () => true,
-    parsePackageJson: () => ({ version }),
-    extractRepoName: () => repositoryName
-};
-const npmPackageFactory = sandbox.stub().callsFake(() => npmPackage);
-
-const release = proxyquire.noCallThru().load('../../../../src/release.js', {
-    './config.js': () => config,
-    './git.js': gitClientFactory,
-    './github.js': githubFactory,
-    './log.js': log,
-    './taoInstance.js': taoInstanceFactory,
-    './npmPackage.js': npmPackageFactory,
+const extensionApi = proxyquire.noCallThru().load('../../../../src/release/extensionApi.js', {
+    '../log.js': log,
+    '../taoInstance.js': taoInstanceFactory,
     inquirer,
 })();
 
-test('should define getMetadata method on release instance', (t) => {
+test('should define getMetadata method on extensionApi instance', (t) => {
     t.plan(1);
 
-    t.ok(typeof release.getMetadata === 'function', 'The release instance has getMetadata method');
+    t.ok(typeof extensionApi.getMetadata === 'function', 'The extensionApi instance has getMetadata method');
 
     t.end();
 });
@@ -86,13 +69,13 @@ test('should define getMetadata method on release instance', (t) => {
 test('should get extension metadata', async (t) => {
     t.plan(4);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
+    await extensionApi.selectTaoInstance();
+    await extensionApi.selectExtension();
 
     sandbox.stub(taoInstance, 'parseManifest').returns({ version, name: extension });
     sandbox.stub(taoInstance, 'getRepoName').returns(repositoryName);
 
-    await release.getMetadata();
+    await extensionApi.getMetadata();
 
     t.equal(taoInstance.parseManifest.callCount, 1, 'Parsing of manifest');
     t.ok(taoInstance.parseManifest.calledWith(manifestPath), 'Parsing of manifest of apropriate extension');
@@ -104,31 +87,16 @@ test('should get extension metadata', async (t) => {
     t.end();
 });
 
-test('should get package metadata', async (t) => {
-    t.plan(1);
-
-    await release.selectPackage();
-
-    sandbox.stub(npmPackage, 'parsePackageJson').returns({ version });
-
-    await release.getMetadata('package');
-
-    t.equal(npmPackage.parsePackageJson.callCount, 1, 'Parsing of package.json');
-
-    sandbox.restore();
-    t.end();
-});
-
 test('should return metadata object', async (t) => {
     t.plan(4);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
+    await extensionApi.selectTaoInstance();
+    await extensionApi.selectExtension();
 
     sandbox.stub(taoInstance, 'parseManifest').returns({ version, name: extension });
     sandbox.stub(taoInstance, 'getRepoName').returns(repositoryName);
 
-    const result = await release.getMetadata();
+    const result = await extensionApi.getMetadata();
 
     t.ok(typeof result === 'object', 'Returns an object');
     t.ok(result.name, 'Returns an object.name');
