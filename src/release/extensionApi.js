@@ -159,11 +159,19 @@ module.exports = function extensionApiFactory(params = {}, data = {}) {
         },
 
         /**
-         * Compile and push extension assets
-         * Build and push translations
+         * Build and push releasable assets
          * @param {String} releasingBranch
          */
         async build(releasingBranch) {
+            await this.compileAssets(releasingBranch);
+            await this.updateTranslations(releasingBranch);
+        },
+
+        /**
+         * Compile and push extension assets
+         * @param {String} releasingBranch
+         */
+        async compileAssets(releasingBranch) {
             log.doing('Bundling');
             log.info('Asset build started, this may take a while');
 
@@ -181,7 +189,13 @@ module.exports = function extensionApiFactory(params = {}, data = {}) {
             }
 
             log.done();
+        },
 
+        /**
+         * Build and push translations
+         * @param {String} releasingBranch
+         */
+        async updateTranslations(releasingBranch) {
             log.doing('Translations');
 
             // Start with CLI option, if it's missing we'll prompt user
