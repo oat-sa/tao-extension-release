@@ -65,6 +65,25 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
     let adaptee;
 
     return {
+
+        /**
+         * Read from the private data property
+         * This is to simplify unit testing
+         * @returns {Object}
+         */
+        getData() {
+            return data;
+        },
+
+        /**
+         * Assign to the private data property
+         * This is to simplify unit testing
+         * @param {Object} data
+         */
+        setData(newData) {
+            data = newData;
+        },
+
         /**
          * Initialise the Adaptee and give it a copy of the release params and loaded data
          */
