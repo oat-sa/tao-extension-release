@@ -62,7 +62,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
     /**
      * @typedef adaptee - an instance of a supplemental API with methods specific to the release subject type
      */
-    let adaptee;
+    let adaptee = {};
 
     return {
 
@@ -303,7 +303,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         async initialiseGithubClient() {
             const metadata = await this.getMetadata();
 
-            if (metadata.repoName) {
+            if (metadata && metadata.repoName) {
                 githubClient = github(data.token, metadata.repoName);
             } else {
                 log.exit('Unable to find the github repository name');
