@@ -78,10 +78,10 @@ test('should get extension metadata', async (t) => {
     await extensionApi.getMetadata();
 
     t.equal(taoInstance.parseManifest.callCount, 1, 'Parsing of manifest');
-    t.ok(taoInstance.parseManifest.calledWith(manifestPath), 'Parsing of manifest of apropriate extension');
+    t.ok(taoInstance.parseManifest.calledWith(manifestPath), 'Parsing of manifest of appropriate extension');
 
     t.equal(taoInstance.getRepoName.callCount, 1, 'Getting of repository name');
-    t.ok(taoInstance.getRepoName.calledWith(extension), 'Getting of repository name of apropriate extension');
+    t.ok(taoInstance.getRepoName.calledWith(extension), 'Getting of repository name of appropriate extension');
 
     sandbox.restore();
     t.end();

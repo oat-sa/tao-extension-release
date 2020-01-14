@@ -83,7 +83,7 @@ test('should log doing message', async (t) => {
     await extensionApi.compileAssets(releasingBranch);
 
     t.equal(log.doing.callCount, 1, 'Doing has been logged');
-    t.ok(log.doing.calledWith('Bundling'), 'Doing has been logged with apropriate message');
+    t.ok(log.doing.calledWith('Bundling'), 'Doing has been logged with appropriate message');
 
     sandbox.restore();
     t.end();
@@ -100,7 +100,7 @@ test('should log info message', async (t) => {
     await extensionApi.compileAssets(releasingBranch);
 
     t.equal(log.info.callCount, 1, 'Info has been logged');
-    t.ok(log.info.calledWith('Asset build started, this may take a while'), 'Info has been logged with apropriate message');
+    t.ok(log.info.calledWith('Asset build started, this may take a while'), 'Info has been logged with appropriate message');
 
     sandbox.restore();
     t.end();
@@ -117,7 +117,7 @@ test('should build assets', async (t) => {
     await extensionApi.compileAssets(releasingBranch);
 
     t.equal(taoInstance.buildAssets.callCount, 1, 'Assets has been built');
-    t.ok(taoInstance.buildAssets.calledWith(extension, false), 'Assets of apropriate extension has been builded');
+    t.ok(taoInstance.buildAssets.calledWith(extension, false), 'Assets of appropriate extension has been builded');
 
     sandbox.restore();
     t.end();
@@ -134,7 +134,7 @@ test('should publish assets', async (t) => {
     await extensionApi.compileAssets(releasingBranch);
 
     t.equal(gitClientInstance.commitAndPush.callCount, 1, 'Assets has been published');
-    t.ok(gitClientInstance.commitAndPush.calledWith(`${branchPrefix}-${version}`, 'bundle assets'), 'Assets of apropriate extension has been published');
+    t.ok(gitClientInstance.commitAndPush.calledWith(`${branchPrefix}-${version}`, 'bundle assets'), 'Assets of appropriate extension has been published');
 
     sandbox.restore();
     t.end();
@@ -155,7 +155,7 @@ test('should log error message if compilation failed', async (t) => {
     await extensionApi.compileAssets(releasingBranch);
 
     t.equal(log.error.callCount, 1, 'Error has been logged');
-    t.ok(log.error.calledWith(`Unable to bundle assets. ${errorMessage}. Continue.`), 'Error has been logged with apropriate message');
+    t.ok(log.error.calledWith(`Unable to bundle assets. ${errorMessage}. Continue.`), 'Error has been logged with appropriate message');
 
     sandbox.restore();
     t.end();
@@ -175,9 +175,9 @@ test('should log info message after compilation of assets', async (t) => {
     await extensionApi.compileAssets(releasingBranch);
 
     t.equal(log.info.callCount, 4, 'Info has been logged');
-    t.ok(log.info.calledWith(`Commit : [bundle assets - ${changes.length} files]`), 'Info has been logged with apropriate message');
+    t.ok(log.info.calledWith(`Commit : [bundle assets - ${changes.length} files]`), 'Info has been logged with appropriate message');
     changes.forEach(change =>
-        t.ok(log.info.calledWith(`  - ${change}`), 'Info has been logged with apropriate message')
+        t.ok(log.info.calledWith(`  - ${change}`), 'Info has been logged with appropriate message')
     );
 
     sandbox.restore();

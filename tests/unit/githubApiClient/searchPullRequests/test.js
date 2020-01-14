@@ -76,8 +76,8 @@ test('should search pull requests', async (t) => {
 
     await githubApiClient.searchPullRequests(searchQuery);
 
-    t.equal(graphqlRequestInstance.request.callCount, 1, 'Pull requests search has been requeted');
-    t.ok(graphqlRequestInstance.request.calledWith(query), 'Pull requests search has been requeted with apropriate query');
+    t.equal(graphqlRequestInstance.request.callCount, 1, 'Pull requests search has been requested');
+    t.ok(graphqlRequestInstance.request.calledWith(query), 'Pull requests search has been requested with appropriate query');
 
     sandbox.restore();
     t.end();

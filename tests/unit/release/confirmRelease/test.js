@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019 Open Assessment Technologies SA;
+ * Copyright (c) 2019-2020 Open Assessment Technologies SA;
  */
 
 /**
@@ -29,42 +29,20 @@ const test = require('tape');
 
 const sandbox = sinon.sandbox.create();
 
-const config = {
-    write: () => { },
-};
 const extension = 'testExtension';
-const gitClientInstance = {
-    pull: () => { }
-};
-const gitClientFactory = sandbox.stub().callsFake(() => gitClientInstance);
+const version = '1.1.1';
+
 const log = {
     exit: () => { },
     doing: () => { },
     done: () => { },
 };
-const taoRoot = 'testRoot';
 const inquirer = {
     prompt: () => { },
 };
-const version = '1.1.1';
-const taoInstance = {
-    getExtensions: () => [],
-    isInstalled: () => true,
-    isRoot: () => ({ root: true, dir: taoRoot }),
-    parseManifest: () => ({ version, name: extension }),
-    getRepoName: () => ''
-};
-const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
-const extensionApi = proxyquire.noCallThru().load('../../../../src/release/extensionApi.js', {
-    '../taoInstance.js': taoInstanceFactory,
-    '../log.js': log,
-    inquirer
-});
+
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
-    './config.js': () => config,
-    './git.js': gitClientFactory,
     './log.js': log,
-    './release/extensionApi.js': extensionApi,
     inquirer
 })();
 
@@ -79,27 +57,18 @@ test('should define confirmRelease method on release instance', (t) => {
 test('should prompt to confirm release', async (t) => {
     t.plan(4);
 
-    await release.initialiseAdaptee();
-
     sandbox.stub(log, 'exit');
+
+    release.setData({ name: extension, version });
+
     sandbox.stub(inquirer, 'prompt')
-        .onCall(0).returns({ taoRoot })
-        .onCall(1).returns({ extension: '' })
-        .onCall(2).returns({ pull: true });
-    sandbox.stub(taoInstance, 'isInstalled').returns(false);
-    sandbox.stub(taoInstance, 'isRoot').returns({ root: true });
-    sandbox.stub(taoInstance, 'getExtensions').returns([]);
+        .callsFake(({ type, name, message }) => {
+            t.equal(type, 'confirm', 'The type should be "confirm"');
+            t.equal(name, 'go', 'The param name should be go');
+            t.equal(message, `Let's release version ${extension}@${version} 🚀 ?`, 'Should display appropriate message');
 
-    await release.selectTarget();
-    await release.verifyBranches();
-
-    sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message }) => {
-        t.equal(type, 'confirm', 'The type should be "confirm"');
-        t.equal(name, 'go', 'The param name should be go');
-        t.equal(message, `Let's release version ${extension}@${version} 🚀 ?`, 'Should disaplay appropriate message');
-
-        return { go: true };
-    });
+            return { go: true };
+        });
 
     await release.confirmRelease();
 
@@ -111,10 +80,6 @@ test('should prompt to confirm release', async (t) => {
 
 test('should log exit if release was not confirmed', async (t) => {
     t.plan(1);
-
-    await release.initialiseAdaptee();
-    await release.selectTarget();
-    await release.verifyBranches();
 
     sandbox.stub(inquirer, 'prompt').returns({ go: false });
     sandbox.stub(log, 'exit');

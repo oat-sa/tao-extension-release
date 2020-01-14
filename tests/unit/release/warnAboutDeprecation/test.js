@@ -13,11 +13,11 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019 Open Assessment Technologies SA;
+ * Copyright (c) 2019-2020 Open Assessment Technologies SA;
  */
 
 /**
- * Unit test the selectReleasingBranch method of module src/release.js
+ * Unit test the warnAboutDeprecation method of module src/release.js
  *
  * @author Ricardo Proença <ricardo@taotesting.com>
  */
@@ -28,10 +28,6 @@ const test = require('tape');
 
 const sandbox = sinon.sandbox.create();
 
-const config = {
-    write: () => { }
-};
-
 const log = {
     exit: () => { }
 };
@@ -41,10 +37,8 @@ const inquirer = {
 };
 
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
-    './config.js': () => config,
     './git.js': {},
     './log.js': log,
-    './taoInstance.js': {},
     inquirer,
 })();
 
@@ -62,7 +56,7 @@ test('should prompt to confirm release', async (t) => {
     sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message }) => {
         t.equal(type, 'confirm', 'The type should be "confirm"');
         t.equal(name, 'isOldWayReleaseSelected', 'The param name should be isOldWayReleaseSelected');
-        t.equal(message, 'This release process is deprecated. Are you sure you want to continue?', 'Should disaplay appropriate message');
+        t.equal(message, 'This release process is deprecated. Are you sure you want to continue?', 'Should display appropriate message');
 
         return { go: true };
     });

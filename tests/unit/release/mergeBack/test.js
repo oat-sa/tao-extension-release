@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019 Open Assessment Technologies SA;
+ * Copyright (c) 2019-2020 Open Assessment Technologies SA;
  */
 
 /**
@@ -35,17 +35,18 @@ const conflictedSummary = {
 const sandbox = sinon.sandbox.create();
 
 const baseBranch = 'testBaseBranch';
-const config = {
-    write: () => { },
-};
+const releaseBranch = 'testReleaseBranch';
 const extension = 'testExtension';
+const taoRoot = 'testRoot';
+const token = 'abc123';
+const releasingBranch = 'release-1.1.1';
+
 const gitClientInstance = {
     mergeBack: () => { },
     push: () => { },
     hasLocalChanges: () => { }
 };
 const gitClientFactory = sandbox.stub().callsFake(() => gitClientInstance);
-const taoRoot = 'testRoot';
 const inquirer = {
     prompt: () => ({ extension, taoRoot }),
 };
@@ -57,21 +58,13 @@ const log = {
     info: () => { },
     warn: () => { }
 };
-const releaseBranch = 'testReleaseBranch';
-const taoInstance = {
-    getExtensions: () => [],
-    isInstalled: () => true,
-    isRoot: () => ({ root: true, dir: taoRoot }),
-    getRepoName: () => ''
-};
-const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
-    './config.js': () => config,
     './git.js': gitClientFactory,
-    './taoInstance.js': taoInstanceFactory,
     './log.js': log,
     inquirer,
 })({ baseBranch, releaseBranch });
+
+release.setData({ releasingBranch, token });
 
 test('should define mergeBack method on release instance', (t) => {
     t.plan(1);
@@ -81,28 +74,10 @@ test('should define mergeBack method on release instance', (t) => {
     t.end();
 });
 
-test('should log doing message', async (t) => {
-    t.plan(2);
-
-    await release.selectTaoInstance();
-    await release.selectExtension();
-
-    sandbox.stub(log, 'doing');
-
-    await release.mergeBack();
-
-    t.equal(log.doing.callCount, 1, 'Doing has been logged');
-    t.ok(log.doing.calledWith(`Merging back ${releaseBranch} into ${baseBranch}`), 'Doing has been logged with apropriate message');
-
-    sandbox.restore();
-    t.end();
-});
-
 test('should merge release branch into base branch', async (t) => {
     t.plan(2);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
+    await release.initialiseGitClient();
 
     sandbox.stub(gitClientInstance, 'mergeBack');
 
@@ -118,8 +93,7 @@ test('should merge release branch into base branch', async (t) => {
 test('should log done message', async (t) => {
     t.plan(1);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
+    await release.initialiseGitClient();
 
     sandbox.stub(log, 'done');
 
@@ -134,8 +108,7 @@ test('should log done message', async (t) => {
 test('should prompt if there are merge conflicts', async (t) => {
     t.plan(2);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
+    await release.initialiseGitClient();
 
     sandbox.stub(gitClientInstance, 'mergeBack').throws(conflictedSummary);
     sandbox.stub(release, 'promptToResolveConflicts');
@@ -153,8 +126,7 @@ test('should prompt if there are merge conflicts', async (t) => {
 test('should push and log done if prompt accepted', async (t) => {
     t.plan(4);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
+    await release.initialiseGitClient();
 
     sandbox.stub(gitClientInstance, 'mergeBack').throws(conflictedSummary);
     sandbox.stub(gitClientInstance, 'push');
@@ -177,8 +149,7 @@ test('should push and log done if prompt accepted', async (t) => {
 test('should log exit if prompt rejected', async (t) => {
     t.plan(5);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
+    await release.initialiseGitClient();
 
     sandbox.stub(gitClientInstance, 'mergeBack').throws(conflictedSummary);
     sandbox.stub(gitClientInstance, 'push');

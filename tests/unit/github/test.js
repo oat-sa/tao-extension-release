@@ -218,7 +218,7 @@ test('the getPRCommitShas method', async (t) => {
             owner,
             ''
         ),
-        'Commits have been requested with apropriate arguments'
+        'Commits have been requested with appropriate arguments'
     );
     t.deepEqual(
         actual,
@@ -265,7 +265,7 @@ test('the extractReleaseNotesFromReleasePR method', async (t) => {
         githubApiClientInstance.searchPullRequests.calledWith(
             '1 2 repo:foo-sa/bar-project type:pr base:develop is:merged',
         ),
-        'Commits have been requested with apropriate arguments'
+        'Commits have been requested with appropriate arguments'
     );
 
     sandbox.restore();

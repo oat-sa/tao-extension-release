@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019 Open Assessment Technologies SA;
+ * Copyright (c) 2019-2020 Open Assessment Technologies SA;
  */
 
 /**
@@ -30,11 +30,16 @@ const test = require('tape');
 const sandbox = sinon.sandbox.create();
 
 const branchPrefix = 'release';
-const config = {
-    write: () => { },
-};
 const extension = 'testExtension';
 const prNumber = '123';
+const version = '1.1.1';
+const taoRoot = 'testRoot';
+const releaseBranch = 'testReleaseBranch';
+const token = 'abc123';
+const releasingBranch = 'release-1.1.1';
+const repoName = 'extension-test';
+const pr = { notes: 'some pr note', number: prNumber };
+
 const githubInstance = {
     extractReleaseNotesFromReleasePR: () => { },
     createReleasePR: () => ({ state: 'open', number: prNumber }),
@@ -44,6 +49,7 @@ const gitClientInstance = {
     pull: () => { }
 };
 const gitClientFactory = sandbox.stub().callsFake(() => gitClientInstance);
+
 const log = {
     exit: () => { },
     error: () => { },
@@ -51,28 +57,17 @@ const log = {
     done: () => { },
     info: () => { },
 };
-const taoRoot = 'testRoot';
 const inquirer = {
     prompt: () => ({ extension, taoRoot }),
 };
-const version = '1.1.1';
-const releaseBranch = 'testReleaseBranch';
-const taoInstance = {
-    getExtensions: () => [],
-    getRepoName: () => 'testRepo',
-    isInstalled: () => true,
-    isRoot: () => ({ root: true, dir: taoRoot }),
-    parseManifest: () => ({ version })
-};
-const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
-    './config.js': () => config,
     './git.js': gitClientFactory,
     './github.js': githubFactory,
     './log.js': log,
-    './taoInstance.js': taoInstanceFactory,
     inquirer,
 })({ branchPrefix, releaseBranch });
+
+release.setData({ releasingBranch, version, token, pr });
 
 test('should define extractReleaseNotes method on release instance', (t) => {
     t.plan(1);
@@ -82,41 +77,24 @@ test('should define extractReleaseNotes method on release instance', (t) => {
     t.end();
 });
 
-test('should log doing message', async (t) => {
-    t.plan(2);
-
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
-    await release.initialiseGithubClient();
-    await release.createPullRequest();
-
-    sandbox.stub(log, 'doing');
-
-    await release.extractReleaseNotes();
-
-    t.equal(log.doing.callCount, 1, 'Doing has been logged');
-    t.ok(log.doing.calledWith('Extract release notes'), 'Doing has been logged with apropriate message');
-
-    sandbox.restore();
-    t.end();
-});
-
 test('should extract release notes', async (t) => {
-    t.plan(2);
+    t.plan(3);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    const releaseNote = 'The release note of a PR';
+
+    sandbox.stub(release, 'getMetadata').returns({ repoName });
+
     await release.initialiseGithubClient();
-    await release.createPullRequest();
 
-    sandbox.stub(githubInstance, 'extractReleaseNotesFromReleasePR');
+    sandbox.stub(githubInstance, 'extractReleaseNotesFromReleasePR').returns(releaseNote);
 
     await release.extractReleaseNotes();
 
     t.equal(githubInstance.extractReleaseNotesFromReleasePR.callCount, 1, 'Release notes has been extracted');
-    t.ok(githubInstance.extractReleaseNotesFromReleasePR.calledWith(prNumber), 'Release notes has been extracted from apropriate pull request');
+    t.ok(githubInstance.extractReleaseNotesFromReleasePR.calledWith(prNumber), 'Release notes has been extracted from appropriate pull request');
+
+    const data = release.getData();
+    t.equal(data.pr.notes, releaseNote, 'PR notes are correct');
 
     sandbox.restore();
     t.end();
@@ -127,11 +105,9 @@ test('should log info message', async (t) => {
 
     const releaseNotes = 'testRleaseNotes';
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    sandbox.stub(release, 'getMetadata').returns({ repoName });
+
     await release.initialiseGithubClient();
-    await release.createPullRequest();
 
     sandbox.stub(githubInstance, 'extractReleaseNotesFromReleasePR').returns(releaseNotes);
     sandbox.stub(log, 'info');
@@ -139,7 +115,7 @@ test('should log info message', async (t) => {
     await release.extractReleaseNotes();
 
     t.equal(log.info.callCount, 1, 'Info has been logged');
-    t.ok(log.info.calledWith(releaseNotes), 'Info has been logged with apropriate message');
+    t.ok(log.info.calledWith(releaseNotes), 'Info has been logged with appropriate message');
 
     sandbox.restore();
     t.end();
@@ -150,11 +126,9 @@ test('should log done message', async (t) => {
 
     const releaseNotes = 'testRleaseNotes';
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    sandbox.stub(release, 'getMetadata').returns({ repoName });
+
     await release.initialiseGithubClient();
-    await release.createPullRequest();
 
     sandbox.stub(githubInstance, 'extractReleaseNotesFromReleasePR').returns(releaseNotes);
     sandbox.stub(log, 'done');
@@ -168,20 +142,21 @@ test('should log done message', async (t) => {
 });
 
 test('should log error message if can not extract release notes', async (t) => {
-    t.plan(2);
+    t.plan(3);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    sandbox.stub(release, 'getMetadata').returns({ repoName });
+
     await release.initialiseGithubClient();
-    await release.createPullRequest();
 
     sandbox.stub(log, 'error');
 
     await release.extractReleaseNotes();
 
     t.equal(log.error.callCount, 1, 'Error has been logged');
-    t.ok(log.error.calledWith('Unable to create the release notes. Continue.'), 'Error has been logged with apropriate message');
+    t.ok(log.error.calledWith('Unable to create the release notes. Continue.'), 'Error has been logged with appropriate message');
+
+    const data = release.getData();
+    t.equal(data.pr.notes, '', 'PR notes are empty');
 
     sandbox.restore();
     t.end();

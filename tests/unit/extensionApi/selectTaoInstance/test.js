@@ -63,7 +63,7 @@ test('should prompt to provide path to tao instance', async (t) => {
     sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message, default: defaultValue }) => {
         t.equal(type, 'input', 'The type should be "input"');
         t.equal(name, 'taoRoot', 'The param name should be taoRoot');
-        t.equal(message, 'Path to the TAO instance : ', 'Should disaplay appropriate message');
+        t.equal(message, 'Path to the TAO instance : ', 'Should display appropriate message');
         t.equal(defaultValue, path.resolve(''), 'Should provide default value');
 
         return { taoRoot: '' };
@@ -123,7 +123,7 @@ test('should log exit if provided path is not a tao root', async (t) => {
     await release.selectTaoInstance();
 
     t.equal(log.exit.callCount, 1, 'Exit message has been logged');
-    t.ok(log.exit.calledWith(`${dir} is not a TAO instance`), 'Exit message has been logged with apropriate message');
+    t.ok(log.exit.calledWith(`${dir} is not a TAO instance`), 'Exit message has been logged with appropriate message');
 
     sandbox.restore();
     t.end();
@@ -159,7 +159,7 @@ test('should log exit if tao instance is not installed', async (t) => {
     await release.selectTaoInstance();
 
     t.equal(log.exit.callCount, 1, 'Exit message has been logged');
-    t.ok(log.exit.calledWith('It looks like the given TAO instance is not installed.'), 'Exit message has been logged with apropriate message');
+    t.ok(log.exit.calledWith('It looks like the given TAO instance is not installed.'), 'Exit message has been logged with appropriate message');
 
     sandbox.restore();
     t.end();

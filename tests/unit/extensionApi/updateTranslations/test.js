@@ -84,7 +84,7 @@ test('should log doing message', async (t) => {
     await extensionApi.updateTranslations(releasingBranch);
 
     t.equal(log.doing.callCount, 1, 'Doing has been logged');
-    t.ok(log.doing.calledWith('Translations'), 'Doing has been logged with apropriate message');
+    t.ok(log.doing.calledWith('Translations'), 'Doing has been logged with appropriate message');
 
     sandbox.restore();
     t.end();
@@ -102,7 +102,7 @@ test('should log warn message', async (t) => {
     await extensionApi.updateTranslations(releasingBranch);
 
     t.equal(log.warn.callCount, 1, 'Warn has been logged');
-    t.ok(log.warn.calledWith('Update translations during a release only if you know what you are doing'), 'Warn has been logged with apropriate message');
+    t.ok(log.warn.calledWith('Update translations during a release only if you know what you are doing'), 'Warn has been logged with appropriate message');
 
     sandbox.restore();
     t.end();
@@ -118,7 +118,7 @@ test('should prompt to update translations', async (t) => {
     sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message, default: defaultValue }) => {
         t.equal(type, 'confirm', 'The type should be "confirm"');
         t.equal(name, 'translation', 'The param name should be translation');
-        t.equal(message, `${extension} needs updated translations ? `, 'Should disaplay appropriate message');
+        t.equal(message, `${extension} needs updated translations ? `, 'Should display appropriate message');
         t.equal(defaultValue, false, 'Default value should be false');
 
         return { translation: false };
@@ -144,7 +144,7 @@ test('should update translations', async (t) => {
     await extensionApi.updateTranslations(releasingBranch);
 
     t.equal(taoInstance.updateTranslations.callCount, 1, 'Translations has been updated');
-    t.ok(taoInstance.updateTranslations.calledWith(extension), 'Translations of apropriate extension has been updated');
+    t.ok(taoInstance.updateTranslations.calledWith(extension), 'Translations of appropriate extension has been updated');
 
     sandbox.restore();
     t.end();
@@ -184,7 +184,7 @@ test('should log error message if update failed', async (t) => {
     await extensionApi.updateTranslations(releasingBranch);
 
     t.equal(log.error.callCount, 1, 'Error has been logged');
-    t.ok(log.error.calledWith(`Unable to update translations. ${errorMessage}. Continue.`), 'Error has been logged with apropriate message');
+    t.ok(log.error.calledWith(`Unable to update translations. ${errorMessage}. Continue.`), 'Error has been logged with appropriate message');
 
     sandbox.restore();
     t.end();
@@ -205,9 +205,9 @@ test('should log info message after update of translations', async (t) => {
     await extensionApi.updateTranslations(releasingBranch);
 
     t.equal(log.info.callCount, 3, 'Info has been logged');
-    t.ok(log.info.calledWith(`Commit : [update translations - ${changes.length} files]`), 'Info has been logged with apropriate message');
+    t.ok(log.info.calledWith(`Commit : [update translations - ${changes.length} files]`), 'Info has been logged with appropriate message');
     changes.forEach(change =>
-        t.ok(log.info.calledWith(`  - ${change}`), 'Info has been logged with apropriate message')
+        t.ok(log.info.calledWith(`  - ${change}`), 'Info has been logged with appropriate message')
     );
 
     sandbox.restore();
@@ -271,7 +271,7 @@ test('should use CLI updateTranslations instead of prompting', async (t) => {
     await extensionApiWithCliOption.updateTranslations(releasingBranch);
 
     t.equal(taoInstance.updateTranslations.callCount, 1, 'Translations has been updated');
-    t.ok(taoInstance.updateTranslations.calledWith(extension), 'Translations of apropriate extension has been updated');
+    t.ok(taoInstance.updateTranslations.calledWith(extension), 'Translations of appropriate extension has been updated');
     t.ok(inquirer.prompt.notCalled, 'No prompt shown');
 
     sandbox.restore();

@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019 Open Assessment Technologies SA;
+ * Copyright (c) 2019-2020 Open Assessment Technologies SA;
  */
 
 /**
@@ -29,38 +29,20 @@ const test = require('tape');
 const sandbox = sinon.sandbox.create();
 
 const origin = 'origin';
-const config = {
-    write: () => { },
-};
 const extension = 'testExtension';
-const gitClientInstance = {
-    pull: () => { }
-};
-const gitClientFactory = sandbox.stub().callsFake(() => gitClientInstance);
-const log = {
-    exit: () => { },
-    doing: () => { },
-    done: () => { },
-};
 const taoRoot = 'testRoot';
+const token = 'abc123';
+const releasingBranch = 'release-1.1.1';
+
 const inquirer = {
     prompt: () => ({ extension, taoRoot }),
 };
-const version = '1.1.1';
-const taoInstance = {
-    getExtensions: () => [],
-    isInstalled: () => true,
-    isRoot: () => ({ root: true, dir: taoRoot }),
-    parseManifest: () => ({ version, name: extension })
-};
-const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
+
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
-    './config.js': () => config,
-    './git.js': gitClientFactory,
-    './log.js': log,
-    './taoInstance.js': taoInstanceFactory,
     inquirer,
 })({ origin });
+
+release.setData({ releasingBranch, token });
 
 test('should define promptToResolveConflicts method on release instance', (t) => {
     t.plan(1);
@@ -73,8 +55,7 @@ test('should define promptToResolveConflicts method on release instance', (t) =>
 test('should prompt to confirm resolution', async (t) => {
     t.plan(5);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
+    await release.initialiseGitClient();
 
     sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message, default: defaultValue }) => {
         t.equal(type, 'confirm', 'The type should be "confirm"');

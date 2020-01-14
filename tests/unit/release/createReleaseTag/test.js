@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019 Open Assessment Technologies SA;
+ * Copyright (c) 2019-2020 Open Assessment Technologies SA;
  */
 
 /**
@@ -29,41 +29,36 @@ const test = require('tape');
 
 const sandbox = sinon.sandbox.create();
 
-const config = {
-    write: () => { },
-};
 const extension = 'testExtension';
+const taoRoot = 'testRoot';
+const version = '1.1.1';
+const tag = 'v1.1.1';
+const token = 'abc123';
+const releaseBranch = 'testReleaseBranch';
+const releasingBranch = 'release-1.1.1';
+
 const gitClientInstance = {
     pull: () => { },
     tag: () => { },
 };
 const gitClientFactory = sandbox.stub().callsFake(() => gitClientInstance);
+
 const log = {
     exit: () => { },
     doing: () => { },
     done: () => { },
 };
-const taoRoot = 'testRoot';
 const inquirer = {
     prompt: () => ({ extension, taoRoot }),
 };
-const releaseBranch = 'testReleaseBranch';
-const version = '1.1.1';
-const taoInstance = {
-    getExtensions: () => [],
-    isInstalled: () => true,
-    isRoot: () => ({ root: true, dir: taoRoot }),
-    parseManifest: () => ({ version }),
-    getRepoName: () => ''
-};
-const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
+
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
-    './config.js': () => config,
     './git.js': gitClientFactory,
     './log.js': log,
-    './taoInstance.js': taoInstanceFactory,
     inquirer,
 })({ releaseBranch });
+
+release.setData({ releasingBranch, version, tag, token });
 
 test('should define createReleaseTag method on release instance', (t) => {
     t.plan(1);
@@ -73,43 +68,24 @@ test('should define createReleaseTag method on release instance', (t) => {
     t.end();
 });
 
-test('should log doing message', async (t) => {
-    t.plan(2);
-
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
-
-    sandbox.stub(log, 'doing');
-
-    await release.createReleaseTag();
-
-    t.equal(log.doing.callCount, 1, 'Doing has been logged');
-    t.ok(log.doing.calledWith(`Add and push tag v${version}`), 'Doing has been logged with apropriate message');
-
-    sandbox.restore();
-    t.end();
-});
-
 test('should create release tag', async (t) => {
     t.plan(2);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    await release.initialiseGitClient();
 
     sandbox.stub(gitClientInstance, 'tag');
 
     await release.createReleaseTag();
 
     t.equal(gitClientInstance.tag.callCount, 1, 'Tag has been created');
-    t.ok(
-        gitClientInstance.tag.calledWith(
+    t.deepEqual(
+        gitClientInstance.tag.getCall(0).args,
+        [
             releaseBranch,
             `v${version}`,
             `version ${version}`
-        ),
-        'Tag has been created with apropriate version'
+        ],
+        'Tag has been created with appropriate version'
     );
 
     sandbox.restore();
@@ -119,9 +95,7 @@ test('should create release tag', async (t) => {
 test('should log done message', async (t) => {
     t.plan(1);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    await release.initialiseGitClient();
 
     sandbox.stub(log, 'done');
 

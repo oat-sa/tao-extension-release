@@ -87,7 +87,7 @@ test('should prompt to select tao extension', async (t) => {
     sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message, pageSize, choices }) => {
         t.equal(type, 'list', 'The type should be "list"');
         t.equal(name, 'extension', 'The param name should be extension');
-        t.equal(message, 'Which extension you want to release ? ', 'Should disaplay appropriate message');
+        t.equal(message, 'Which extension you want to release ? ', 'Should display appropriate message');
         t.equal(pageSize, 12, 'The page size should be 12');
         t.equal(choices, availableExtensions, 'Should use avaiable extensions as choices');
 
@@ -140,7 +140,7 @@ test('should log exit message when bad CLI extension provided', async (t) => {
     await extensionApiWithCliOption.selectExtension();
 
     t.equal(log.exit.callCount, 1, 'Exit has been logged');
-    t.ok(log.exit.calledWith('Specified extension testExtensionFoo not found in testRoot'), 'Error has been logged with apropriate message');
+    t.ok(log.exit.calledWith('Specified extension testExtensionFoo not found in testRoot'), 'Error has been logged with appropriate message');
 
     sandbox.restore();
     t.end();

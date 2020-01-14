@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019 Open Assessment Technologies SA;
+ * Copyright (c) 2019-2020 Open Assessment Technologies SA;
  */
 
 /**
@@ -29,40 +29,35 @@ const test = require('tape');
 
 const sandbox = sinon.sandbox.create();
 
-const config = {
-    write: () => { },
-};
 const extension = 'testExtension';
+const taoRoot = 'testRoot';
+const version = '1.1.1';
+const tag = 'v1.1.1';
+const token = 'abc123';
+const releasingBranch = 'release-1.1.1';
+
 const gitClientInstance = {
     pull: () => { },
     hasTag: () => false
 };
 const gitClientFactory = sandbox.stub().callsFake(() => gitClientInstance);
+
 const log = {
     exit: () => { },
     doing: () => { },
     done: () => { },
 };
-const taoRoot = 'testRoot';
 const inquirer = {
     prompt: () => ({ extension, taoRoot }),
 };
-const version = '1.1.1';
-const taoInstance = {
-    getExtensions: () => [],
-    isInstalled: () => true,
-    isRoot: () => ({ root: true, dir: taoRoot }),
-    parseManifest: () => ({ version }),
-    getRepoName: () => ''
-};
-const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
+
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
-    './config.js': () => config,
     './git.js': gitClientFactory,
     './log.js': log,
-    './taoInstance.js': taoInstanceFactory,
     inquirer,
 })();
+
+release.setData({ releasingBranch, version, tag, token });
 
 test('should define doesTagExists method on release instance', (t) => {
     t.plan(1);
@@ -72,30 +67,10 @@ test('should define doesTagExists method on release instance', (t) => {
     t.end();
 });
 
-test('should log doing message', async (t) => {
-    t.plan(2);
-
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
-
-    sandbox.stub(log, 'doing');
-
-    await release.doesTagExists();
-
-    t.equal(log.doing.callCount, 1, 'Doing has been logged');
-    t.ok(log.doing.calledWith(`Check if tag v${version} exists`), 'Doing has been logged with appropriate message');
-
-    sandbox.restore();
-    t.end();
-});
-
 test('should check if tag exists', async (t) => {
     t.plan(2);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    await release.initialiseGitClient();
 
     sandbox.stub(gitClientInstance, 'hasTag');
 
@@ -111,9 +86,7 @@ test('should check if tag exists', async (t) => {
 test('should log exit if tag exists', async (t) => {
     t.plan(2);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    await release.initialiseGitClient();
 
     sandbox.stub(log, 'exit');
     sandbox.stub(gitClientInstance, 'hasTag').returns(true);
@@ -130,9 +103,7 @@ test('should log exit if tag exists', async (t) => {
 test('should log done message', async (t) => {
     t.plan(1);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    await release.initialiseGitClient();
 
     sandbox.stub(log, 'done');
 

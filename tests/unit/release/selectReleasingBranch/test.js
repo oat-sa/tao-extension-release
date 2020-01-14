@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019 Open Assessment Technologies SA;
+ * Copyright (c) 2019-2020 Open Assessment Technologies SA;
  */
 
 /**
@@ -28,9 +28,10 @@ const test = require('tape');
 
 const sandbox = sinon.sandbox.create();
 
-const config = {
-    write: () => { },
-};
+const taoRoot = 'testRoot';
+const extension = 'testExtension';
+const token = 'abc123';
+const releasingBranch = 'release-1.1.1';
 
 const gitClientInstance = {
     getLocalBranches: () => {},
@@ -46,21 +47,9 @@ const log = {
     done: () => { }
 };
 
-const taoRoot = 'testRoot';
-const extension = 'testExtension';
-
 const inquirer = {
     prompt: () => ({ extension, pull: true, taoRoot }),
 };
-
-const taoInstance = {
-    getExtensions: () => [],
-    isInstalled: () => true,
-    isRoot: () => ({ root: true, dir: taoRoot }),
-    parseManifest: () => ({}),
-};
-
-const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
 
 const releaseOptions = {
     branchPrefix: 'release',
@@ -69,12 +58,12 @@ const releaseOptions = {
 };
 
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
-    './config.js': () => config,
     './git.js': gitClientFactory,
     './log.js': log,
-    './taoInstance.js': taoInstanceFactory,
     inquirer,
 })(releaseOptions);
+
+release.setData({ releasingBranch, token });
 
 test('should define selectReleasingBranch method on release instance', (t) => {
     t.plan(1);
@@ -85,8 +74,7 @@ test('should define selectReleasingBranch method on release instance', (t) => {
 test('Version provided but no branches found', async (t) => {
     t.plan(2);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
+    await release.initialiseGitClient();
 
     sandbox.stub(gitClientInstance, 'fetch');
     sandbox.stub(gitClientInstance, 'getLocalBranches').returns([
@@ -103,7 +91,7 @@ test('Version provided but no branches found', async (t) => {
     await release.selectReleasingBranch();
 
     t.equal(log.exit.callCount, 1, 'Exit message has been logged');
-    t.ok(log.exit.calledWith('Cannot find the branch \'remotes/origin/release-0.9.0\'.'), 'Exit message has been logged with apropriate message');
+    t.ok(log.exit.calledWith('Cannot find the branch \'remotes/origin/release-0.9.0\'.'), 'Exit message has been logged with appropriate message');
 
     sandbox.restore();
     t.end();
@@ -112,8 +100,7 @@ test('Version provided but no branches found', async (t) => {
 test('version provided and found 1 branch', async (t) => {
     t.plan(2);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
+    await release.initialiseGitClient();
 
     sandbox.stub(gitClientInstance, 'fetch');
     sandbox.stub(gitClientInstance, 'getLocalBranches').returns([
@@ -133,7 +120,7 @@ test('version provided and found 1 branch', async (t) => {
     await release.selectReleasingBranch();
 
     t.equal(log.done.callCount, 1, 'Done message has been logged');
-    t.ok(log.done.calledWith('Branch release-0.9.0 is selected.'), 'Done message has been logged with apropriate message');
+    t.ok(log.done.calledWith('Branch release-0.9.0 is selected.'), 'Done message has been logged with appropriate message');
 
     sandbox.restore();
     t.end();

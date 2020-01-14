@@ -76,8 +76,8 @@ test('should request commits', async (t) => {
         nextPageCursor,
     );
 
-    t.equal(graphqlRequestInstance.request.callCount, 1, 'Commits have been requeted');
-    t.ok(graphqlRequestInstance.request.calledWith(query), 'Commits have been requeted with apropriate query');
+    t.equal(graphqlRequestInstance.request.callCount, 1, 'Commits have been requested');
+    t.ok(graphqlRequestInstance.request.calledWith(query), 'Commits have been requested with appropriate query');
 
     sandbox.restore();
     t.end();
@@ -119,8 +119,8 @@ test('should use empty nextCursor by default', async (t) => {
         repositoryOwner,
     );
 
-    t.equal(graphqlRequestInstance.request.callCount, 1, 'Commits have been requeted');
-    t.ok(graphqlRequestInstance.request.calledWith(query), 'Commits have been requeted with apropriate query');
+    t.equal(graphqlRequestInstance.request.callCount, 1, 'Commits have been requested');
+    t.ok(graphqlRequestInstance.request.calledWith(query), 'Commits have been requested with appropriate query');
 
     sandbox.restore();
     t.end();

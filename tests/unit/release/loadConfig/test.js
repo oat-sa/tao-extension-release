@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019 Open Assessment Technologies SA;
+ * Copyright (c) 2019-2020 Open Assessment Technologies SA;
  */
 
 /**
@@ -89,7 +89,7 @@ test('should prompt user to provide a token if there is no token in the config',
     sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message }) => {
         t.equal(type, 'input', 'The type should be "input"');
         t.equal(name, 'token', 'The param name should be token');
-        t.equal(message, 'I need a Github token, with "repo" rights (check your browser)  : ', 'Should disaplay appropriate message');
+        t.equal(message, 'I need a Github token, with "repo" rights (check your browser) : ', 'Should display appropriate message');
 
         return {};
     });
