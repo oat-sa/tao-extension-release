@@ -118,16 +118,16 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Fetch metadata about the extension or package from its local metafile
          * @returns {Promise} object containing metadata
          */
-        getMetadata() {
-            return adaptee.getMetadata();
+        async getMetadata() {
+            return await adaptee.getMetadata();
         },
 
         /**
          * Verify that the version that we are going to release is valid
          */
-        verifyReleasingBranch() {
-            const { lastVersion, tag } = adaptee.verifyReleasingBranch(data.releasingBranch, data.version);
-            data = { ...data, lastVersion, tag };
+        async verifyReleasingBranch() {
+            const { lastVersion, lastTag } = await adaptee.verifyReleasingBranch(data.releasingBranch, data.version);
+            data = { ...data, lastVersion, lastTag };
         },
 
         /**
@@ -135,16 +135,16 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          *
          * @returns
          */
-        build() {
-            return adaptee.build(data.releasingBranch);
+        async build() {
+            return await adaptee.build(data.releasingBranch);
         },
 
         /**
          * Publish the released package
          * @returns {Promise}
          */
-        publish() {
-            return adaptee.publish();
+        async publish() {
+            return await adaptee.publish();
         },
 
         /**
