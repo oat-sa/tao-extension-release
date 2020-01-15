@@ -38,7 +38,7 @@ const log = require('../log.js');
  * @param {Boolean} [params.updateTranslations] - should translations be included?
  * @param {Object} data - copy of global data object
  */
-module.exports = function extensionApiFactory(params = {}, data = {}) {
+module.exports = function extensionApiFactory(params = {}, data = { extension: {} }) {
 
     return {
 

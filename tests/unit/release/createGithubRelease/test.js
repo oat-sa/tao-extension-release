@@ -67,7 +67,7 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     inquirer,
 })({ branchPrefix, releaseBranch });
 
-release.setData({ version, tag, pr, token });
+release.setData({ version, tag, pr, token, extension: {} });
 
 test('should define createGithubRelease method on release instance', (t) => {
     t.plan(1);
@@ -142,7 +142,7 @@ const releaseWithCliOption = proxyquire.noCallThru().load('../../../../src/relea
     inquirer,
 })({ branchPrefix, releaseBranch, releaseComment: 'my first release' });
 
-releaseWithCliOption.setData({ version, tag, pr, token });
+releaseWithCliOption.setData({ version, tag, pr, token, extension: {} });
 
 test('should use CLI release comment instead of prompting', async (t) => {
     t.plan(4);

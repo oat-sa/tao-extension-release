@@ -53,7 +53,7 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     inquirer,
 })();
 
-release.setData({ releasingBranch, token });
+release.setData({ releasingBranch, token, extension: {} });
 
 test('should define initialiseGithubClient method on release instance', (t) => {
     t.plan(1);

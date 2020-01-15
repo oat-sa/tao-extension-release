@@ -42,7 +42,7 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     inquirer,
 })({ origin });
 
-release.setData({ releasingBranch, token });
+release.setData({ releasingBranch, token, extension: {} });
 
 test('should define promptToResolveConflicts method on release instance', (t) => {
     t.plan(1);

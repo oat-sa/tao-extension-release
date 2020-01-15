@@ -56,7 +56,7 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     inquirer,
 })({ branchPrefix });
 
-release.setData({ releasingBranch, token });
+release.setData({ releasingBranch, token, extension: {} });
 
 test('should define removeReleasingBranch method on release instance', (t) => {
     t.plan(1);

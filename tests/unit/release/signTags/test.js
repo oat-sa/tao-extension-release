@@ -41,7 +41,7 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './git.js': gitClientFactory,
 })();
 
-release.setData({ releasingBranch, token });
+release.setData({ releasingBranch, token, extension: {} });
 
 test('should define signTags method on release instance', (t) => {
     t.plan(1);

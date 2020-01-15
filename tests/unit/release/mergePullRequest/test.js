@@ -68,7 +68,7 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     opn,
 })({ branchPrefix, releaseBranch });
 
-release.setData({ releasingBranch, token });
+release.setData({ releasingBranch, token, extension: {} });
 
 test('should define mergePullRequest method on release instance', (t) => {
     t.plan(1);

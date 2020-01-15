@@ -59,7 +59,7 @@ test('should prompt to confirm release', async (t) => {
 
     sandbox.stub(log, 'exit');
 
-    release.setData({ name: extension, version });
+    release.setData({ version, extension: { name: extension } });
 
     sandbox.stub(inquirer, 'prompt')
         .callsFake(({ type, name, message }) => {

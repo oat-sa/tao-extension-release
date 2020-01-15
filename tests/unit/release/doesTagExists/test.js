@@ -57,7 +57,7 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     inquirer,
 })();
 
-release.setData({ releasingBranch, version, tag, token });
+release.setData({ releasingBranch, version, tag, token, extension: {} });
 
 test('should define doesTagExists method on release instance', (t) => {
     t.plan(1);

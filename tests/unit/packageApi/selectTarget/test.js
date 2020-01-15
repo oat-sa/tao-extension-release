@@ -140,8 +140,10 @@ test('should return selected package data', async (t) => {
     const res = await packageApi.selectTarget();
 
     t.deepEqual(res, {
-        path: taoRoot,
-        name: packageName,
+        package: {
+            path: taoRoot,
+            name: packageName
+        },
     }, 'Return value is correct');
 
     sandbox.restore();

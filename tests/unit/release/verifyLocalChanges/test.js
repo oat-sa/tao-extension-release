@@ -48,7 +48,7 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './log.js': log,
 })();
 
-release.setData({ releasingBranch, token, name: extension });
+release.setData({ releasingBranch, token, extension: { name: extension } });
 
 test('should define verifyLocalChanges method on release instance', (t) => {
     t.plan(1);

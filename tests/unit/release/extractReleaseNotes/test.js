@@ -67,7 +67,7 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     inquirer,
 })({ branchPrefix, releaseBranch });
 
-release.setData({ releasingBranch, version, token, pr });
+release.setData({ releasingBranch, version, token, pr, extension: {} });
 
 test('should define extractReleaseNotes method on release instance', (t) => {
     t.plan(1);

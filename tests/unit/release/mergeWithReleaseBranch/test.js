@@ -75,7 +75,7 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     inquirer,
 })(releaseOptions);
 
-release.setData({ releasingBranch: localReleasingBranch, token, version, tag });
+release.setData({ releasingBranch: localReleasingBranch, token, version, tag, extension: {} });
 
 test('should define mergeWithReleaseBranch method on release instance', (t) => {
     t.plan(1);

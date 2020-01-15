@@ -61,7 +61,7 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     inquirer,
 })({ branchPrefix, releaseBranch });
 
-release.setData({ releasingBranch, version, lastVersion, tag, token, pr: null });
+release.setData({ releasingBranch, version, lastVersion, tag, token, pr: null, extension: {} });
 
 test('should define createPullRequest method on release instance', (t) => {
     t.plan(1);

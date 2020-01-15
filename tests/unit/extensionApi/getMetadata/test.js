@@ -37,8 +37,10 @@ const version = '1.1.1';
 const manifestPath = path.join(taoRoot, extension, 'manifest.php');
 const data = {
     taoRoot,
-    name: extension,
-    path: `${taoRoot}/${extension}`
+    extension: {
+        name: extension,
+        path: `${taoRoot}/${extension}`
+    }
 };
 
 const log = {
