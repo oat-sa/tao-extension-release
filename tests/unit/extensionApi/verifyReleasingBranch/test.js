@@ -28,6 +28,13 @@ const test = require('tape');
 
 const sandbox = sinon.sandbox.create();
 
+const taoRoot = 'testRoot';
+const extension = 'testExtension';
+const releasingBranch = 'remotes/origin/release-0.9.0';
+const versionToRelease = '0.9.0';
+const localReleasingBranch = 'release-0.9.0';
+const releaseBranch = 'master';
+
 const gitClientInstance = {
     getLocalBranches: () => {},
     fetch: () => { },
@@ -41,9 +48,6 @@ const log = {
     error: () => { },
     done: () => { }
 };
-
-const taoRoot = 'testRoot';
-const extension = 'testExtension';
 
 const inquirer = {
     prompt: () => ({ extension, pull: true, taoRoot }),
@@ -70,11 +74,6 @@ const extensionApi = proxyquire.noCallThru().load('../../../../src/release/exten
     '../taoInstance.js': taoInstanceFactory,
     inquirer,
 })(releaseOptions);
-
-const releasingBranch = 'remotes/origin/release-0.9.0';
-const versionToRelease = '0.9.0';
-const localReleasingBranch = 'release-0.9.0';
-const releaseBranch = 'master';
 
 test('should define verifyReleasingBranch method on extensionApi instance', (t) => {
     t.plan(1);

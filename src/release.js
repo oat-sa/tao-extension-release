@@ -594,7 +594,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
             // Get version to release:
             await gitClient.pull(baseBranch);
-            const manifest = await this.getMetadata(); // name, version, repoName
+            const manifest = await this.getMetadata();
             data.version = manifest.version;
             data.tag = `v${manifest.version}`;
             data.releasingBranch = `${branchPrefix}-${manifest.version}`;

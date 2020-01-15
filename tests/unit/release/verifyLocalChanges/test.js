@@ -84,7 +84,7 @@ test('should log exit message if there is local changes', async (t) => {
     await release.verifyLocalChanges();
 
     t.equal(log.exit.callCount, 1, 'Notify about local changes');
-    t.equal(log.exit.getCall(0).args[0], `The extension ${extension} has local changes, please clean or stash them before releasing`, 'Notify aboutlocal changes with appropriate message');
+    t.equal(log.exit.getCall(0).args[0], `The extension ${extension} has local changes, please clean or stash them before releasing`, 'Notify about local changes with appropriate message');
 
     sandbox.restore();
     t.end();

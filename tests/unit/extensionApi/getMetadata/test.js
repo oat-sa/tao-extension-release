@@ -30,9 +30,16 @@ const path = require('path');
 
 const sandbox = sinon.sandbox.create();
 
-const taoRoot = path.normalize('../../fixtures/taoRoot');
+const taoRoot = 'taoRoot';
 const extension = 'taoFakeExtension';
+const repositoryName = 'testRepository';
+const version = '1.1.1';
 const manifestPath = path.join(taoRoot, extension, 'manifest.php');
+const data = {
+    taoRoot,
+    name: extension,
+    path: `${taoRoot}/${extension}`
+};
 
 const log = {
     exit: () => { },
@@ -40,8 +47,6 @@ const log = {
 const inquirer = {
     prompt: () => ({ extension, taoRoot }),
 };
-const repositoryName = 'testRepository';
-const version = '1.1.1';
 
 const taoInstance = {
     getExtensions: () => [],
@@ -56,7 +61,7 @@ const extensionApi = proxyquire.noCallThru().load('../../../../src/release/exten
     '../log.js': log,
     '../taoInstance.js': taoInstanceFactory,
     inquirer,
-})();
+})({}, data);
 
 test('should define getMetadata method on extensionApi instance', (t) => {
     t.plan(1);
@@ -70,7 +75,6 @@ test('should get extension metadata', async (t) => {
     t.plan(4);
 
     await extensionApi.selectTaoInstance();
-    await extensionApi.selectExtension();
 
     sandbox.stub(taoInstance, 'parseManifest').returns({ version, name: extension });
     sandbox.stub(taoInstance, 'getRepoName').returns(repositoryName);
@@ -91,7 +95,6 @@ test('should return metadata object', async (t) => {
     t.plan(4);
 
     await extensionApi.selectTaoInstance();
-    await extensionApi.selectExtension();
 
     sandbox.stub(taoInstance, 'parseManifest').returns({ version, name: extension });
     sandbox.stub(taoInstance, 'getRepoName').returns(repositoryName);

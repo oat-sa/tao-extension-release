@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019 Open Assessment Technologies SA;
+ * Copyright (c) 2020 Open Assessment Technologies SA;
  */
 
 /**
@@ -142,7 +142,7 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
          * @param {String} [registry='https://registry.npmjs.org']
          * @returns {Promise}
          */
-        publish(dryRun = true, registry = 'https://registry.npmjs.org') {
+        publish(dryRun = false, registry = 'https://registry.npmjs.org') {
             const dryRunFlag = '--dry-run';
             const registryFlag = `--registry ${registry}`;
             const publishCommand = `publish ${dryRun && dryRunFlag} ${registry && registryFlag}`;

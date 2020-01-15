@@ -31,10 +31,15 @@ const sandbox = sinon.sandbox.create();
 
 const branchPrefix = 'release';
 const extension = 'testExtension';
+const taoRoot = 'testRoot';
+const version = '1.1.1';
+const releasingBranch = 'release-1.1.1';
+
 const gitClientInstance = {
     commitAndPush: () => { },
     pull: () => { }
 };
+
 const log = {
     exit: () => { },
     doing: () => { },
@@ -43,12 +48,10 @@ const log = {
     info: () => { },
     warn: () => { },
 };
-const taoRoot = 'testRoot';
 const inquirer = {
     prompt: () => ({ extension, taoRoot, translation: true }),
 };
-const version = '1.1.1';
-const releasingBranch = 'release-1.1.1';
+
 const taoInstance = {
     getExtensions: () => [],
     isInstalled: () => true,
@@ -58,6 +61,7 @@ const taoInstance = {
     getRepoName: () => ''
 };
 const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
+
 const extensionApi = proxyquire.noCallThru().load('../../../../src/release/extensionApi.js', {
     '../log.js': log,
     '../taoInstance.js': taoInstanceFactory,
