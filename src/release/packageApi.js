@@ -62,9 +62,11 @@ module.exports = function packageApiFactory(params = {}) {
                     .exit();
             }
 
-            return  {
-                name: this.npmPackage.name,
-                path: absolutePathToPackage
+            return {
+                package: {
+                    name: this.npmPackage.name,
+                    path: absolutePathToPackage
+                }
             };
         },
 

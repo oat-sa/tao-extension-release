@@ -88,6 +88,9 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Initialise the Adaptee and give it a copy of the release params and loaded data
          */
         initialiseAdaptee() {
+            if (!data[subjectType]) {
+                data[subjectType] = {};
+            }
             if (subjectType === 'extension') {
                 adaptee = extensionApi(params, data);
             }
@@ -100,9 +103,9 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Allows the user to specify the path to what they want to release
          */
         async selectTarget() {
-            const { name, path } = await adaptee.selectTarget();
-            data.name = name;
-            data.path = path;
+            const newData = await adaptee.selectTarget();
+            data[subjectType].name = newData[subjectType].name;
+            data[subjectType].path = newData[subjectType].path;
         },
 
         /**
@@ -110,7 +113,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * The same client will be stored both here and in the adaptee
          */
         initialiseGitClient() {
-            gitClient = gitClientFactory(data.path, params.origin);
+            gitClient = gitClientFactory(data[subjectType].path, params.origin);
             adaptee.gitClient = gitClient;
         },
 
@@ -170,7 +173,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             const { go } = await inquirer.prompt({
                 type: 'confirm',
                 name: 'go',
-                message: `Let's release version ${data.name}@${data.version} 🚀 ?`
+                message: `Let's release version ${data[subjectType].name}@${data.version} 🚀 ?`
             });
 
             if (!go) {
@@ -584,7 +587,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 log.exit();
             }
 
-            log.doing(`Updating ${data.name}`);
+            log.doing(`Updating ${data[subjectType].name}`);
 
             // Get last released version:
             await gitClient.pull(releaseBranch);
@@ -607,10 +610,10 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             log.doing(`Checking ${subjectType} status`);
 
             if (await gitClient.hasLocalChanges()) {
-                log.exit(`The ${subjectType} ${data.name} has local changes, please clean or stash them before releasing`);
+                log.exit(`The ${subjectType} ${data[subjectType].name} has local changes, please clean or stash them before releasing`);
             }
 
-            log.done(`${data.name} is clean`);
+            log.done(`${data[subjectType].name} is clean`);
         },
 
         /**

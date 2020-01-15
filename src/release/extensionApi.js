@@ -105,12 +105,12 @@ module.exports = function extensionApiFactory(params = {}, data = {}) {
                     message: 'Which extension you want to release ? ',
                     pageSize: 12,
                     choices: availableExtensions,
-                    default: data.name,
+                    default: data.extension.name,
                 }) );
             }
 
-            data.name = extension;
-            data.path =`${data.taoRoot}/${extension}`;
+            data.extension.name = extension;
+            data.extension.path =`${data.taoRoot}/${extension}`;
         },
 
         /**
@@ -118,8 +118,8 @@ module.exports = function extensionApiFactory(params = {}, data = {}) {
          * @returns {Object}
          */
         async getMetadata() {
-            const manifest = await this.taoInstance.parseManifest(`${data.path}/manifest.php`);
-            const repoName = await this.taoInstance.getRepoName(data.name);
+            const manifest = await this.taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
+            const repoName = await this.taoInstance.getRepoName(data.extension.name);
             return { ...manifest, repoName };
         },
 
@@ -134,7 +134,7 @@ module.exports = function extensionApiFactory(params = {}, data = {}) {
             log.doing('Checking out and verifying releasing branch.');
 
             // Cross check releasing branch version with manifest version
-            const releasingBranchManifest = await this.taoInstance.parseManifest(`${data.path}/manifest.php`);
+            const releasingBranchManifest = await this.taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
 
             if (compareVersions(releasingBranchManifest.version, versionToRelease) === 0) {
                 log.doing(`Branch ${releasingBranch} has valid manifest.`);
@@ -145,7 +145,7 @@ module.exports = function extensionApiFactory(params = {}, data = {}) {
             // Cross check releasing branch wth release branch and make sure new version is highest
             await this.gitClient.checkout(params.releaseBranch);
 
-            const releaseBranchManifest = await this.taoInstance.parseManifest(`${data.path}/manifest.php`);
+            const releaseBranchManifest = await this.taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
 
             if (compareVersions(releasingBranchManifest.version, releaseBranchManifest.version) === 1) {
                 data.lastVersion = releaseBranchManifest.version;
@@ -176,7 +176,7 @@ module.exports = function extensionApiFactory(params = {}, data = {}) {
             log.info('Asset build started, this may take a while');
 
             try {
-                await this.taoInstance.buildAssets(data.name, false);
+                await this.taoInstance.buildAssets(data.extension.name, false);
 
                 const changes = await this.gitClient.commitAndPush(releasingBranch, 'bundle assets');
 
@@ -209,14 +209,14 @@ module.exports = function extensionApiFactory(params = {}, data = {}) {
                 } = await inquirer.prompt({
                     type: 'confirm',
                     name: 'translation',
-                    message: `${data.name} needs updated translations ? `,
+                    message: `${data.extension.name} needs updated translations ? `,
                     default: false
                 }));
             }
 
             if (translation) {
                 try {
-                    await this.taoInstance.updateTranslations(data.name);
+                    await this.taoInstance.updateTranslations(data.extension.name);
 
                     const changes = await this.gitClient.commitAndPush(releasingBranch, 'update translations');
 
