@@ -40,6 +40,14 @@ module.exports = function packageApiFactory(params = {}) {
 
         npmPackage: null,
 
+        getData() {
+            // Not implemented
+        },
+
+        setData() {
+            // Not implemented
+        },
+
         /**
          * Select and initialise the npm package to release
          * @returns {Object}

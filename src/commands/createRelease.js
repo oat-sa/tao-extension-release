@@ -52,7 +52,6 @@ async function createRelease() {
         log.title('TAO Extension Release: createRelease');
 
         await release.loadConfig();
-        await release.initialiseAdaptee();
         await release.selectTarget();
         await release.writeConfig();
         await release.initialiseGitClient();

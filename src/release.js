@@ -64,6 +64,14 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
      */
     let adaptee = {};
 
+    // Initialise the Adaptee and give it a copy of the release params and loaded data
+    if (subjectType === 'extension') {
+        adaptee = extensionApi(params, data);
+    }
+    else if (subjectType === 'package') {
+        adaptee = packageApi(params, data);
+    }
+
     return {
 
         /**
@@ -85,25 +93,14 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
-         * Initialise the Adaptee and give it a copy of the release params and loaded data
-         */
-        initialiseAdaptee() {
-            if (!data[subjectType]) {
-                data[subjectType] = {};
-            }
-            if (subjectType === 'extension') {
-                adaptee = extensionApi(params, data);
-            }
-            else if (subjectType === 'package') {
-                adaptee = packageApi(params, data);
-            }
-        },
-
-        /**
          * Allows the user to specify the path to what they want to release
          */
         async selectTarget() {
             const newData = await adaptee.selectTarget();
+
+            if (!data[subjectType]) {
+                data[subjectType] = {};
+            }
             data[subjectType].name = newData[subjectType].name;
             data[subjectType].path = newData[subjectType].path;
         },
@@ -381,6 +378,8 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
                 await config.write(data);
             }
+
+            adaptee.setData(data);
         },
 
         /**

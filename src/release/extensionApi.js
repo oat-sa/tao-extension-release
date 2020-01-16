@@ -47,6 +47,22 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
         taoInstance: null,
 
         /**
+         * Read from the private data property
+         * @returns {Object}
+         */
+        getData() {
+            return data;
+        },
+
+        /**
+         * Assign to the private data property
+         * @param {Object} data
+         */
+        setData(newData) {
+            data = newData;
+        },
+
+        /**
          * Select the target : the tao instance and the extension
          * @returns {Object}
          */
