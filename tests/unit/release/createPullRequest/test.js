@@ -89,7 +89,8 @@ test('should create pull request', async (t) => {
             `${branchPrefix}-${version}`,
             releaseBranch,
             version,
-            lastVersion
+            lastVersion,
+            'extension'
         ],
         'Release pull request has been created from releasing branch',
     );
