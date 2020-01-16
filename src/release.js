@@ -48,6 +48,7 @@ const packageApi = require('./release/packageApi.js');
  * @param {String} [params.versionToRelease] - version in xx.x.x format
  * @param {Boolean} [params.updateTranslations] - should translations be included?
  * @param {String} [params.releaseComment] - the release author's comment
+ * @param {String} [params.subjectType='extension'] - extension or package
  * @return {Object} - instance of taoExtensionRelease
  */
 module.exports = function taoExtensionReleaseFactory(params = {}) {
@@ -211,7 +212,8 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 data.releasingBranch,
                 releaseBranch,
                 data.version,
-                data.lastVersion
+                data.lastVersion,
+                subjectType
             );
 
             if (pullRequest && pullRequest.state === 'open') {
