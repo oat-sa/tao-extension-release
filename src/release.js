@@ -383,6 +383,10 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             }
         },
 
+        /**
+         * Write the data object back to a file on disk
+         * @returns true
+         */
         async writeConfig() {
             await config.write(data);
             return true;
