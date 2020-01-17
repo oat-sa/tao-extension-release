@@ -13,10 +13,10 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019 Open Assessment Technologies SA;
+ * Copyright (c) 2019-2020 Open Assessment Technologies SA;
  */
 
- /**
+/**
  * Unit test the doesReleasingBranchExists method of module src/release.js
  */
 
@@ -26,41 +26,37 @@ const test = require('tape');
 
 const sandbox = sinon.sandbox.create();
 
-const config = {
-    write: () => { },
-};
+const branchPrefix = 'release';
 const extension = 'testExtension';
+const taoRoot = 'testRoot';
+const origin = 'origin';
+const version = '1.1.1';
+const tag = 'v1.1.1';
+const token = 'abc123';
+const releasingBranch = 'release-1.1.1';
+
 const gitClientInstance = {
     pull: () => { },
     hasBranch: () => false
 };
 const gitClientFactory = sandbox.stub().callsFake(() => gitClientInstance);
+
 const log = {
     exit: () => { },
     doing: () => { },
     done: () => { },
 };
-const taoRoot = 'testRoot';
 const inquirer = {
     prompt: () => ({ extension, taoRoot }),
 };
-const origin = 'origin';
-const branchPrefix = 'release';
-const version = '1.1.1';
-const taoInstance = {
-    getExtensions: () => [],
-    isInstalled: () => true,
-    isRoot: () => ({ root: true, dir: taoRoot }),
-    parseManifest: () => ({ version })
-};
-const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
+
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
-    './config.js': () => config,
     './git.js': gitClientFactory,
     './log.js': log,
-    './taoInstance.js': taoInstanceFactory,
     inquirer
 })({ branchPrefix, origin });
+
+release.setData({ releasingBranch, version, tag, token, extension: {} });
 
 test('should define doesReleasingBranchExists method on release instance', (t) => {
     t.plan(1);
@@ -70,32 +66,10 @@ test('should define doesReleasingBranchExists method on release instance', (t) =
     t.end();
 });
 
-test('should log doing message', async (t) => {
-    t.plan(2);
-
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
-
-    sandbox.stub(log, 'doing');
-
-    console.log(`Check if branch remotes/${origin}/${branchPrefix}-${version} exists`);
-
-    await release.doesReleasingBranchExists();
-
-    t.equal(log.doing.callCount, 1, 'Doing has been logged');
-    t.ok(log.doing.calledWith(`Check if branch remotes/${origin}/${branchPrefix}-${version} exists`), 'Doing has been logged with appropriate message');
-
-    sandbox.restore();
-    t.end();
-});
-
 test('should check if release branch exists', async (t) => {
     t.plan(2);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    await release.initialiseGitClient();
 
     sandbox.stub(gitClientInstance, 'hasBranch');
 
@@ -111,9 +85,7 @@ test('should check if release branch exists', async (t) => {
 test('should log exit if release branch exists', async (t) => {
     t.plan(2);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    await release.initialiseGitClient();
 
     sandbox.stub(log, 'exit');
     sandbox.stub(gitClientInstance, 'hasBranch').returns(true);
@@ -130,9 +102,7 @@ test('should log exit if release branch exists', async (t) => {
 test('should log done message', async (t) => {
     t.plan(1);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    await release.initialiseGitClient();
 
     sandbox.stub(log, 'done');
 

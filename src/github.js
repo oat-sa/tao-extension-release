@@ -22,7 +22,7 @@
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
 
-const githubApiClientFactory = require('./githubApiClient');
+const githubApiClientFactory = require('./githubApiClient.js');
 const validate = require('./validate.js');
 
 /**
@@ -67,16 +67,17 @@ module.exports = function githubFactory(token, repository) {
          * @param {String} releaseBranch - the base branch
          * @param {String} version - the version of the release
          * @param {String} fromVersion - the last version
+         * @param {String} [subjectType='extension'] - extension or package
          * @returns {Promise<Object>} resolves with the pull request data
          */
-        createReleasePR(releasingBranch, releaseBranch, version = '?.?.?', fromVersion = '?.?.?') {
+        createReleasePR(releasingBranch, releaseBranch, version = '?.?.?', fromVersion = '?.?.?', subjectType = 'extension') {
             if (!releasingBranch || !releaseBranch) {
                 return Promise.reject(new TypeError('Unable to create a release pull request when the branches are not defined'));
             }
             return new Promise((resolve, reject) => {
                 ghrepo.pr({
                     title: `Release ${version}`,
-                    body: this.getReleasePRComment(version, fromVersion),
+                    body: this.getReleasePRComment(version, fromVersion, subjectType),
                     head: releasingBranch,
                     base: releaseBranch
                 }, (err, data) => {
@@ -92,19 +93,26 @@ module.exports = function githubFactory(token, repository) {
          * Get the comment of the release pull request
          * @param {String} version - the version of the release
          * @param {String} fromVersion - the last version
+         * @param {String} [subjectType='extension'] - extension or package
          * @returns {String} the comment
          */
-        getReleasePRComment(version = '?.?.?', fromVersion = '?.?.?') {
-            const checks = [
-                `the manifest (versions ${version} and dependencies)`,
-                `the update script (from ${fromVersion} to ${version})`,
-                'CSS and JavaScript bundles'
-            ];
+        getReleasePRComment(version = '?.?.?', fromVersion = '?.?.?', subjectType = 'extension') {
+            const checks = {
+                extension: [
+                    `the manifest (versions ${version} and dependencies)`,
+                    `the update script (from ${fromVersion} to ${version})`,
+                    'CSS and JavaScript bundles'
+                ],
+                package: [
+                    `the package.json version (from ${fromVersion} to ${version})`,
+                    'the package-lock.json'
+                ]
+            };
 
             if (typeof extensionPRChecks[repository] !== 'undefined') {
-                checks.push(extensionPRChecks[repository]);
+                checks.extension.push(extensionPRChecks[repository]);
             }
-            return `Please verify the following points :\n${checks.map(c => '\n- [ ] ' + c)}`;
+            return `Please verify the following points :\n${checks[subjectType].map(c => '\n- [ ] ' + c)}`;
         },
 
         /**

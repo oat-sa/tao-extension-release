@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2017 Open Assessment Technologies SA;
+ * Copyright (c) 2017-2020 Open Assessment Technologies SA;
  */
 
 /*eslint no-console: "off"*/
@@ -51,10 +51,10 @@ module.exports = {
         return this;
     },
     error(err){
-        if(err.message){
+        if(err && err.message){
             console.log(chalk.red(`❎ ${err.message}`));
         }
-        console.error(err);
+        console.error(`Error: ${err}`);
         return this;
     },
     exit(msg){

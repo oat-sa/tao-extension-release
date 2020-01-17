@@ -16,6 +16,8 @@
  * Copyright (c) 2019 Open Assessment Technologies SA;
  */
 
+/*eslint no-console: "off"*/
+
 /**
  * This module tests the src/git.js module against the repos provided in fixtures
  *

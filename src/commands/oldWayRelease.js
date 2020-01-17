@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019 Open Assessment Technologies SA;
+ * Copyright (c) 2019-2020 Open Assessment Technologies SA;
  */
 
 const log = require('../log.js');
@@ -21,7 +21,7 @@ const log = require('../log.js');
 const commander = require('commander');
 const program = new commander.Command();
 
-const cliOptions =  require('./cliOptions');
+const cliOptions =  require('./cliOptions.js');
 
 program
     .name('taoRelease oldWayRelease')
@@ -40,9 +40,11 @@ program
     .option(...cliOptions.releaseComment)
     .parse(process.argv);
 
-if (program.debug) console.log(program.opts());
+if (program.debug) {
+    console.log(program.opts());
+}
 
-const release = require('../release')(program.opts());
+const release = require('../release.js')({ ...program.opts(), subjectType: 'extension' });
 
 async function releaseExtension() {
     try {
@@ -50,8 +52,9 @@ async function releaseExtension() {
 
         await release.warnAboutDeprecation();
         await release.loadConfig();
-        await release.selectTaoInstance();
-        await release.selectExtension();
+        await release.selectTarget();
+        await release.writeConfig();
+        await release.initialiseGitClient();
         await release.verifyLocalChanges();
         await release.signTags();
         await release.verifyBranches();
@@ -60,8 +63,7 @@ async function releaseExtension() {
         await release.isReleaseRequired();
         await release.confirmRelease();
         await release.createReleasingBranch();
-        await release.compileAssets();
-        await release.updateTranslations();
+        await release.build();
         await release.initialiseGithubClient();
         await release.createPullRequest();
         await release.extractReleaseNotes();

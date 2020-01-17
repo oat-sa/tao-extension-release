@@ -46,4 +46,7 @@ program
     .command('oldWayRelease', '[deprecated] run the whole release process from start to finish',  {
         executableFile: './src/commands/oldWayRelease'
     })
+    .command('npmRelease', 'release and publish a npm package', {
+        executableFile: './src/commands/npmRelease'
+    })
     .parse(process.argv);

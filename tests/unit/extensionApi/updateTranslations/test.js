@@ -13,12 +13,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019 Open Assessment Technologies SA;
+ * Copyright (c) 2019-2020 Open Assessment Technologies SA;
  */
 
- /**
+/**
  *
- * Unit test the updateTranslations method of module src/release.js
+ * Unit test the updateTranslations method of module src/release/extensionApi.js
  *
  * @author Anton Tsymuk <anton@taotesting.com>
  */
@@ -30,15 +30,16 @@ const test = require('tape');
 const sandbox = sinon.sandbox.create();
 
 const branchPrefix = 'release';
-const config = {
-    write: () => { },
-};
 const extension = 'testExtension';
+const taoRoot = 'testRoot';
+const version = '1.1.1';
+const releasingBranch = 'release-1.1.1';
+
 const gitClientInstance = {
     commitAndPush: () => { },
     pull: () => { }
 };
-const gitClientFactory = sandbox.stub().callsFake(() => gitClientInstance);
+
 const log = {
     exit: () => { },
     doing: () => { },
@@ -47,31 +48,30 @@ const log = {
     info: () => { },
     warn: () => { },
 };
-const taoRoot = 'testRoot';
 const inquirer = {
     prompt: () => ({ extension, taoRoot, translation: true }),
 };
-const version = '1.1.1';
+
 const taoInstance = {
     getExtensions: () => [],
     isInstalled: () => true,
     isRoot: () => ({ root: true, dir: taoRoot }),
     parseManifest: () => ({ version, name: extension }),
     updateTranslations: () => { },
+    getRepoName: () => ''
 };
 const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
-const release = proxyquire.noCallThru().load('../../../../src/release.js', {
-    './config.js': () => config,
-    './git.js': gitClientFactory,
-    './log.js': log,
-    './taoInstance.js': taoInstanceFactory,
+
+const extensionApi = proxyquire.noCallThru().load('../../../../src/release/extensionApi.js', {
+    '../log.js': log,
+    '../taoInstance.js': taoInstanceFactory,
     inquirer,
 })({ branchPrefix });
 
-test('should define updateTranslations method on release instance', (t) => {
+test('should define updateTranslations method on extensionApi instance', (t) => {
     t.plan(1);
 
-    t.ok(typeof release.updateTranslations === 'function', 'The release instance has updateTranslations method');
+    t.ok(typeof extensionApi.updateTranslations === 'function', 'The extensionApi instance has updateTranslations method');
 
     t.end();
 });
@@ -79,16 +79,16 @@ test('should define updateTranslations method on release instance', (t) => {
 test('should log doing message', async (t) => {
     t.plan(2);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    await extensionApi.selectTaoInstance();
+    await extensionApi.selectExtension();
+    extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(log, 'doing');
 
-    await release.updateTranslations();
+    await extensionApi.updateTranslations(releasingBranch);
 
     t.equal(log.doing.callCount, 1, 'Doing has been logged');
-    t.ok(log.doing.calledWith('Translations'), 'Doing has been logged with apropriate message');
+    t.ok(log.doing.calledWith('Translations'), 'Doing has been logged with appropriate message');
 
     sandbox.restore();
     t.end();
@@ -97,16 +97,16 @@ test('should log doing message', async (t) => {
 test('should log warn message', async (t) => {
     t.plan(2);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    await extensionApi.selectTaoInstance();
+    await extensionApi.selectExtension();
+    extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(log, 'warn');
 
-    await release.updateTranslations();
+    await extensionApi.updateTranslations(releasingBranch);
 
     t.equal(log.warn.callCount, 1, 'Warn has been logged');
-    t.ok(log.warn.calledWith('Update translations during a release only if you know what you are doing'), 'Warn has been logged with apropriate message');
+    t.ok(log.warn.calledWith('Update translations during a release only if you know what you are doing'), 'Warn has been logged with appropriate message');
 
     sandbox.restore();
     t.end();
@@ -115,20 +115,20 @@ test('should log warn message', async (t) => {
 test('should prompt to update translations', async (t) => {
     t.plan(5);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    await extensionApi.selectTaoInstance();
+    await extensionApi.selectExtension();
+    extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message, default: defaultValue }) => {
         t.equal(type, 'confirm', 'The type should be "confirm"');
         t.equal(name, 'translation', 'The param name should be translation');
-        t.equal(message, `${extension} needs updated translations ? `, 'Should disaplay appropriate message');
+        t.equal(message, `${extension} needs updated translations ? `, 'Should display appropriate message');
         t.equal(defaultValue, false, 'Default value should be false');
 
         return { translation: false };
     });
 
-    await release.updateTranslations();
+    await extensionApi.updateTranslations(releasingBranch);
 
     t.equal(inquirer.prompt.callCount, 1, 'Prompt has been initialised');
 
@@ -139,34 +139,35 @@ test('should prompt to update translations', async (t) => {
 test('should update translations', async (t) => {
     t.plan(2);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    await extensionApi.selectTaoInstance();
+    await extensionApi.selectExtension();
+    extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(taoInstance, 'updateTranslations');
 
-    await release.updateTranslations();
+    await extensionApi.updateTranslations(releasingBranch);
 
     t.equal(taoInstance.updateTranslations.callCount, 1, 'Translations has been updated');
-    t.ok(taoInstance.updateTranslations.calledWith(extension), 'Translations of apropriate extension has been updated');
+    t.ok(taoInstance.updateTranslations.calledWith(extension), 'Translations of appropriate extension has been updated');
 
     sandbox.restore();
     t.end();
 });
 
 test('should publish translations', async (t) => {
-    t.plan(2);
+    t.plan(3);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    await extensionApi.selectTaoInstance();
+    await extensionApi.selectExtension();
+    extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(gitClientInstance, 'commitAndPush');
 
-    await release.updateTranslations();
+    await extensionApi.updateTranslations(releasingBranch);
 
     t.equal(gitClientInstance.commitAndPush.callCount, 1, 'Translations has been published');
-    t.ok(gitClientInstance.commitAndPush.calledWith(`${branchPrefix}-${version}`, 'update translations'), 'Translations of apropriate extension has been published');
+    t.equal(gitClientInstance.commitAndPush.getCall(0).args[0], `${branchPrefix}-${version}`, 'Branch name is correct');
+    t.equal(gitClientInstance.commitAndPush.getCall(0).args[1], 'update translations', 'Commit message is present and correct');
 
     sandbox.restore();
     t.end();
@@ -177,17 +178,17 @@ test('should log error message if update failed', async (t) => {
 
     const errorMessage = 'testError';
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    await extensionApi.selectTaoInstance();
+    await extensionApi.selectExtension();
+    extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(log, 'error');
     sandbox.stub(taoInstance, 'updateTranslations').throws(new Error(errorMessage));
 
-    await release.updateTranslations();
+    await extensionApi.updateTranslations(releasingBranch);
 
     t.equal(log.error.callCount, 1, 'Error has been logged');
-    t.ok(log.error.calledWith(`Unable to update translations. ${errorMessage}. Continue.`), 'Error has been logged with apropriate message');
+    t.ok(log.error.calledWith(`Unable to update translations. ${errorMessage}. Continue.`), 'Error has been logged with appropriate message');
 
     sandbox.restore();
     t.end();
@@ -198,19 +199,19 @@ test('should log info message after update of translations', async (t) => {
 
     const changes = ['change1', 'change2'];
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    await extensionApi.selectTaoInstance();
+    await extensionApi.selectExtension();
+    extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(log, 'info');
     sandbox.stub(gitClientInstance, 'commitAndPush').returns(changes);
 
-    await release.updateTranslations();
+    await extensionApi.updateTranslations(releasingBranch);
 
     t.equal(log.info.callCount, 3, 'Info has been logged');
-    t.ok(log.info.calledWith(`Commit : [update translations - ${changes.length} files]`), 'Info has been logged with apropriate message');
+    t.ok(log.info.calledWith(`Commit : [update translations - ${changes.length} files]`), 'Info has been logged with appropriate message');
     changes.forEach(change =>
-        t.ok(log.info.calledWith(`  - ${change}`), 'Info has been logged with apropriate message')
+        t.ok(log.info.calledWith(`  - ${change}`), 'Info has been logged with appropriate message')
     );
 
     sandbox.restore();
@@ -220,15 +221,15 @@ test('should log info message after update of translations', async (t) => {
 test('should skip translations if "no" answered', async (t) => {
     t.plan(3);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    await extensionApi.selectTaoInstance();
+    await extensionApi.selectExtension();
+    extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(inquirer, 'prompt').returns({ translation: false });
     sandbox.stub(taoInstance, 'updateTranslations');
     sandbox.stub(log, 'done');
 
-    await release.updateTranslations();
+    await extensionApi.updateTranslations(releasingBranch);
 
     t.equal(inquirer.prompt.callCount, 1, 'Prompt has been initialised');
     t.equal(taoInstance.updateTranslations.callCount, 0, 'Translations not updated');
@@ -241,13 +242,13 @@ test('should skip translations if "no" answered', async (t) => {
 test('should log done message', async (t) => {
     t.plan(1);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    await extensionApi.selectTaoInstance();
+    await extensionApi.selectExtension();
+    extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(log, 'done');
 
-    await release.updateTranslations();
+    await extensionApi.updateTranslations(releasingBranch);
 
     t.equal(log.done.callCount, 1, 'Done has been logged');
 
@@ -255,28 +256,26 @@ test('should log done message', async (t) => {
     t.end();
 });
 
-const releaseWithCliOption = proxyquire.noCallThru().load('../../../../src/release.js', {
-    './config.js': () => config,
-    './git.js': gitClientFactory,
-    './log.js': log,
-    './taoInstance.js': taoInstanceFactory,
+const extensionApiWithCliOption = proxyquire.noCallThru().load('../../../../src/release/extensionApi.js', {
+    '../log.js': log,
+    '../taoInstance.js': taoInstanceFactory,
     inquirer,
 })({ updateTranslations: true });
 
 test('should use CLI updateTranslations instead of prompting', async (t) => {
     t.plan(3);
 
-    await releaseWithCliOption.selectTaoInstance();
-    await releaseWithCliOption.selectExtension();
-    await releaseWithCliOption.verifyBranches();
+    await extensionApiWithCliOption.selectTaoInstance();
+    await extensionApiWithCliOption.selectExtension();
+    extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(inquirer, 'prompt');
     sandbox.stub(taoInstance, 'updateTranslations');
 
-    await releaseWithCliOption.updateTranslations();
+    await extensionApiWithCliOption.updateTranslations(releasingBranch);
 
     t.equal(taoInstance.updateTranslations.callCount, 1, 'Translations has been updated');
-    t.ok(taoInstance.updateTranslations.calledWith(extension), 'Translations of apropriate extension has been updated');
+    t.ok(taoInstance.updateTranslations.calledWith(extension), 'Translations of appropriate extension has been updated');
     t.ok(inquirer.prompt.notCalled, 'No prompt shown');
 
     sandbox.restore();
