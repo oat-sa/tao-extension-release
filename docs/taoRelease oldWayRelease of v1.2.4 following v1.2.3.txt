@@ -1,0 +1,58 @@
+title taoRelease oldWayRelease of v1.2.4 following v1.2.3
+
+participantspacing 4
+participantgroup #azure **Local repo**
+materialdesignicons f2a2 "master" as LM
+materialdesignicons f2a2 "develop" as LD
+materialdesignicons f2a2 "release-1.2.4" as LR
+end
+participantgroup #ivory **Remote repo**
+materialdesignicons f2a4 "release-1.2.4" as RR
+materialdesignicons f2a4 "master" as RM
+materialdesignicons f2a4 "develop" as RD
+end
+
+
+parallel
+note over RM: v1.2.3
+note over RD: v1.2.4
+parallel off
+
+RM->LM: checkout & pull master
+RD->LD: checkout & pull develop
+LM<<-->>LD: compare
+
+LD->*LR: <align:center>checkout\nnew branch</align>
+activate LR
+rbox over LR: compile JS+CSS
+LR->LR: commit
+LR->*RR: push
+activate RR
+rbox over LR: update translations?
+LR->LR: commit
+LR->RR: push
+
+note over RR#yellow: branch ready!
+rbox over RR: create PR to master
+RR-->>RM: PR
+
+activate RM
+rbox over RM: extract release notes
+note over RR#lightpink: **human checks**
+RR->RM: merge
+rbox over RM: tag v1.2.4
+rbox over RM: release v1.2.4
+note over RM#lawngreen: **v1.2.4 is released!**
+
+RM->LM: checkout & pull master
+deactivate RM
+LM->LD: <align:center>merge\n(fast-forward)</align>
+LD->RD: push
+note over RD: <align:center>v1.2.4\nequal with master</align>
+
+rbox over RR: delete branch
+deactivate RR
+destroyafter RR
+rbox over LR: delete branch
+deactivate LR
+destroyafter LR

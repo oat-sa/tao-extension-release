@@ -1,8 +1,25 @@
 /**
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; under version 2
+ * of the License (non-upgradable).
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ *
+ * Copyright (c) 2019-2020 Open Assessment Technologies SA;
+ */
+
+/**
  *
  * Unit test the loadConfig method of module src/release.js
  *
- * @copyright 2019 Open Assessment Technologies SA;
  * @author Anton Tsymuk <anton@taotesting.com>
  */
 
@@ -72,7 +89,7 @@ test('should prompt user to provide a token if there is no token in the config',
     sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message }) => {
         t.equal(type, 'input', 'The type should be "input"');
         t.equal(name, 'token', 'The param name should be token');
-        t.equal(message, 'I need a Github token, with "repo" rights (check your browser)  : ', 'Should disaplay appropriate message');
+        t.equal(message, 'I need a Github token, with "repo" rights (check your browser) : ', 'Should display appropriate message');
 
         return {};
     });

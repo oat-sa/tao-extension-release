@@ -1,8 +1,25 @@
 /**
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; under version 2
+ * of the License (non-upgradable).
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ *
+ * Copyright (c) 2019-2020 Open Assessment Technologies SA;
+ */
+
+/**
  *
  * Unit test the mergePullRequest method of module src/release.js
  *
- * @copyright 2019 Open Assessment Technologies SA;
  * @author Anton Tsymuk <anton@taotesting.com>
  */
 
@@ -13,10 +30,14 @@ const test = require('tape');
 const sandbox = sinon.sandbox.create();
 
 const branchPrefix = 'release';
-const config = {
-    write: () => { },
-};
+const taoRoot = 'testRoot';
+const version = '1.1.1';
+const releaseBranch = 'testReleaseBranch';
 const extension = 'testExtension';
+const token = 'abc123';
+const releasingBranch = 'release-1.1.1';
+const repoName = 'oat-sa/extension-test';
+
 const githubInstance = {
     createReleasePR: () => ({ state: 'open' })
 };
@@ -26,36 +47,28 @@ const gitClientInstance = {
     mergePr: () => { },
 };
 const gitClientFactory = sandbox.stub().callsFake(() => gitClientInstance);
+
 const log = {
     exit: () => { },
     doing: () => { },
     done: () => { },
     info: () => { },
 };
-const taoRoot = 'testRoot';
 const inquirer = {
     prompt: () => ({ extension, taoRoot, pr: true }),
 };
-const version = '1.1.1';
-const releaseBranch = 'testReleaseBranch';
-const taoInstance = {
-    getExtensions: () => [],
-    getRepoName: () => 'testRepo',
-    isInstalled: () => true,
-    isRoot: () => ({ root: true, dir: taoRoot }),
-    parseManifest: () => ({ version })
-};
-const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
+
 const opn = sandbox.spy();
+
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
-    './config.js': () => config,
     './git.js': gitClientFactory,
     './github.js': githubFactory,
     './log.js': log,
-    './taoInstance.js': taoInstanceFactory,
     inquirer,
     opn,
-})(null, branchPrefix, null, releaseBranch);
+})({ branchPrefix, releaseBranch });
+
+release.setData({ releasingBranch, token, extension: {} });
 
 test('should define mergePullRequest method on release instance', (t) => {
     t.plan(1);
@@ -70,9 +83,9 @@ test('should open pull request in browser', async (t) => {
 
     const clock = sandbox.useFakeTimers();
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    sandbox.stub(release, 'getMetadata').returns({ repoName });
+
+    await release.initialiseGitClient();
     await release.initialiseGithubClient();
     await release.createPullRequest();
 
@@ -85,22 +98,23 @@ test('should open pull request in browser', async (t) => {
     t.equal(opn.callCount, 1, 'Browser has been opened');
 
     clock.restore();
+    sandbox.restore();
     t.end();
 });
 
 test('should prompt about merging pull request', async (t) => {
     t.plan(4);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    sandbox.stub(release, 'getMetadata').returns({ repoName });
+
+    await release.initialiseGitClient();
     await release.initialiseGithubClient();
     await release.createPullRequest();
 
     sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message }) => {
         t.equal(type, 'confirm', 'The type should be "confrim"');
         t.equal(name, 'pr', 'The param name should be pr');
-        t.equal(message, 'Please review the release PR (you can make the last changes now). Can I merge it now ?', 'Should disaplay appropriate message');
+        t.equal(message, 'Please review the release PR (you can make the last changes now). Can I merge it now ?', 'Should display appropriate message');
 
 
         return { pr: true };
@@ -117,9 +131,9 @@ test('should prompt about merging pull request', async (t) => {
 test('should log exit if pr is not confirmed', async (t) => {
     t.plan(1);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    sandbox.stub(release, 'getMetadata').returns({ repoName });
+
+    await release.initialiseGitClient();
     await release.initialiseGithubClient();
     await release.createPullRequest();
 
@@ -134,32 +148,12 @@ test('should log exit if pr is not confirmed', async (t) => {
     t.end();
 });
 
-test('should log doing message', async (t) => {
-    t.plan(2);
-
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
-    await release.initialiseGithubClient();
-    await release.createPullRequest();
-
-    sandbox.stub(log, 'doing');
-
-    await release.mergePullRequest();
-
-    t.equal(log.doing.callCount, 1, 'Doing has been logged');
-    t.ok(log.doing.calledWith('Merging the pull request'), 'Doing has been logged with apropriate message');
-
-    sandbox.restore();
-    t.end();
-});
-
 test('should merge pull request', async (t) => {
     t.plan(2);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    sandbox.stub(release, 'getMetadata').returns({ repoName });
+
+    await release.initialiseGitClient();
     await release.initialiseGithubClient();
     await release.createPullRequest();
 
@@ -173,7 +167,7 @@ test('should merge pull request', async (t) => {
             releaseBranch,
             `${branchPrefix}-${version}`
         ),
-        'Apropriated PR has been merged',
+        'Appropriate PR has been merged',
     );
 
     sandbox.restore();
@@ -183,9 +177,9 @@ test('should merge pull request', async (t) => {
 test('should log done message', async (t) => {
     t.plan(2);
 
-    await release.selectTaoInstance();
-    await release.selectExtension();
-    await release.verifyBranches();
+    sandbox.stub(release, 'getMetadata').returns({ repoName });
+
+    await release.initialiseGitClient();
     await release.initialiseGithubClient();
     await release.createPullRequest();
 
@@ -194,7 +188,7 @@ test('should log done message', async (t) => {
     await release.mergePullRequest();
 
     t.equal(log.done.callCount, 1, 'Done has been logged');
-    t.ok(log.done.calledWith('PR merged'), 'Done has been logged with apropriate message');
+    t.ok(log.done.calledWith('PR merged'), 'Done has been logged with appropriate message');
 
     sandbox.restore();
     t.end();

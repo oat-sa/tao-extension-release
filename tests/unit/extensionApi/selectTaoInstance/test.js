@@ -1,8 +1,25 @@
 /**
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; under version 2
+ * of the License (non-upgradable).
  *
- * Unit test the selectTaoInstance method of module src/release.js
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * @copyright 2019 Open Assessment Technologies SA;
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ *
+ * Copyright (c) 2019-2020 Open Assessment Technologies SA;
+ */
+
+/**
+ *
+ * Unit test the selectTaoInstance method of module src/release/extensionApi.js
+ *
  * @author Anton Tsymuk <anton@taotesting.com>
  */
 
@@ -22,19 +39,20 @@ const log = {
 const taoInstance = {
     isInstalled: () => ({}),
     isRoot: () => ({}),
+    getRepoName: () => ''
 };
 const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
 const wwwUser = 'testwwwUser';
-const release = proxyquire.noCallThru().load('../../../../src/release.js', {
-    './log.js': log,
-    './taoInstance.js': taoInstanceFactory,
+const release = proxyquire.noCallThru().load('../../../../src/release/extensionApi.js', {
+    '../log.js': log,
+    '../taoInstance.js': taoInstanceFactory,
     inquirer,
-})(null, null, null, null, wwwUser);
+})({ wwwUser });
 
-test('should define selectTaoInstance method on release instance', (t) => {
+test('should define selectTaoInstance method on extensionApi instance', (t) => {
     t.plan(1);
 
-    t.ok(typeof release.selectTaoInstance === 'function', 'The release instance has selectTaoInstance method');
+    t.ok(typeof release.selectTaoInstance === 'function', 'The extensionApi instance has selectTaoInstance method');
 
     t.end();
 });
@@ -45,7 +63,7 @@ test('should prompt to provide path to tao instance', async (t) => {
     sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message, default: defaultValue }) => {
         t.equal(type, 'input', 'The type should be "input"');
         t.equal(name, 'taoRoot', 'The param name should be taoRoot');
-        t.equal(message, 'Path to the TAO instance : ', 'Should disaplay appropriate message');
+        t.equal(message, 'Path to the TAO instance : ', 'Should display appropriate message');
         t.equal(defaultValue, path.resolve(''), 'Should provide default value');
 
         return { taoRoot: '' };
@@ -105,7 +123,7 @@ test('should log exit if provided path is not a tao root', async (t) => {
     await release.selectTaoInstance();
 
     t.equal(log.exit.callCount, 1, 'Exit message has been logged');
-    t.ok(log.exit.calledWith(`${dir} is not a TAO instance`), 'Exit message has been logged with apropriate message');
+    t.ok(log.exit.calledWith(`${dir} is not a TAO instance`), 'Exit message has been logged with appropriate message');
 
     sandbox.restore();
     t.end();
@@ -141,7 +159,29 @@ test('should log exit if tao instance is not installed', async (t) => {
     await release.selectTaoInstance();
 
     t.equal(log.exit.callCount, 1, 'Exit message has been logged');
-    t.ok(log.exit.calledWith('It looks like the given TAO instance is not installed.'), 'Exit message has been logged with apropriate message');
+    t.ok(log.exit.calledWith('It looks like the given TAO instance is not installed.'), 'Exit message has been logged with appropriate message');
+
+    sandbox.restore();
+    t.end();
+});
+
+const releaseWithCliOption = proxyquire.noCallThru().load('../../../../src/release/extensionApi.js', {
+    '../log.js': log,
+    '../taoInstance.js': taoInstanceFactory,
+    inquirer,
+})({ pathToTao: '/path/to/tao' });
+
+test('should use CLI pathToTao instead of prompting', async (t) => {
+    t.plan(3);
+
+    sandbox.stub(inquirer, 'prompt');
+    taoInstanceFactory.resetHistory();
+
+    await releaseWithCliOption.selectTaoInstance();
+
+    t.equal(taoInstanceFactory.callCount, 1, 'Instance has been initialised');
+    t.ok(taoInstanceFactory.calledWith('/path/to/tao'), 'Instance has been initialised with CLI path');
+    t.ok(inquirer.prompt.notCalled, 'No prompt shown');
 
     sandbox.restore();
     t.end();

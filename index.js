@@ -15,63 +15,38 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2017 Open Assessment Technologies SA;
+ * Copyright (c) 2017-2019 Open Assessment Technologies SA;
  */
 
 /**
  * CLI script entry point
- *
- * Long but linear process.
  *
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
 
 const updateNotifier = require('update-notifier');
 
-const log = require('./src/log.js');
 const pkg = require('./package.json');
 
 updateNotifier({pkg}).notify();
 
-const argv = require('minimist')(process.argv.slice(2));
+const commander = require('commander');
+const program = new commander.Command();
 
-const baseBranch = argv['base-branch'] || 'develop';
-const branchPrefix = argv['branch-prefix'] || 'release';
-const origin = argv['origin'] || 'origin';
-const releaseBranch = argv['release-branch'] || 'master';
-const wwwUser = argv['www-user'] || 'www-data';
-
-const release = require('./src/release')(baseBranch, branchPrefix, origin, releaseBranch, wwwUser);
-
-async function releaseExtension() {
-    try {
-        log.title('TAO Extension Release');
-
-        await release.loadConfig();
-        await release.selectTaoInstance();
-        await release.selectExtension();
-        await release.verifyLocalChanges();
-        await release.signTags();
-        await release.verifyBranches();
-        await release.initialiseGithubClient();
-        await release.doesReleaseExists();
-        await release.isReleaseRequired();
-        await release.confirmRelease();
-        await release.createReleasingBranch();
-        await release.compileAssets();
-        await release.updateTranslations();
-        await release.createPullRequest();
-        await release.extractReleaseNotes();
-        await release.mergePullRequest();
-        await release.createReleaseTag();
-        await release.createGithubRelease();
-        await release.mergeBack();
-        await release.removeReleasingBranch();
-
-        log.done('Good job!');
-    } catch (error) {
-        log.error(error);
-    }
-}
-
-releaseExtension();
+program
+    .version(pkg.version)
+    .name('taoRelease')
+    .usage('command [options]')
+    .command('prepareRelease', 'prepare an extension release', {
+        executableFile: './src/commands/prepareRelease'
+    })
+    .command('createRelease', 'create a release from a prepared release branch', {
+        executableFile: './src/commands/createRelease'
+    })
+    .command('oldWayRelease', '[deprecated] run the whole release process from start to finish',  {
+        executableFile: './src/commands/oldWayRelease'
+    })
+    .command('npmRelease', 'release and publish a npm package', {
+        executableFile: './src/commands/npmRelease'
+    })
+    .parse(process.argv);
