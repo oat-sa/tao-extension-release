@@ -1,4 +1,4 @@
-# TAO Extension Realse Tool history
+# TAO Extension Release Tool history
 
 ## [Version 0.1.0](https://github.com/oat-sa/tao-extension-release/releases/tag/0.1.0)
 
@@ -9,31 +9,38 @@
 
 ## [Version 0.2.0](https://github.com/oat-sa/tao-extension-release/releases/tag/0.2.0)
 
- - windows support
+ - Windows support
  - update notification
-
 
 ## [Version 0.2.1](https://github.com/oat-sa/tao-extension-release/releases/tag/0.2.1)
 
- - fix windows home path
+ - fix Windows home path
  - library update
 
 ## [Version 0.3.0](https://github.com/oat-sa/tao-extension-release/releases/tag/0.3.1)
 
  - Add unit and integration tests
- - Add Eslint
+ - Add ESLint
  - Translations are false by default
  - `wwwUser` can be defined in the config file
 
- ## [Version 0.4.0](https://github.com/oat-sa/tao-extension-release/releases/tag/0.4.0)
+## [Version 0.4.0](https://github.com/oat-sa/tao-extension-release/releases/tag/0.4.0)
 
  - Refactor release functionality into separate module
  - Partially migrate application to use github v4 api
  - Extract release notes from github pull requests
- - Introduce `base-branch`, `branch-prefix`, `origin`, `release-branch`, `www-user`  command line arguments
+ - Introduce `base-branch`, `branch-prefix`, `origin`, `release-branch`, `www-user` command line arguments
  - Cover changes with unit tests
 
+## [Version 0.4.1](https://github.com/oat-sa/tao-extension-release/releases/tag/0.4.1)
 
- ## [Version 0.4.1](https://github.com/oat-sa/tao-extension-release/releases/tag/0.4.1)
+ - Enforce npm install
 
- - Enforce npm install 
+## [Version 1.1.0]
+
+ - Introduce npm commander for CLI params
+ - Add `prepareRelease` & `createRelease` commands
+ - Keep old process as `oldWayRelease`
+ - Add `npmRelease` command
+ - npm install the extension/views before release
+ - Make release note extraction more robust
