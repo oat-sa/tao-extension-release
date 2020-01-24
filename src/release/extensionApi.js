@@ -99,8 +99,6 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
             }
 
             data.taoRoot = dir;
-
-            console.log('data', data);
         },
 
         /**
