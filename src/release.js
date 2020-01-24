@@ -88,7 +88,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * @param {Object} data
          */
         setData(newData) {
-            Object.assign({ data, newData });
+            Object.assign(data, newData);
         },
 
         /**
