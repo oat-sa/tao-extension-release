@@ -39,9 +39,7 @@ const log = require('../log.js');
  * @param {Object} data - copy of global data object
  */
 module.exports = function extensionApiFactory(params = {}, data = { extension: {} }) {
-
     return {
-
         gitClient: null,
 
         taoInstance: null,
@@ -59,7 +57,7 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
          * @param {Object} data
          */
         setData(newData) {
-            data = newData;
+            Object.assign(data, newData);
         },
 
         /**
@@ -69,6 +67,7 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
         async selectTarget() {
             await this.selectTaoInstance();
             await this.selectExtension();
+
             return data;
         },
 
@@ -80,27 +79,28 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
             let taoRoot = params.pathToTao;
 
             if (!taoRoot) {
-                ( { taoRoot } = await inquirer.prompt({
+                ({ taoRoot } = await inquirer.prompt({
                     type: 'input',
                     name: 'taoRoot',
                     message: 'Path to the TAO instance : ',
                     default: data.taoRoot || process.cwd()
-                }) );
+                }));
             }
 
             this.taoInstance = taoInstanceFactory(path.resolve(taoRoot), false, params.wwwUser);
-
             const { dir, root } = await this.taoInstance.isRoot();
 
             if (!root) {
                 log.exit(`${dir} is not a TAO instance`);
             }
 
-            if (!await this.taoInstance.isInstalled()) {
+            if (!(await this.taoInstance.isInstalled())) {
                 log.exit('It looks like the given TAO instance is not installed.');
             }
 
             data.taoRoot = dir;
+
+            console.log('data', data);
         },
 
         /**
@@ -109,24 +109,24 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
         async selectExtension() {
             // Start with CLI option, if it's missing we'll prompt user
             let extension = params.extensionToRelease;
+
             const availableExtensions = await this.taoInstance.getExtensions();
 
             if (extension && !availableExtensions.includes(extension)) {
                 log.exit(`Specified extension ${extension} not found in ${data.taoRoot}`);
-            }
-            else if (!extension) {
-                ( { extension } = await inquirer.prompt({
+            } else if (!extension) {
+                ({ extension } = await inquirer.prompt({
                     type: 'list',
                     name: 'extension',
                     message: 'Which extension you want to release ? ',
                     pageSize: 12,
                     choices: availableExtensions,
-                    default: data.extension.name,
-                }) );
+                    default: data.extension.name
+                }));
             }
 
             data.extension.name = extension;
-            data.extension.path =`${data.taoRoot}/${extension}`;
+            data.extension.path = `${data.taoRoot}/${extension}`;
         },
 
         /**
@@ -155,7 +155,9 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
             if (compareVersions(releasingBranchManifest.version, versionToRelease) === 0) {
                 log.doing(`Branch ${releasingBranch} has valid manifest.`);
             } else {
-                log.exit(`Branch '${releasingBranch}' cannot be released because its branch name does not match its own manifest version (${releasingBranchManifest.version}).`);
+                log.exit(
+                    `Branch '${releasingBranch}' cannot be released because its branch name does not match its own manifest version (${releasingBranchManifest.version}).`
+                );
             }
 
             // Cross check releasing branch wth release branch and make sure new version is highest
@@ -168,7 +170,9 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
                 data.lastTag = `v${releaseBranchManifest.version}`;
                 log.done(`Branch ${releasingBranch} is valid.`);
             } else {
-                log.exit(`Branch '${releasingBranch}' cannot be released because its manifest version (${versionToRelease}) is not greater than the manifest version of '${params.releaseBranch}' (${releaseBranchManifest.version}).`);
+                log.exit(
+                    `Branch '${releasingBranch}' cannot be released because its manifest version (${versionToRelease}) is not greater than the manifest version of '${params.releaseBranch}' (${releaseBranchManifest.version}).`
+                );
             }
 
             return data;
@@ -220,9 +224,7 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
             if (!translation) {
                 log.warn('Update translations during a release only if you know what you are doing');
 
-                ({
-                    translation
-                } = await inquirer.prompt({
+                ({ translation } = await inquirer.prompt({
                     type: 'confirm',
                     name: 'translation',
                     message: `${data.extension.name} needs updated translations ? `,

@@ -23,12 +23,11 @@
  *
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
-
 const updateNotifier = require('update-notifier');
 
 const pkg = require('./package.json');
 
-updateNotifier({pkg}).notify();
+updateNotifier({ pkg }).notify();
 
 const commander = require('commander');
 const program = new commander.Command();
@@ -43,7 +42,7 @@ program
     .command('createRelease', 'create a release from a prepared release branch', {
         executableFile: './src/commands/createRelease'
     })
-    .command('oldWayRelease', '[deprecated] run the whole release process from start to finish',  {
+    .command('oldWayRelease', '[deprecated] run the whole release process from start to finish', {
         executableFile: './src/commands/oldWayRelease'
     })
     .command('npmRelease', 'release and publish a npm package', {
