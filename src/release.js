@@ -56,7 +56,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
     const { subjectType = 'extension' } = params;
     let { releaseComment } = params;
 
-    let data = {};
+    let data = { extension: {} };
     let gitClient;
     let githubClient;
 
@@ -68,13 +68,11 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
     // Initialise the Adaptee and give it a copy of the release params and loaded data
     if (subjectType === 'extension') {
         adaptee = extensionApi(params, data);
-    }
-    else if (subjectType === 'package') {
+    } else if (subjectType === 'package') {
         adaptee = packageApi(params, data);
     }
 
     return {
-
         /**
          * Read from the private data property
          * This is to simplify unit testing
@@ -90,7 +88,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * @param {Object} data
          */
         setData(newData) {
-            data = newData;
+            Object.assign({ data, newData });
         },
 
         /**
@@ -157,8 +155,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             if (allBranches.includes(data.releasingBranch)) {
                 // Branch exists locally
                 await gitClient.checkout(data.releasingBranch);
-            }
-            else {
+            } else {
                 // Branch only exists remotely
                 await gitClient.checkoutNonLocal(data.releasingBranch, origin);
             }
@@ -189,11 +186,11 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             let comment = releaseComment;
 
             if (!comment || !comment.length) {
-                ( { comment } = await inquirer.prompt({
+                ({ comment } = await inquirer.prompt({
                     type: 'input',
                     name: 'comment',
-                    message: 'Any comment on the release ?',
-                }) );
+                    message: 'Any comment on the release ?'
+                }));
             }
             const fullReleaseComment = `${comment}\n\n**Release notes :**\n${data.pr.notes}`;
 
@@ -285,8 +282,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         async extractReleaseNotes() {
             log.doing('Extract release notes');
 
-            const releaseNotes = await githubClient
-                .extractReleaseNotesFromReleasePR(data.pr.number);
+            const releaseNotes = await githubClient.extractReleaseNotesFromReleasePR(data.pr.number);
 
             if (releaseNotes) {
                 data.pr.notes = releaseNotes;
@@ -402,25 +398,26 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             try {
                 await gitClient.mergeBack(baseBranch, releaseBranch);
                 log.done();
-            }
-            catch (err) {
+            } catch (err) {
                 if (err && err.message && err.message.startsWith('CONFLICTS:')) {
                     log.error(`There were conflicts preventing the merge of ${releaseBranch} back into ${baseBranch}.`);
-                    log.warn('Please resolve the conflicts and complete the merge manually (including making the merge commit).');
+                    log.warn(
+                        'Please resolve the conflicts and complete the merge manually (including making the merge commit).'
+                    );
 
                     const mergeDone = await this.promptToResolveConflicts();
                     if (mergeDone) {
                         if (await gitClient.hasLocalChanges()) {
-                            log.exit(`Cannot push changes because local branch '${baseBranch}' still has changes to commit.`);
+                            log.exit(
+                                `Cannot push changes because local branch '${baseBranch}' still has changes to commit.`
+                            );
                         }
                         await gitClient.push(origin, baseBranch);
                         log.done();
-                    }
-                    else {
+                    } else {
                         log.exit(`Not able to bring ${baseBranch} up to date. Please fix it manually.`);
                     }
-                }
-                else {
+                } else {
                     log.exit(`An error occurred: ${err}`);
                 }
             }
@@ -435,7 +432,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             const { pr } = await inquirer.prompt({
                 type: 'confirm',
                 name: 'pr',
-                message: 'Please review the release PR (you can make the last changes now). Can I merge it now ?',
+                message: 'Please review the release PR (you can make the last changes now). Can I merge it now ?'
             });
 
             if (!pr) {
@@ -472,23 +469,24 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             } catch (err) {
                 // error is about merging conflicts
                 if (err && err.message && err.message.startsWith('CONFLICTS:')) {
-                    log.warn('Please resolve the conflicts and complete the merge manually (including making the merge commit).');
+                    log.warn(
+                        'Please resolve the conflicts and complete the merge manually (including making the merge commit).'
+                    );
 
                     const mergeDone = await this.promptToResolveConflicts();
                     if (mergeDone) {
-
                         if (await gitClient.hasLocalChanges()) {
-                            log.exit(`Cannot push changes because local branch '${data.releasingBranch}' still has changes to commit.`);
+                            log.exit(
+                                `Cannot push changes because local branch '${data.releasingBranch}' still has changes to commit.`
+                            );
                         } else {
                             await gitClient.push(origin, data.releasingBranch);
                             log.done(`'${releaseBranch}' merged into '${branchPrefix}-${data.version}'.`);
                         }
-
                     } else {
                         await gitClient.abortMerge([releaseBranch]);
                         log.exit();
                     }
-
                 } else {
                     log.exit(`An error occurred: ${err}`);
                 }
@@ -548,7 +546,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                     data.releasingBranch = `${branchPrefix}-${versionToRelease}`;
                     data.version = versionToRelease;
                     data.tag = `v${versionToRelease}`;
-
                 } else {
                     log.exit(`Cannot find the branch '${branchName}'.`);
                 }
@@ -560,7 +557,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                     data.releasingBranch = `${branchPrefix}-${highestVersionBranch.version}`;
                     data.version = highestVersionBranch.version;
                     data.tag = `v${highestVersionBranch.version}`;
-
                 } else {
                     log.exit(`Cannot find any branches matching '${partialBranchName}'.`);
                 }
@@ -615,7 +611,9 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             log.doing(`Checking ${subjectType} status`);
 
             if (await gitClient.hasLocalChanges()) {
-                log.exit(`The ${subjectType} ${data[subjectType].name} has local changes, please clean or stash them before releasing`);
+                log.exit(
+                    `The ${subjectType} ${data[subjectType].name} has local changes, please clean or stash them before releasing`
+                );
             }
 
             log.done(`${data[subjectType].name} is clean`);
@@ -636,6 +634,5 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 log.exit();
             }
         }
-
     };
 };
