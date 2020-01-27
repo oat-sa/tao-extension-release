@@ -88,7 +88,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * @param {Object} data
          */
         setData(newData) {
-            Object.assign(data, newData);
+            data = newData;
         },
 
         /**
@@ -358,7 +358,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Load and initialise release extension config
          */
         async loadConfig() {
-            data = Object.assign({}, await config.load());
+            Object.assign(data, await config.load());
 
             // Request github token if necessary
             if (!data.token) {

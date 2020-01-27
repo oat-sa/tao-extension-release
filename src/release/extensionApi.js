@@ -57,7 +57,7 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
          * @param {Object} data
          */
         setData(newData) {
-            Object.assign(data, newData);
+            data = newData;
         },
 
         /**
