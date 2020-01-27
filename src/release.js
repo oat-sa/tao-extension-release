@@ -56,7 +56,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
     const { subjectType = 'extension' } = params;
     let { releaseComment } = params;
 
-    let data = { extension: {} };
+    let data = {};
     let gitClient;
     let githubClient;
 
@@ -88,7 +88,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * @param {Object} data
          */
         setData(newData) {
-            Object.assign(data, newData);
+            data = newData;
         },
 
         /**

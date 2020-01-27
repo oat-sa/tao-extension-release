@@ -57,7 +57,7 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
          * @param {Object} data
          */
         setData(newData) {
-            Object.assign(data, newData);
+            data = newData;
         },
 
         /**
@@ -105,6 +105,10 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
          * Select and initialise the extension to release
          */
         async selectExtension() {
+            if (!data.extension) {
+                data.extension = {};
+            }
+
             // Start with CLI option, if it's missing we'll prompt user
             let extension = params.extensionToRelease;
 
