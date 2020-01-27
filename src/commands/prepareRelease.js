@@ -21,7 +21,7 @@ const log = require('../log.js');
 const commander = require('commander');
 const program = new commander.Command();
 
-const cliOptions =  require('./cliOptions.js');
+const cliOptions = require('./cliOptions.js');
 
 program
     .name('taoRelease prepareRelease')
@@ -40,7 +40,7 @@ program
     .parse(process.argv);
 
 if (program.debug) {
-    console.log(program.opts());
+    log.info(program.opts());
 }
 
 const release = require('../release.js')({ ...program.opts(), subjectType: 'extension' });

@@ -26,38 +26,42 @@
 const chalk = require('chalk');
 
 module.exports = {
-    title(msg){
+    title(msg) {
         console.log(' ');
         console.log('✨ ' + chalk.bold.underline(msg) + ' ✨');
         console.log(' ');
         return this;
     },
-    doing(msg){
+    doing(msg) {
         console.log(chalk.gray(`➡ ${msg}`));
         return this;
     },
-    done(msg){
+    done(msg) {
         msg = msg || 'ok';
         console.log(chalk.green(` ✅ ${msg}`));
         return this;
     },
-    warn(msg){
+    warn(msg) {
         msg = msg || 'ok';
         console.log(chalk.yellow(`⚠ ${msg}`));
         return this;
     },
-    info(msg){
-        console.log(chalk.blue(msg));
+    info(msg) {
+        if (typeof msg !== 'string') {
+            console.log(msg);
+        } else {
+            console.log(chalk.blue(msg));
+        }
         return this;
     },
-    error(err){
-        if(err && err.message){
+    error(err) {
+        if (err && err.message) {
             console.log(chalk.red(`❎ ${err.message}`));
         }
         console.error(`Error: ${err}`);
         return this;
     },
-    exit(msg){
+    exit(msg) {
         console.log(msg || 'Good bye');
         process.exit();
     }
