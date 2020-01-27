@@ -42,7 +42,7 @@ program
     .parse(process.argv);
 
 if (program.debug) {
-    log(program.opts());
+    log.info(program.opts());
 }
 
 const release = require('../release.js')({ ...program.opts(), subjectType: 'extension' });
