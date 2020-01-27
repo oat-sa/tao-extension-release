@@ -358,10 +358,10 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Load and initialise release extension config
          */
         async loadConfig() {
-            data = Object.assign({}, await config.load());
+            const configFile = await config.load();
 
             // Request github token if necessary
-            if (!data.token) {
+            if (!configFile.token) {
                 setTimeout(() => opn('https://github.com/settings/tokens'), 2000);
 
                 const { token } = await inquirer.prompt({
@@ -375,6 +375,8 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 data.token = token;
 
                 await config.write(data);
+            } else {
+                data = configFile;
             }
 
             adaptee.setData(data);
