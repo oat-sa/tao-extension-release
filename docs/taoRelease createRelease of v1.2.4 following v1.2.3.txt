@@ -18,10 +18,13 @@ note over RM: v1.2.3
 note over RR#yellow: v1.2.4
 parallel off
 
-RR->*LR: checkout & pull  
+RR->*LR: checkout & pull
 activate LR
 RM->LM: fetch & pull master
 LM->LR: merge master
+rbox over LR: update translations?
+LR->LR: commit
+LR->RR: push
 rbox over LR: compile JS+CSS
 LR->LR: commit
 LR->RR: push
