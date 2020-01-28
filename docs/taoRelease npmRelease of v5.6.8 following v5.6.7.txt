@@ -1,0 +1,56 @@
+title taoRelease npmRelease of v5.6.8 following v5.6.7
+
+participantspacing 4
+participantgroup #azure **Local repo**
+materialdesignicons f2a2 "master" as LM
+materialdesignicons f2a2 "develop" as LD
+materialdesignicons f2a2 "release-5.6.8" as LR
+end
+participantgroup #ivory **Remote repo**
+materialdesignicons f2a4 "release-5.6.8" as RR
+materialdesignicons f2a4 "master" as RM
+materialdesignicons f2a4 "develop" as RD
+end
+
+
+parallel
+note over RM: v5.6.7
+note over RD: v5.6.8
+parallel off
+
+RM->LM: checkout & pull master
+RD->LD: checkout & pull develop
+LM<<-->>LD: compare
+
+LD->*LR: <align:center>checkout\nnew branch</align>
+activate LR
+activate RR
+LR->RR: push
+
+note over RR#yellow: branch ready!
+rbox over RR: create PR to master
+RR-->>RM: PR
+
+activate RM
+rbox over RM: extract release notes
+note over RR#lightpink: **human checks**
+RR->RM: merge
+rbox over RM: tag v5.6.8
+rbox over RM: release v5.6.8
+note over RM#lawngreen: **v5.6.8 is released!**
+
+RM->LM: checkout & pull master
+deactivate RM
+LM->LD: <align:center>merge\n(fast-forward)</align>
+LD->RD: push
+note over RD: <align:center>v5.6.8\nequal with master</align>
+
+rbox over RR: delete branch
+deactivate RR
+destroyafter RR
+rbox over LR: delete branch
+deactivate LR
+destroyafter LR
+
+rbox over LM: npm publish
+note over LM#lawngreen:<align:center>**v5.6.8 published \non npmjs.com**
