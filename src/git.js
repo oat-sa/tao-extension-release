@@ -219,12 +219,12 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
 
         /**
          * Push a branch to the given remote
-         * @param {String} origin - name of the remote
+         * @param {String} originName - name of the remote
          * @param {String} branchName - name of the branch to push to
          * @returns {Promise}
          */
-        push(origin, branchName) {
-            return git(repository).push(origin, branchName);
+        push(originName, branchName) {
+            return git(repository).push(originName, branchName);
         },
 
         /**
