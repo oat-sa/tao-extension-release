@@ -53,11 +53,18 @@ test('should define npmCommand method on release instance', (t) => {
 });
 
 test('npmCommand should have correct return type', (t) => {
-    t.plan(1);
+    let command;
 
-    t.ok(npmPackage.npmCommand() instanceof Promise, 'npmCommand returns a Promise');
+    t.plan(2);
 
-    t.end();
+    command = npmPackage.npmCommand()
+        .catch( error => {
+            t.pass(`Should catch rejection: ${error.message}`);
+        })
+        .finally(() => {
+            t.assert(command instanceof Promise, 'npmCommand returns a Promise');
+            t.end();
+        });
 });
 
 test('npmCommand should reject on invalid params', (t) => {
