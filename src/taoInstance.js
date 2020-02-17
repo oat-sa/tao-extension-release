@@ -232,7 +232,7 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
         buildAssets(extensionName = ''){
             const getOptions = (cwd) => {
                 const options = {
-                    cwd : cwd || normalize(`${rootDir}/tao/views/build`)
+                    cwd : cwd || normalize(`${rootDir}/tao/views`)
                 };
                 if(!quiet){
                     options.stdio = 'inherit';
