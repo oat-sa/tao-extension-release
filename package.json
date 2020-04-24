@@ -25,7 +25,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/oat-sa/tao-extension-release.git"
+    "url": "https://github.com/oat-sa/tao-extension-release.git"
   },
   "author": "Bertrand Chevrier <betrand@taotesting.com>",
   "license": "MIT",
