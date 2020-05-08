@@ -44,3 +44,7 @@
  - Add `npmRelease` command
  - npm install the extension/views before release
  - Make release note extraction more robust
+
+## [Version 1.1.1]
+
+ - Bugfix for when data.extension is not already set
