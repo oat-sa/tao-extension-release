@@ -48,3 +48,9 @@
 ## [Version 1.1.1]
 
  - Bugfix for when data.extension is not already set
+
+## [Version 1.2.0]
+
+ - Added a shared `eslint` configuration library: `@oat-sa/eslint-config-tao`.
+ - Updated path for building assets reflecting the `tao-core` module structure changes:
+  `tao/views/build` to `tao/views`.

@@ -46,6 +46,42 @@ const localRepoPath = path.join(workDir, 'localRepo');
 const remoteRepoPath = path.join(workDir, 'remoteRepo');
 const secondLocalRepoPath = path.join(workDir, 'secondLocalRepo');
 
+const tearDown = function tearDown() {
+    // empty temp dir
+    try {
+        fs.emptyDirSync(workDir);
+        console.log('emptied workDir');
+    }
+    catch (err) {
+        throw new Error('Error removing test repos');
+    }
+};
+
+const verifyLocal = async function verifyLocal(gitHelper) {
+    const isBare = await gitHelper.raw(['rev-parse', '--is-bare-repository']);
+    if (isBare.trim() === 'true') {
+        throw new Error('The localRepo appears to be bare');
+    }
+    // make sure repo is not the wrong one!
+    const remotes = await gitHelper.getRemotes(true);
+    if (remotes.some(r => r.refs.push.includes('github.com'))) {
+        console.log('remotes', remotes);
+        throw new Error('I won\'t test against a github-connected repo!');
+    }
+};
+
+const verifyRemote = async function verifyRemote(gitHelper) {
+    const isBare = await gitHelper.raw(['rev-parse', '--is-bare-repository']);
+    if (isBare.trim() !== 'true') {
+        throw new Error('The remoteRepo does not appear to be bare');
+    }
+    // make sure repo is not the wrong one!
+    const remotes = await gitHelper.getRemotes(true);
+    if (remotes.filter(r => r.name).length) {
+        throw new Error(`The remoteRepo should have 0 remotes, ${remotes.length} found`);
+    }
+};
+
 /**
  * Lifecycle functions
  */
@@ -109,42 +145,6 @@ const setUp = async function setUp() {
     catch (err) {
         console.error(err);
         throw new Error('Error setting up test repos');
-    }
-};
-
-const verifyLocal = async function verifyLocal(gitHelper) {
-    const isBare = await gitHelper.raw(['rev-parse', '--is-bare-repository']);
-    if (isBare.trim() === 'true') {
-        throw new Error('The localRepo appears to be bare');
-    }
-    // make sure repo is not the wrong one!
-    const remotes = await gitHelper.getRemotes(true);
-    if (remotes.some(r => r.refs.push.includes('github.com'))) {
-        console.log('remotes', remotes);
-        throw new Error('I won\'t test against a github-connected repo!');
-    }
-};
-
-const verifyRemote = async function verifyRemote(gitHelper) {
-    const isBare = await gitHelper.raw(['rev-parse', '--is-bare-repository']);
-    if (isBare.trim() !== 'true') {
-        throw new Error('The remoteRepo does not appear to be bare');
-    }
-    // make sure repo is not the wrong one!
-    const remotes = await gitHelper.getRemotes(true);
-    if (remotes.filter(r => r.name).length) {
-        throw new Error(`The remoteRepo should have 0 remotes, ${remotes.length} found`);
-    }
-};
-
-const tearDown = function tearDown() {
-    // empty temp dir
-    try {
-        fs.emptyDirSync(workDir);
-        console.log('emptied workDir');
-    }
-    catch (err) {
-        throw new Error('Error removing test repos');
     }
 };
 

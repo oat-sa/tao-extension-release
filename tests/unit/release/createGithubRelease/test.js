@@ -152,21 +152,21 @@ test('should use CLI release comment instead of prompting', async (t) => {
     await releaseWithCliOption.initialiseGithubClient();
 
     sandbox.stub(inquirer, 'prompt');
-    {
-        await releaseWithCliOption.createGithubRelease();
 
-        t.ok(inquirer.prompt.notCalled, 'No prompt shown');
-    }
+    await releaseWithCliOption.createGithubRelease();
+
+    t.ok(inquirer.prompt.notCalled, 'No prompt shown');
+
     sandbox.restore();
 
     sandbox.stub(githubInstance, 'release');
-    {
-        await releaseWithCliOption.createGithubRelease();
 
-        t.ok(githubInstance.release.calledOnce, 'Github release has been created');
-        t.ok(githubInstance.release.calledWith(`v${version}`), 'Github release has been created from appropriate tag');
-        t.ok(githubInstance.release.calledWith(`v${version}`, sinon.match(/^my first release/)), 'Github release has been created with CLI comment');
-    }
+    await releaseWithCliOption.createGithubRelease();
+
+    t.ok(githubInstance.release.calledOnce, 'Github release has been created');
+    t.ok(githubInstance.release.calledWith(`v${version}`), 'Github release has been created from appropriate tag');
+    t.ok(githubInstance.release.calledWith(`v${version}`, sinon.match(/^my first release/)), 'Github release has been created with CLI comment');
+
     sandbox.restore();
 
     t.end();

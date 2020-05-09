@@ -61,9 +61,9 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
                         return reject(new Error(`${dir} must be a valid directory`));
                     }
 
-                    fs.readdir(dir, (err, files) => {
-                        if (err) {
-                            return reject(err);
+                    fs.readdir(dir, (error, files) => {
+                        if (error) {
+                            return reject(error);
                         }
                         result.root = files.length &&
                             files.indexOf('tao') > -1 &&
@@ -110,9 +110,9 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
                         return reject(err);
                     }
                     if (stats.isDirectory()) {
-                        fs.readdir(extensionPath, (err, files) => {
-                            if (err) {
-                                return reject(err);
+                        fs.readdir(extensionPath, (statsError, files) => {
+                            if (statsError) {
+                                return reject(statsError);
                             }
                             result.extension = files.length && files.indexOf('manifest.php') > -1;
                             resolve(result);
@@ -145,7 +145,7 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
                                     .map( entry => basename(entry.dir) )
                             );
                         })
-                        .catch( err => reject(err) );
+                        .catch( extensionError => reject(extensionError) );
                 });
             });
         },
@@ -232,7 +232,7 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
         buildAssets(extensionName = ''){
             const getOptions = (cwd) => {
                 const options = {
-                    cwd : cwd || normalize(`${rootDir}/tao/views/build`)
+                    cwd : cwd || normalize(`${rootDir}/tao/views`)
                 };
                 if(!quiet){
                     options.stdio = 'inherit';

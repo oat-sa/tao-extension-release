@@ -368,8 +368,8 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                     type: 'input',
                     name: 'token',
                     message: 'I need a Github token, with "repo" rights (check your browser) : ',
-                    validate: token => /[a-z0-9]{32,48}/i.test(token),
-                    filter: token => token.trim()
+                    validate: tokenToValidate => /[a-z0-9]{32,48}/i.test(tokenToValidate),
+                    filter: tokenToFilter => tokenToFilter.trim()
                 });
 
                 data.token = token;
