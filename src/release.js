@@ -32,6 +32,7 @@ const gitClientFactory = require('./git.js');
 const log = require('./log.js');
 
 const extensionApi = require('./release/extensionApi.js');
+const conventionalExtensionApi = require('./release/conventionalExtensionApi.js');
 const packageApi = require('./release/packageApi.js');
 
 /**
@@ -70,6 +71,8 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         adaptee = extensionApi(params, data);
     } else if (subjectType === 'package') {
         adaptee = packageApi(params, data);
+    } else if (subjectType === 'conventionalExtension') {
+        adaptee = conventionalExtensionApi(params, data);
     }
 
     return {
@@ -578,30 +581,23 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Fetch and pull branches, extract manifests and repo name
          */
         async verifyBranches() {
-            const { pull } = await inquirer.prompt({
-                type: 'confirm',
-                name: 'pull',
-                message: `Can I checkout and pull ${baseBranch} and ${releaseBranch}  ?`
-            });
 
-            if (!pull) {
-                log.exit();
-            }
 
             log.doing(`Updating ${data[subjectType].name}`);
+            log.info(`Checkout and pull ${baseBranch} and ${releaseBranch}`);
 
             // Get last released version:
             await gitClient.pull(releaseBranch);
-            const { version: lastVersion } = await this.getMetadata();
-            data.lastVersion = lastVersion;
-            data.lastTag = `v${lastVersion}`;
-
-            // Get version to release:
             await gitClient.pull(baseBranch);
-            const manifest = await this.getMetadata();
-            data.version = manifest.version;
-            data.tag = `v${manifest.version}`;
-            data.releasingBranch = `${branchPrefix}-${manifest.version}`;
+
+            const { version, lastVersion, recommendation } = await this.getMetadata();
+            log.info(`Recommended release ${version} from ${lastVersion} (${recommendation.reason})`);
+
+            data.lastVersion = `${lastVersion}`;
+            data.lastTag = `v${lastVersion}`;
+            data.version = `${version}`;
+            data.tag = `v${version}`;
+            data.releasingBranch = `${branchPrefix}-${version}`;
         },
 
         /**

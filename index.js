@@ -48,4 +48,7 @@ program
     .command('npmRelease', 'release and publish a npm package', {
         executableFile: './src/commands/npmRelease'
     })
+    .command('ccRelease', 'release extension using conventional commits', {
+        executableFile: './src/commands/ccRelease'
+    })
     .parse(process.argv);
