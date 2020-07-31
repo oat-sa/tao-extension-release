@@ -123,7 +123,6 @@ test('the method getReleasePRComment', t => {
     t.equal(ghclient.getReleasePRComment(), `Please verify the following points :
 
 - [ ] the manifest (versions ?.?.? and dependencies),
-- [ ] the update script (from ?.?.? to ?.?.?),
 - [ ] CSS and JavaScript bundles`);
 
     ghclient = github(token, 'oat-sa/tao-core');
@@ -131,7 +130,6 @@ test('the method getReleasePRComment', t => {
     t.equal(ghclient.getReleasePRComment('18.7.3', '18.6.0'), `Please verify the following points :
 
 - [ ] the manifest (versions 18.7.3 and dependencies),
-- [ ] the update script (from 18.6.0 to 18.7.3),
 - [ ] CSS and JavaScript bundles,
 - [ ] Increase TAO-VERSION in \`manifest.php\``);
 
