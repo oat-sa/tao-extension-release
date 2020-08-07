@@ -63,3 +63,4 @@ tests/integration/work
 
 #IDE
 .vscode
+.idea

@@ -100,7 +100,6 @@ module.exports = function githubFactory(token, repository) {
             const checks = {
                 extension: [
                     `the manifest (versions ${version} and dependencies)`,
-                    `the update script (from ${fromVersion} to ${version})`,
                     'CSS and JavaScript bundles'
                 ],
                 package: [
