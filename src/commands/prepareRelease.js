@@ -27,6 +27,7 @@ program
     .name('taoRelease prepareRelease')
     .usage('[options]')
     .option(...cliOptions.debug)
+    .option(...cliOptions.releaseVersion)
     // options with defaults
     .option(...cliOptions.baseBranch)
     .option(...cliOptions.branchPrefix)
@@ -60,6 +61,7 @@ async function prepareRelease() {
         await release.isReleaseRequired();
         await release.createReleasingBranch();
         await release.build();
+        await release.updateVersion();
 
         log.done('Release branch prepared, and pushed to remote.').exit();
     } catch (error) {

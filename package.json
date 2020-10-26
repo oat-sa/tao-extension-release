@@ -37,6 +37,9 @@
     "chalk": "^2.1.0",
     "commander": "^3.0.1",
     "compare-versions": "^3.5.1",
+    "conventional-changelog-conventionalcommits": "^4.4.0",
+    "conventional-changelog-core": "^4.2.0",
+    "conventional-recommended-bump": "^6.0.10",
     "cross-spawn": "^6.0.3",
     "fs-extra": "^5.0.0",
     "graphql-request": "^1.8.2",
@@ -46,8 +49,10 @@
     "opn": "^5.1.0",
     "php-parser": "^2.0.7",
     "read-pkg": "^5.2.0",
+    "semver": "^7.3.2",
     "simple-git": "^1.126.0",
-    "update-notifier": "^2.3.0"
+    "update-notifier": "^2.3.0",
+    "write-pkg": "^4.0.0"
   },
   "engine": {
     "node": ">=8.6.0"

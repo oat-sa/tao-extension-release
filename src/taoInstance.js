@@ -30,6 +30,9 @@ const crossSpawn              = require('cross-spawn');
 
 const isWin = /^win/.test(process.platform);
 
+const versionPropRegex = /'version' => ('\d+\.\d+\.\d+((\.|-)\d+)?')/g;
+const versionRegex = /'\d+\.\d+\.\d+((\.|-)\d+)?'/g;
+
 /**
  * Get the taoInstance
  *
@@ -349,6 +352,40 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
                 execed.stdout.pipe(process.stdout);
                 execed.stderr.pipe(process.stderr);
                 execed.on('exit', code => code === 0 ? resolve() : reject( new Error('Something went wrong in the translation generation')));
+            });
+        },
+
+        /**
+        * Update version in extension manifest
+        *
+        * @param {String} manifestPath - the path to the extension manifest
+        * @param {String} version - extension version
+        * @return {Promise}
+        */
+        updateVersion(manifestPath = '', version) {
+            return new Promise((resolve, reject) => {
+                fs.readFile(manifestPath, 'utf8', function (err, data) {
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    if (!versionPropRegex.test(data)) {
+                        reject(new Error('Can not extract version from manifest file'));
+                    }
+
+                    const manifestContent = data.replace(
+                        versionPropRegex,
+                        (match) => match.replace(versionRegex, `'${version}'`)
+                    );
+
+                    fs.writeFile(manifestPath, manifestContent, 'utf8', function (err) {
+                        if (err) {
+                            return reject(err);
+                        }
+
+                        resolve();
+                    });
+                });
             });
         }
     };

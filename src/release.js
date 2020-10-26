@@ -25,14 +25,19 @@
 const inquirer = require('inquirer');
 const opn = require('opn');
 const compareVersions = require('compare-versions');
+const semverGt = require('semver/functions/gt');
 
 const config = require('./config.js')();
 const github = require('./github.js');
 const gitClientFactory = require('./git.js');
 const log = require('./log.js');
+const conventionalCommitsFactory = require('./conventionalCommits.js');
+
 
 const extensionApi = require('./release/extensionApi.js');
 const packageApi = require('./release/packageApi.js');
+
+const conventionalCommits = conventionalCommitsFactory();
 
 /**
  * Get the taoExtensionRelease
@@ -52,7 +57,7 @@ const packageApi = require('./release/packageApi.js');
  * @return {Object} - instance of taoExtensionRelease
  */
 module.exports = function taoExtensionReleaseFactory(params = {}) {
-    const { baseBranch, branchPrefix, origin, releaseBranch, versionToRelease } = params;
+    const { baseBranch, branchPrefix, origin, releaseBranch, releaseVersion, versionToRelease } = params;
     const { subjectType = 'extension' } = params;
     let { releaseComment } = params;
 
@@ -102,6 +107,9 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             }
             data[subjectType].name = newData[subjectType].name;
             data[subjectType].path = newData[subjectType].path;
+
+            // change root to release target
+            process.chdir(data[subjectType].path);
         },
 
         /**
@@ -592,16 +600,42 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
             // Get last released version:
             await gitClient.pull(releaseBranch);
-            const { version: lastVersion } = await this.getMetadata();
-            data.lastVersion = lastVersion;
-            data.lastTag = `v${lastVersion}`;
-
-            // Get version to release:
             await gitClient.pull(baseBranch);
-            const manifest = await this.getMetadata();
-            data.version = manifest.version;
-            data.tag = `v${manifest.version}`;
-            data.releasingBranch = `${branchPrefix}-${manifest.version}`;
+
+            const lastTag = await gitClient.getLastTag();
+
+            let {
+                recommendation: {
+                    hasNonConventionalCommits,
+                },
+                lastVersion,
+                version,
+            } = await conventionalCommits.getNextVersion(lastTag);
+
+            if (releaseVersion && !semverGt(releaseVersion, lastVersion)) {
+                log.exit(`Provided version less than latest version ${lastVersion}.`);
+            }
+
+            if (hasNonConventionalCommits) {
+                const { pull } = await inquirer.prompt({
+                    type: 'confirm',
+                    name: 'pull',
+                    message: 'There are some non conventional commits?',
+                });
+
+                if (!pull) {
+                    log.exit();
+                }
+            }
+
+            // use cli param if provided
+            version = releaseVersion || version;
+
+            data.lastVersion = `${lastVersion}`;
+            data.lastTag = `v${lastVersion}`;
+            data.version = `${version}`;
+            data.tag = `v${version}`;
+            data.releasingBranch = `${branchPrefix}-${version}`;
         },
 
         /**
@@ -633,6 +667,15 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             if (!isOldWayReleaseSelected) {
                 log.exit();
             }
+        },
+
+        /**
+          * Update version in releasing repository
+          */
+        async updateVersion() {
+            await adaptee.updateVersion();
+
+            await gitClient.commitAndPush(data.releasingBranch, 'bump version');
         }
     };
 };

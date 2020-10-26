@@ -27,6 +27,7 @@ program
     .name('taoRelease oldWayRelease')
     .usage('[options]')
     .option(...cliOptions.debug)
+    .option(...cliOptions.releaseVersion)
     // options with defaults
     .option(...cliOptions.baseBranch)
     .option(...cliOptions.branchPrefix)
@@ -64,6 +65,7 @@ async function releaseExtension() {
         await release.confirmRelease();
         await release.createReleasingBranch();
         await release.build();
+        await release.updateVersion();
         await release.initialiseGithubClient();
         await release.createPullRequest();
         await release.extractReleaseNotes();

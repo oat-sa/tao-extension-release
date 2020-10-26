@@ -32,7 +32,7 @@ const log = require('../log.js');
 * @param {Object} params
 * @param {String} [params.releaseBranch] - branch to release to
 */
-module.exports = function packageApiFactory(params = {}) {
+module.exports = function packageApiFactory(params = {}, data) {
 
     return {
 
@@ -44,8 +44,8 @@ module.exports = function packageApiFactory(params = {}) {
             // Not implemented
         },
 
-        setData() {
-            // Not implemented
+        setData(newData) {
+            data = newData;
         },
 
         /**
@@ -121,6 +121,13 @@ module.exports = function packageApiFactory(params = {}) {
 
         build(){
             // Not implemented
+        },
+
+        /**
+         * Update package version
+         */
+        async updateVersion() {
+            await this.npmPackage.updateVersion(undefined, data.version);
         }
     };
 };

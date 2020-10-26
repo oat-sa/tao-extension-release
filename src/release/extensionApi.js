@@ -254,6 +254,17 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
 
         publish() {
             // Not implemented
+        },
+
+        /**
+         * Update extension version
+         */
+        async updateVersion() {
+            try {
+                await this.taoInstance.updateVersion(`${data.extension.path}/manifest.php`, data.version);
+            } catch(error) {
+                log.exit(`Unable to update version. ${error.message}.`);
+            }
         }
     };
 };
