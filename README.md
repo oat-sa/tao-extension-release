@@ -68,6 +68,7 @@ Commandline arguments to give you more control over the parameters of the releas
 |`--extension-to-release <extension>`|extension name (e.g. taoFoobar)|(none - prompted)|
 |`--update-translations`|flag to indicate translation files should be updated|(none - prompted)|
 |`--www-user <user>`|the system user used to launch PHP commands|`www-data`|
+|`--release-version <version>`|version to be used for the next release|none|
 
 ### createRelease extra options
 
@@ -122,6 +123,16 @@ The following values can be defined in this file :
  - `token` : your Github auth token
  - `taoRoot` : the path to the root of TAO
  - `wwwUser` : the system user used to launch PHP commands (`www-data`)
+
+ ## Next version calculation
+
+Next version taken based on [Conventional commits](https://www.conventionalcommits.org/en/v1.0.0/).
+Some treats of the next version calculation:
+- if multiple commits contains a breaking change, the version will be increased by one major semver version
+- if multiple commits contains a feature change, the version will be increased by one minor semver version
+- if multiple commits contains a bugfix change, the version will be increased by one fix semver version
+- if no commit contains a conventional change information, the version will be increased by one fix semver version and warn the user
+- if `release-version` option provided, it will be taken as next release version and version calculation will be skiped
 
 ## System Prerequisite
 <a name="prerequisite"></a>

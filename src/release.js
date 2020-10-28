@@ -616,7 +616,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 log.exit(`Provided version less than latest version ${lastVersion}.`);
             }
 
-            if (hasNonConventionalCommits) {
+            if (!releaseVersion && hasNonConventionalCommits) {
                 const { pull } = await inquirer.prompt({
                     type: 'confirm',
                     name: 'pull',
