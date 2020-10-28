@@ -40,8 +40,14 @@ const repoName = 'oat-sa/extension-test';
 
 const gitClientInstance = {
     pull: () => { },
+    getLastTag: () => {},
 };
 const gitClientFactory = sandbox.stub().callsFake(() => gitClientInstance);
+
+const conventionalCommits = {
+    getNextVersion: () => ({ recommendation: {} }),
+};
+const conventionalCommitsFactory = sandbox.stub().callsFake(() => conventionalCommits);
 
 const log = {
     doing: () => { },
@@ -52,6 +58,7 @@ const inquirer = {
 };
 
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
+    './conventionalCommits.js': conventionalCommitsFactory,
     './git.js': gitClientFactory,
     './log.js': log,
     inquirer,
@@ -111,9 +118,8 @@ test('should log exit if pull not confirmed', async (t) => {
 test('should pull release branch', async (t) => {
     t.plan(4);
 
-    sandbox.stub(release, 'getMetadata')
-        .onCall(0).returns({ repoName, version: '1.2.3' })
-        .onCall(1).returns({ repoName, version: '4.5.6' });
+    sandbox.stub(conventionalCommits, 'getNextVersion')
+        .onCall(0).returns({ lastVersion: '1.2.3', version: '4.5.6', recommendation: {} });
 
     await release.initialiseGitClient();
 
@@ -135,9 +141,8 @@ test('should pull release branch', async (t) => {
 test('should pull base branch', async (t) => {
     t.plan(5);
 
-    sandbox.stub(release, 'getMetadata')
-        .onCall(0).returns({ repoName, version: '1.2.3' })
-        .onCall(1).returns({ repoName, version: '4.5.6' });
+    sandbox.stub(conventionalCommits, 'getNextVersion')
+        .onCall(0).returns({ lastVersion: '1.2.3', version: '4.5.6', recommendation: {} });
 
     await release.initialiseGitClient();
 
