@@ -17,7 +17,12 @@
  */
 
 /**
- * Helper module to work with conventional commits tool
+ * Helper module to work with conventional commits tool.
+ *
+ * Conventional commits 3th party packages work under the root of current process
+ * and there is not way to pass path to the target repository.
+ * To work around the problem mentioned above the root of the process changed
+ * to release target during traget select
  */
 const conventionalChangelogCore = require('conventional-changelog-core');
 const conventionalCommitsConfig = require('conventional-changelog-conventionalcommits');
