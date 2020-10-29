@@ -43,7 +43,7 @@ const conventionalCommits = proxyquire.noCallThru().load('../../../../src/conven
     'conventional-recommended-bump': conventionalRecommendedBump,
     'semver/functions/parse': semverParse,
     'semver/functions/inc': semverInc,
-})();
+});
 
 test('should define getNextVersion method on conventionalCommits', (t) => {
     t.plan(1);

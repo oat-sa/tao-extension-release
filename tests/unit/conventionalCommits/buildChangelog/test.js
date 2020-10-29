@@ -43,7 +43,7 @@ const conventionalCommitsConfig = sandbox.stub().returns(presetConfig);
 const conventionalCommits = proxyquire.noCallThru().load('../../../../src/conventionalCommits.js', {
     'conventional-changelog-core': conventionalChangelogCore,
     'conventional-changelog-conventionalcommits': conventionalCommitsConfig,
-})();
+});
 
 test('should define buildChangelog method on conventionalCommits', (t) => {
     t.plan(1);

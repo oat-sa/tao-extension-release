@@ -31,13 +31,11 @@ const config = require('./config.js')();
 const github = require('./github.js');
 const gitClientFactory = require('./git.js');
 const log = require('./log.js');
-const conventionalCommitsFactory = require('./conventionalCommits.js');
+const conventionalCommits = require('./conventionalCommits.js');
 
 
 const extensionApi = require('./release/extensionApi.js');
 const packageApi = require('./release/packageApi.js');
-
-const conventionalCommits = conventionalCommitsFactory();
 
 /**
  * Get the taoExtensionRelease
@@ -620,7 +618,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 const { pull } = await inquirer.prompt({
                     type: 'confirm',
                     name: 'pull',
-                    message: 'There are some non conventional commits?',
+                    message: 'There are some non conventional commits?. Are you sure you want to continue?',
                 });
 
                 if (!pull) {

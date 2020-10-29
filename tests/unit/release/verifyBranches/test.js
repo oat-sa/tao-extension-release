@@ -47,7 +47,6 @@ const gitClientFactory = sandbox.stub().callsFake(() => gitClientInstance);
 const conventionalCommits = {
     getNextVersion: () => ({ recommendation: {} }),
 };
-const conventionalCommitsFactory = sandbox.stub().callsFake(() => conventionalCommits);
 
 const log = {
     doing: () => { },
@@ -58,7 +57,7 @@ const inquirer = {
 };
 
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
-    './conventionalCommits.js': conventionalCommitsFactory,
+    './conventionalCommits.js': conventionalCommits,
     './git.js': gitClientFactory,
     './log.js': log,
     inquirer,

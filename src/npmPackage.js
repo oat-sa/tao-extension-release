@@ -148,7 +148,7 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
         },
 
         /**
-          * Update version in package.json
+          * Update version in package.json and package-lock.json
           *
           * @param {String} folderName - the path to package
           * @param {String} version - package version
