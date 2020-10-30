@@ -31,12 +31,12 @@ const manifestPath = '/test/manifest.php';
 const version = '1.1.1';
 
 const fs = {
-    readFile: sandbox.stub().callsFake((path, enc, callback) => callback(undefined, manifestContent)),
-    writeFile: sandbox.stub().callsFake((path, data, enc, callback) => callback(undefined)),
+    readFile: sandbox.stub().callsFake(() => Promise.resolve(manifestContent)),
+    writeFile: sandbox.stub().callsFake(() => Promise.resolve),
 };
 
 const taoInstance = proxyquire.noCallThru().load('../../../../src/taoInstance.js', {
-    'fs': fs,
+    'fs-extra': fs,
 })();
 
 test('should define updateVersion method on tao instance', (t) => {

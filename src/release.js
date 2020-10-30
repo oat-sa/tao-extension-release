@@ -618,7 +618,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 const { pull } = await inquirer.prompt({
                     type: 'confirm',
                     name: 'pull',
-                    message: 'There are some non conventional commits?. Are you sure you want to continue?',
+                    message: 'There are some non conventional commits. Are you sure you want to continue?',
                 });
 
                 if (!pull) {
@@ -673,7 +673,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         async updateVersion() {
             await adaptee.updateVersion();
 
-            await gitClient.commitAndPush(data.releasingBranch, 'bump version');
+            await gitClient.commitAndPush(data.releasingBranch, 'chore: bump version');
         }
     };
 };

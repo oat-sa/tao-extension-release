@@ -22,7 +22,7 @@
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
 
-const fs                      = require('fs');
+const fs                      = require('fs-extra');
 const { normalize, basename } = require('path');
 const { exec }                = require('child_process');
 const phpParser               = require('php-parser');
@@ -361,31 +361,19 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
         * @param {String} version - extension version
         * @return {Promise}
         */
-        updateVersion(manifestPath = '', version) {
-            return new Promise((resolve, reject) => {
-                fs.readFile(manifestPath, 'utf8', function (err, manifestContent) {
-                    if (err) {
-                        return reject(err);
-                    }
+        async updateVersion(manifestPath = '', version) {
+            const manifestContent = await fs.readFile(manifestPath, 'utf8');
 
-                    if (!versionPropRegex.test(manifestContent)) {
-                        reject(new Error('Can not extract version from manifest file'));
-                    }
+            if (!versionPropRegex.test(manifestContent)) {
+                throw new Error('Can not extract version from manifest file');
+            }
 
-                    const updatedManifestContent = manifestContent.replace(
-                        versionPropRegex,
-                        (match, versionMatch) => match.replace(versionMatch, `'${version}'`)
-                    );
+            const updatedManifestContent = manifestContent.replace(
+                versionPropRegex,
+                (match, versionMatch) => match.replace(versionMatch, `'${version}'`)
+            );
 
-                    fs.writeFile(manifestPath, updatedManifestContent, 'utf8', function (err) {
-                        if (err) {
-                            return reject(err);
-                        }
-
-                        resolve();
-                    });
-                });
-            });
+            await fs.writeFile(manifestPath, updatedManifestContent, 'utf8');
         }
     };
 };
