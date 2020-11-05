@@ -28,7 +28,7 @@ const inquirer = require('inquirer');
 const taoInstanceFactory = require('../taoInstance.js');
 const log = require('../log.js');
 const conventionalRecommendedBump = require('conventional-recommended-bump');
-const conventionalChangelogCore = require('conventional-changelog-core');
+const conventionalChangelog = require('conventional-changelog');
 const semverParse = require('semver/functions/parse');
 const semverInc = require('semver/functions/inc');
 
@@ -149,7 +149,8 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
             return new Promise( (resolve, reject) => {
                 conventionalRecommendedBump({
                     preset: {
-                        name: 'conventionalcommits'
+                        //name: '@oat-sa/tao'
+                        name: 'angular'
                     }
                 }, {}, (err, recommendation) => {
                     if(err){
@@ -168,15 +169,15 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
         async buildChangelog(){
             const $chanegelog = fs.createWriteStream(path.join(data.conventionalExtension.path, 'CHANGELOG.md'), { flags : 'a' });
             return new Promise( (resolve, reject) => {
-                conventionalChangelogCore({
-                    preset: 'conventionalcommits',
+                conventionalChangelog({
+                    preset: 'angular',
                     append: true
                 }, {
                     version: data.version
                 })
-                .on('error', err => reject(err))
-                .on('finish', () => resolve)
-                .pipe($chanegelog);
+                    .on('error', err => reject(err))
+                    .on('finish', () => resolve)
+                    .pipe($chanegelog);
             });
         },
 
