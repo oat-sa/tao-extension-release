@@ -56,6 +56,7 @@ async function prepareRelease() {
         await release.initialiseGitClient();
         await release.verifyLocalChanges();
         await release.verifyBranches();
+        await release.extractVersion();
         await release.doesTagExists();
         await release.doesReleasingBranchExists();
         await release.isReleaseRequired();

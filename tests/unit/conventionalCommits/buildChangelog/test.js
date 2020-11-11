@@ -42,13 +42,13 @@ const conventionalCommitsConfig = sandbox.stub().returns(presetConfig);
 
 const conventionalCommits = proxyquire.noCallThru().load('../../../../src/conventionalCommits.js', {
     'conventional-changelog-core': conventionalChangelogCore,
-    'conventional-changelog-conventionalcommits': conventionalCommitsConfig,
+    '@oat-sa/conventional-changelog-tao': conventionalCommitsConfig,
 });
 
 test('should define buildChangelog method on conventionalCommits', (t) => {
     t.plan(1);
 
-    t.ok(typeof conventionalCommits.buildChangelog === 'function', 'The conventional commits instance has buildChangelog method');
+    t.ok(typeof conventionalCommits.buildChangelog === 'function', 'The conventional commits instance has a buildChangelog method');
 
     t.end();
 });
@@ -60,7 +60,7 @@ test('should get config of conventionalcommits preset', async (t) => {
 
     await conventionalCommits.buildChangelog();
 
-    t.equals(conventionalCommitsConfig.callCount, 1, 'get config of conventionalcommits preset');
+    t.equals(conventionalCommitsConfig.callCount, 1, 'the conventionalcommits preset is requested');
 
     t.end();
 });

@@ -25,7 +25,7 @@
  * to release target during traget select
  */
 const conventionalChangelogCore = require('conventional-changelog-core');
-const conventionalCommitsConfig = require('conventional-changelog-conventionalcommits');
+const conventionalPresetConfig = require('@oat-sa/conventional-changelog-tao');
 const conventionalRecommendedBump = require('conventional-recommended-bump');
 const semverParse = require('semver/functions/parse');
 const semverInc = require('semver/functions/inc');
@@ -43,7 +43,7 @@ module.exports = {
 
             conventionalChangelogCore(
                 {
-                    config: conventionalCommitsConfig(),
+                    config: conventionalPresetConfig(),
                 },
                 context
             )
@@ -64,21 +64,11 @@ module.exports = {
             throw new Error('Unable to retrieve last version from tags');
         }
 
-        const whatBump = (await conventionalCommitsConfig()).recommendedBumpOpts.whatBump;
-
         return new Promise((resolve, reject) => {
             conventionalRecommendedBump(
                 {
                     preset: {
-                        name: 'conventionalcommits'
-                    },
-                    whatBump: (...args) => {
-                        const [commits] = args;
-
-                        return {
-                            ...whatBump(...args),
-                            hasNonConventionalCommits: commits.some(({ type }) => !type)
-                        };
+                        name: '@oat-sa/tao'
                     }
                 },
                 {},

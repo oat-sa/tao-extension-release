@@ -99,7 +99,7 @@ test('should commit and push version changes', async (t) => {
 
     t.equal(gitClientInstance.commitAndPush.callCount, 1, 'commitAndPush has been called');
     t.ok(
-        gitClientInstance.commitAndPush.calledWith(releasingBranch, 'bump version'),
+        gitClientInstance.commitAndPush.calledWith(releasingBranch, 'chore: bump version'),
         'updateVersion has been called'
     );
 
