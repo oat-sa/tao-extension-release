@@ -210,3 +210,42 @@ test('warn when no conventional commits are found', async (t) => {
     t.end();
 });
 
+test('warn when no new commits are found', async (t) => {
+    t.plan(5);
+
+    const release = releaseFactory({ branchPrefix, baseBranch, releaseBranch });
+    release.setData({ releasingBranch, token, extension: {} });
+    sandbox.stub(conventionalCommits, 'getNextVersion').onCall(0).returns({
+        lastVersion: '1.2.3',
+        version: '1.2.4',
+        recommendation: {
+            stats : {
+                unset : 0,
+                commits: 0,
+                features: 0,
+                fix: 0,
+                breakings: 0
+            }
+        }
+    });
+
+    sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message }) => {
+        t.equal(type, 'confirm');
+        t.equal(name, 'releaseAgain', 'The prompt name is correct');
+        t.equal(message, 'There\'s no new commits, do you really want to release a new version ?');
+
+        return { releaseAgain: false };
+    });
+    sandbox.stub(log, 'exit');
+
+    await release.initialiseGitClient();
+
+    await release.extractVersion();
+
+    t.equal(inquirer.prompt.callCount, 1, 'Prompt has been called');
+    t.equal(log.exit.callCount, 1, 'the command exists');
+
+    sandbox.restore();
+    t.end();
+});
+

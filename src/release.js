@@ -623,7 +623,19 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 log.info(`Release version provided: ${releaseVersion}`);
             } else {
 
-                if (recommendation.stats && recommendation.stats.unset > 0) {
+                if (recommendation.stats && recommendation.stats.commits === 0) {
+                    const { releaseAgain  } = await inquirer.prompt({
+                        type: 'confirm',
+                        name: 'releaseAgain',
+                        default : false,
+                        message: 'There\'s no new commits, do you really want to release a new version ?'
+                    });
+
+                    if (!releaseAgain) {
+                        log.exit();
+                    }
+                }
+                else if (recommendation.stats && recommendation.stats.unset > 0) {
                     const { acceptDefaultVersion  } = await inquirer.prompt({
                         type: 'confirm',
                         name: 'acceptDefaultVersion',
