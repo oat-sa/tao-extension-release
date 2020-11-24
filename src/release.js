@@ -618,7 +618,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
             if (releaseVersion) {
                 if(!semverGt(releaseVersion, lastVersion)) {
-                    log.exit(`Provided version less than latest version ${lastVersion}.`);
+                    log.exit(`The provided version is lesser than the latest version ${lastVersion}.`);
                 }
                 log.info(`Release version provided: ${releaseVersion}`);
             } else {
