@@ -365,7 +365,7 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
             const manifestContent = await fs.readFile(manifestPath, 'utf8');
 
             if (!versionPropRegex.test(manifestContent)) {
-                throw new Error('Can not extract version from manifest file');
+                throw new Error('Cannot extract version from manifest file');
             }
 
             const updatedManifestContent = manifestContent.replace(
