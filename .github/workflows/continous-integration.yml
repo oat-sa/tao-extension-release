@@ -22,7 +22,7 @@ jobs:
         NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
     - name: Running tests
       run: |
-        npm run test:cov
+        npm run test:unit:cov
         npm run test:cov:clover
     - name: Report coverage
       if: always()
@@ -30,8 +30,8 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         clover_file: coverage/clover.xml
-        threshold_alert: 75
-        threshold_warning: 90
+        threshold_alert: 50
+        threshold_warning: 75
         comment_mode: update
     - name: Save Code Linting Report JSON
       if: always()
