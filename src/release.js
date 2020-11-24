@@ -628,7 +628,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                         type: 'confirm',
                         name: 'releaseAgain',
                         default : false,
-                        message: 'There\'s no new commits, do you really want to release a new version ?'
+                        message: 'There\'s no new commits, do you really want to release a new version?'
                     });
 
                     if (!releaseAgain) {
