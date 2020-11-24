@@ -167,7 +167,7 @@ test('exit when trying to release from a version lower than the last version', a
     await release.extractVersion();
 
     t.equal(log.exit.callCount, 1, 'Exit has been called');
-    t.equal(log.exit.getCall(0).args[0], 'Provided version less than latest version 1.2.3.');
+    t.equal(log.exit.getCall(0).args[0], 'The provided version is lesser than the latest version 1.2.3.');
 
     sandbox.restore();
     t.end();
@@ -232,7 +232,7 @@ test('warn when no new commits are found', async (t) => {
     sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message }) => {
         t.equal(type, 'confirm');
         t.equal(name, 'releaseAgain', 'The prompt name is correct');
-        t.equal(message, 'There\'s no new commits, do you really want to release a new version ?');
+        t.equal(message, 'There\'s no new commits, do you really want to release a new version?');
 
         return { releaseAgain: false };
     });
