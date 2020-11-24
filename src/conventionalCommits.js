@@ -53,7 +53,7 @@ module.exports = {
         });
     },
     /**
-     * Get next recomended version
+     * Get next recommended version
      *
      * @param {String} lastTag
      * @returns {Promise}
