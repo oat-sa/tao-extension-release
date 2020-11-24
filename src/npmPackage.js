@@ -158,7 +158,7 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
             // eslint-disable-next-line no-unused-vars
             const { readme, _id, ...packageJson } =  await readPkg({ cwd: folderName });
 
-            await writePkg(folderName, { ...packageJson, version: version });
+            await writePkg(folderName, { ...packageJson, version });
 
             return this.npmCommand('i');
         }
