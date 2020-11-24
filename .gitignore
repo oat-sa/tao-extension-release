@@ -64,3 +64,5 @@ tests/integration/work
 #IDE
 .vscode
 .idea
+
+eslint_report.json
