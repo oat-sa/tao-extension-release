@@ -59,7 +59,14 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
          */
         deleteBranch(branchName){
             return git(repository).push([origin, branchName, '--delete'])
-                .then( () => git(repository).deleteLocalBranch(branchName) );
+                .then( () => git(repository).deleteLocalBranch(branchName) )
+                .then( results => {
+                    if (results.success){
+                        //seems like the content depends on git version
+                        results.branch = branchName;
+                    }
+                    return results;
+                });
         },
 
         /**
