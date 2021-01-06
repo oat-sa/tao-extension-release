@@ -33,7 +33,6 @@ const gitClientFactory = require('./git.js');
 const log = require('./log.js');
 const conventionalCommits = require('./conventionalCommits.js');
 
-
 const extensionApi = require('./release/extensionApi.js');
 const packageApi = require('./release/packageApi.js');
 
@@ -72,7 +71,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
     // Initialise the Adaptee and give it a copy of the release params and loaded data
     if (subjectType === 'extension') {
         adaptee = extensionApi(params, data);
-    } else if (subjectType === 'package') {
+    } else if (subjectType === 'package' || subjectType === 'repo') {
         adaptee = packageApi(params, data);
     }
 
@@ -676,22 +675,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             }
 
             log.done(`${data[subjectType].name} is clean`);
-        },
-
-        /**
-         * Prompt user if he really want to use deprecated way to do the release
-         */
-        async warnAboutDeprecation() {
-            const { isOldWayReleaseSelected } = await inquirer.prompt({
-                type: 'confirm',
-                name: 'isOldWayReleaseSelected',
-                message: 'This release process is deprecated. Are you sure you want to continue?',
-                default: false
-            });
-
-            if (!isOldWayReleaseSelected) {
-                log.exit();
-            }
         },
 
         /**

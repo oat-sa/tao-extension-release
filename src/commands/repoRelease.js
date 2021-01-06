@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019-2020 Open Assessment Technologies SA;
+ * Copyright (c) 2020 Open Assessment Technologies SA;
  */
 
 const log = require('../log.js');
@@ -24,20 +24,16 @@ const program = new commander.Command();
 const cliOptions = require('./cliOptions.js');
 
 program
-    .name('taoRelease createRelease')
+    .name('taoRelease ghRelease')
     .usage('[options]')
     .option(...cliOptions.debug)
+    .option(...cliOptions.releaseVersion)
     // options with defaults
     .option(...cliOptions.baseBranch)
     .option(...cliOptions.branchPrefix)
     .option(...cliOptions.origin)
     .option(...cliOptions.releaseBranch)
-    .option(...cliOptions.wwwUser)
     // options which fall back to user prompts if undefined
-    .option(...cliOptions.pathToTao)
-    .option(...cliOptions.extensionToRelease)
-    .option(...cliOptions.versionToRelease)
-    .option(...cliOptions.updateTranslations)
     .option(...cliOptions.releaseComment)
     .parse(process.argv);
 
@@ -45,11 +41,11 @@ if (program.debug) {
     log.info(program.opts());
 }
 
-const release = require('../release.js')({ ...program.opts(), subjectType: 'extension' });
+const release = require('../release.js')({ ...program.opts(), subjectType: 'repo' });
 
-async function createRelease() {
+async function npmRelease() {
     try {
-        log.title('TAO Extension Release: createRelease');
+        log.title('Release a repository');
 
         await release.loadConfig();
         await release.selectTarget();
@@ -57,11 +53,13 @@ async function createRelease() {
         await release.initialiseGitClient();
         await release.verifyLocalChanges();
         await release.signTags();
-        await release.selectReleasingBranch();
-        await release.checkoutReleasingBranch();
-        await release.verifyReleasingBranch();
-        await release.mergeWithReleaseBranch();
-        await release.build();
+        await release.verifyBranches();
+        await release.extractVersion();
+        await release.doesTagExists();
+        await release.doesReleasingBranchExists();
+        await release.isReleaseRequired();
+        await release.confirmRelease();
+        await release.createReleasingBranch();
         await release.initialiseGithubClient();
         await release.createPullRequest();
         await release.extractReleaseNotes();
@@ -77,4 +75,4 @@ async function createRelease() {
     }
 }
 
-createRelease();
+npmRelease();

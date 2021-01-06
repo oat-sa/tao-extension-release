@@ -45,7 +45,7 @@ const release = require('../release.js')({ ...program.opts(), subjectType: 'pack
 
 async function npmRelease() {
     try {
-        log.title('TAO Extension Release: npmRelease');
+        log.title('Release an npm package');
 
         await release.loadConfig();
         await release.selectTarget();

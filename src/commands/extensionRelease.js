@@ -24,7 +24,7 @@ const program = new commander.Command();
 const cliOptions = require('./cliOptions.js');
 
 program
-    .name('taoRelease prepareRelease')
+    .name('taoRelease extensionRelease')
     .usage('[options]')
     .option(...cliOptions.debug)
     .option(...cliOptions.releaseVersion)
@@ -38,6 +38,7 @@ program
     .option(...cliOptions.pathToTao)
     .option(...cliOptions.extensionToRelease)
     .option(...cliOptions.updateTranslations)
+    .option(...cliOptions.releaseComment)
     .parse(process.argv);
 
 if (program.debug) {
@@ -46,28 +47,38 @@ if (program.debug) {
 
 const release = require('../release.js')({ ...program.opts(), subjectType: 'extension' });
 
-async function prepareRelease() {
+async function releaseExtension() {
     try {
-        log.title('TAO Extension Release: prepareRelease');
+        log.title('Release a TAO exntesion');
 
         await release.loadConfig();
         await release.selectTarget();
         await release.writeConfig();
         await release.initialiseGitClient();
         await release.verifyLocalChanges();
+        await release.signTags();
         await release.verifyBranches();
         await release.extractVersion();
         await release.doesTagExists();
         await release.doesReleasingBranchExists();
         await release.isReleaseRequired();
+        await release.confirmRelease();
         await release.createReleasingBranch();
         await release.build();
         await release.updateVersion();
+        await release.initialiseGithubClient();
+        await release.createPullRequest();
+        await release.extractReleaseNotes();
+        await release.mergePullRequest();
+        await release.createReleaseTag();
+        await release.createGithubRelease();
+        await release.mergeBack();
+        await release.removeReleasingBranch();
 
-        log.done('Release branch prepared, and pushed to remote.').exit();
+        log.done('Good job!').exit();
     } catch (error) {
         log.error(error).exit();
     }
 }
 
-prepareRelease();
+releaseExtension();
