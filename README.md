@@ -59,6 +59,7 @@ Commandline arguments to give you more control over the parameters of the releas
 |`--branch-prefix <prefix>`|releasing branch prefix|`release`|
 |`--origin <remote>`|git repository remote name|`origin`|
 |`--release-branch <branch>`|branch to release to|`master`|
+|`--release-version <version>`|version to be used for the next release|none|
 
 ### prepareRelease extra options
 
@@ -122,6 +123,16 @@ The following values can be defined in this file :
  - `token` : your Github auth token
  - `taoRoot` : the path to the root of TAO
  - `wwwUser` : the system user used to launch PHP commands (`www-data`)
+
+ ## Next version calculation
+
+Next version taken based on [Conventional commits](https://www.conventionalcommits.org/en/v1.0.0/).
+Some treats of the next version calculation:
+- if one or more commits contains a breaking change, the version will be increased by one major semver version
+- if one or more commits contains a feature change, the version will be increased by one minor semver version
+- if one or more commits contains a bugfix change, the version will be increased by one fix semver version
+- if no commit contains a conventional change information, the version will be increased by one fix semver version and warn the user
+- if `release-version` option provided, it will be taken as next release version and version calculation will be skiped
 
 ## System Prerequisite
 <a name="prerequisite"></a>

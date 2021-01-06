@@ -40,18 +40,25 @@ const repoName = 'oat-sa/extension-test';
 
 const gitClientInstance = {
     pull: () => { },
+    getLastTag: () => {},
 };
 const gitClientFactory = sandbox.stub().callsFake(() => gitClientInstance);
+
+const conventionalCommits = {
+    getNextVersion: () => {}
+};
 
 const log = {
     doing: () => { },
     exit: () => { },
+    info: () => { },
 };
 const inquirer = {
     prompt: () => ({ extension, pull: true, taoRoot }),
 };
 
 const release = proxyquire.noCallThru().load('../../../../src/release.js', {
+    './conventionalCommits.js': conventionalCommits,
     './git.js': gitClientFactory,
     './log.js': log,
     inquirer,
@@ -109,11 +116,7 @@ test('should log exit if pull not confirmed', async (t) => {
 });
 
 test('should pull release branch', async (t) => {
-    t.plan(4);
-
-    sandbox.stub(release, 'getMetadata')
-        .onCall(0).returns({ repoName, version: '1.2.3' })
-        .onCall(1).returns({ repoName, version: '4.5.6' });
+    t.plan(2);
 
     await release.initialiseGitClient();
 
@@ -124,20 +127,12 @@ test('should pull release branch', async (t) => {
     t.equal(gitClientInstance.pull.callCount, 2, 'Branches have been pulled');
     t.ok(gitClientInstance.pull.calledWith(releaseBranch), 'Release branch have been pulled');
 
-    const data = release.getData();
-    t.equal(data.lastVersion, '1.2.3');
-    t.equal(data.lastTag, 'v1.2.3');
-
     sandbox.restore();
     t.end();
 });
 
 test('should pull base branch', async (t) => {
-    t.plan(5);
-
-    sandbox.stub(release, 'getMetadata')
-        .onCall(0).returns({ repoName, version: '1.2.3' })
-        .onCall(1).returns({ repoName, version: '4.5.6' });
+    t.plan(2);
 
     await release.initialiseGitClient();
 
@@ -147,11 +142,6 @@ test('should pull base branch', async (t) => {
 
     t.equal(gitClientInstance.pull.callCount, 2, 'Branches have been pulled');
     t.ok(gitClientInstance.pull.calledWith(releaseBranch), 'Base branch have been pulled');
-
-    const data = release.getData();
-    t.equal(data.version, '4.5.6');
-    t.equal(data.tag, 'v4.5.6');
-    t.equal(data.releasingBranch, 'releaser-4.5.6');
 
     sandbox.restore();
     t.end();

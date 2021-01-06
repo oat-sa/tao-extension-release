@@ -157,6 +157,17 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
         },
 
         /**
+         * Get the latest tag
+         *
+         * @param {String} tagName
+         * @returns {Promise<Boolean>}
+         */
+        getLastTag() {
+            return git(repository).tags()
+                .then( tags => tags && tags.latest);
+        },
+
+        /**
          * Does the given branch exists
          * @param {String} branchName
          * @returns {Promise<Boolean>}

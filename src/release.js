@@ -25,11 +25,14 @@
 const inquirer = require('inquirer');
 const opn = require('opn');
 const compareVersions = require('compare-versions');
+const semverGt = require('semver/functions/gt');
 
 const config = require('./config.js')();
 const github = require('./github.js');
 const gitClientFactory = require('./git.js');
 const log = require('./log.js');
+const conventionalCommits = require('./conventionalCommits.js');
+
 
 const extensionApi = require('./release/extensionApi.js');
 const packageApi = require('./release/packageApi.js');
@@ -45,14 +48,15 @@ const packageApi = require('./release/packageApi.js');
  * @param {String} [params.wwwUser] - name of the www user
  * @param {String} [params.pathToTao] - path to the instance root
  * @param {String} [params.extensionToRelease] - name of the extension
- * @param {String} [params.versionToRelease] - version in xx.x.x format
- * @param {Boolean} [params.updateTranslations] - should translations be included?
+ * @param {String} [params.releaseVersion] - version to create
+ * @param {String} [params.versionToRelease] - version in xx.x.x format in case of prepared release
+ * @param {Boolea unset: 0, commits : 0n} [params.updateTranslations] - should translations be included?
  * @param {String} [params.releaseComment] - the release author's comment
  * @param {String} [params.subjectType='extension'] - extension or package
  * @return {Object} - instance of taoExtensionRelease
  */
 module.exports = function taoExtensionReleaseFactory(params = {}) {
-    const { baseBranch, branchPrefix, origin, releaseBranch, versionToRelease } = params;
+    const { baseBranch, branchPrefix, origin, releaseBranch, releaseVersion, versionToRelease } = params;
     const { subjectType = 'extension' } = params;
     let { releaseComment } = params;
 
@@ -102,6 +106,9 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             }
             data[subjectType].name = newData[subjectType].name;
             data[subjectType].path = newData[subjectType].path;
+
+            // change root to release target
+            process.chdir(data[subjectType].path);
         },
 
         /**
@@ -592,16 +599,68 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
             // Get last released version:
             await gitClient.pull(releaseBranch);
-            const { version: lastVersion } = await this.getMetadata();
-            data.lastVersion = lastVersion;
-            data.lastTag = `v${lastVersion}`;
-
-            // Get version to release:
             await gitClient.pull(baseBranch);
-            const manifest = await this.getMetadata();
-            data.version = manifest.version;
-            data.tag = `v${manifest.version}`;
-            data.releasingBranch = `${branchPrefix}-${manifest.version}`;
+
+        },
+
+        /**
+         * Extract the version from conventionalCommits or parameters
+         */
+        async extractVersion() {
+
+            const lastTag = await gitClient.getLastTag();
+
+            let {
+                recommendation,
+                lastVersion,
+                version,
+            } = await conventionalCommits.getNextVersion(lastTag);
+
+            if (releaseVersion) {
+                if(!semverGt(releaseVersion, lastVersion)) {
+                    log.exit(`The provided version is lesser than the latest version ${lastVersion}.`);
+                }
+                log.info(`Release version provided: ${releaseVersion}`);
+            } else {
+
+                if (recommendation.stats && recommendation.stats.commits === 0) {
+                    const { releaseAgain  } = await inquirer.prompt({
+                        type: 'confirm',
+                        name: 'releaseAgain',
+                        default : false,
+                        message: 'There\'s no new commits, do you really want to release a new version?'
+                    });
+
+                    if (!releaseAgain) {
+                        log.exit();
+                    }
+                }
+                else if (recommendation.stats && recommendation.stats.unset > 0) {
+                    const { acceptDefaultVersion  } = await inquirer.prompt({
+                        type: 'confirm',
+                        name: 'acceptDefaultVersion',
+                        message: recommendation.stats.unset === recommendation.stats.commits ?
+                            'The commits are non conventional. Exit and provide the version to release or continue and a fix version will be applied?' :
+                            'There are some non conventional commits. Are you sure you want to continue?',
+                    });
+
+                    if (!acceptDefaultVersion) {
+                        log.exit();
+                    }
+                }
+
+                log.info(`Last version found: ${lastVersion}`);
+                log.info(`Recommended version from commits: ${version}`);
+                log.info(`Reason: ${recommendation.reason}`);
+            }
+
+            version = releaseVersion || version;
+
+            data.lastVersion = `${lastVersion}`;
+            data.lastTag = `v${lastVersion}`;
+            data.version = `${version}`;
+            data.tag = `v${version}`;
+            data.releasingBranch = `${branchPrefix}-${version}`;
         },
 
         /**
@@ -633,6 +692,15 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             if (!isOldWayReleaseSelected) {
                 log.exit();
             }
+        },
+
+        /**
+          * Update version in releasing repository
+          */
+        async updateVersion() {
+            await adaptee.updateVersion();
+
+            await gitClient.commitAndPush(data.releasingBranch, 'chore: bump version');
         }
     };
 };

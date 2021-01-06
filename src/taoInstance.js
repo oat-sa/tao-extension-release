@@ -22,13 +22,15 @@
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
 
-const fs                      = require('fs');
+const fs                      = require('fs-extra');
 const { normalize, basename } = require('path');
 const { exec }                = require('child_process');
 const phpParser               = require('php-parser');
 const crossSpawn              = require('cross-spawn');
 
 const isWin = /^win/.test(process.platform);
+
+const versionPropRegex = /'version' => ('\d+\.\d+\.\d+((\.|-)\d+)?')/g;
 
 /**
  * Get the taoInstance
@@ -350,6 +352,28 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
                 execed.stderr.pipe(process.stderr);
                 execed.on('exit', code => code === 0 ? resolve() : reject( new Error('Something went wrong in the translation generation')));
             });
+        },
+
+        /**
+        * Update version in extension manifest
+        *
+        * @param {String} manifestPath - the path to the extension manifest
+        * @param {String} version - extension version
+        * @return {Promise}
+        */
+        async updateVersion(manifestPath = '', version) {
+            const manifestContent = await fs.readFile(manifestPath, 'utf8');
+
+            if (!versionPropRegex.test(manifestContent)) {
+                throw new Error('Cannot extract version from manifest file');
+            }
+
+            const updatedManifestContent = manifestContent.replace(
+                versionPropRegex,
+                (match, versionMatch) => match.replace(versionMatch, `'${version}'`)
+            );
+
+            await fs.writeFile(manifestPath, updatedManifestContent, 'utf8');
         }
     };
 };
