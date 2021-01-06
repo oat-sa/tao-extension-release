@@ -37,12 +37,12 @@ program
     .name('taoRelease')
     .usage('command [options]')
     .command('extensionRelease', 'release a TAO extension', {
-        executableFile: './src/commands/oldWayRelease'
+        executableFile: './src/commands/extensionRelease'
     })
-    .command('npmRelease', 'release and publish a npm package', {
+    .command('npmRelease', 'release and publish an npm package', {
         executableFile: './src/commands/npmRelease'
     })
     .command('ghRelease', 'release any repository', {
-        executableFile: './src/commands/ghRelease'
+        executableFile: './src/commands/repoRelease'
     })
     .parse(process.argv);
