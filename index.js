@@ -42,7 +42,7 @@ program
     .command('npmRelease', 'release and publish an npm package', {
         executableFile: './src/commands/npmRelease'
     })
-    .command('ghRelease', 'release any repository', {
+    .command('repoRelease', 'release any repository', {
         executableFile: './src/commands/repoRelease'
     })
     .parse(process.argv);
