@@ -24,7 +24,7 @@ const program = new commander.Command();
 const cliOptions = require('./cliOptions.js');
 
 program
-    .name('taoRelease ghRelease')
+    .name('taoRelease repoRelease')
     .usage('[options]')
     .option(...cliOptions.debug)
     .option(...cliOptions.releaseVersion)
@@ -43,7 +43,7 @@ if (program.debug) {
 
 const release = require('../release.js')({ ...program.opts(), subjectType: 'repo' });
 
-async function npmRelease() {
+async function repoRelease() {
     try {
         log.title('Release a repository');
 
@@ -75,4 +75,4 @@ async function npmRelease() {
     }
 }
 
-npmRelease();
+repoRelease();
