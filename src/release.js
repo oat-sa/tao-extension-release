@@ -33,8 +33,11 @@ const gitClientFactory = require('./git.js');
 const log = require('./log.js');
 const conventionalCommits = require('./conventionalCommits.js');
 
-const extensionApi = require('./release/extensionApi.js');
-const packageApi = require('./release/packageApi.js');
+const adaptees = {
+    extension : require('./release/extensionApi.js'),
+    package: require('./release/packageApi.js'),
+    repository: require('./release/repositoryApi.js')
+};
 
 /**
  * Get the taoExtensionRelease
@@ -63,17 +66,13 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
     let gitClient;
     let githubClient;
 
+    if (!adaptees[subjectType]) {
+        throw new Error(`No implentation found for the type '${subjectType}'`);
+    }
     /**
      * @typedef adaptee - an instance of a supplemental API with methods specific to the release subject type
      */
-    let adaptee = {};
-
-    // Initialise the Adaptee and give it a copy of the release params and loaded data
-    if (subjectType === 'extension') {
-        adaptee = extensionApi(params, data);
-    } else if (subjectType === 'package' || subjectType === 'repo') {
-        adaptee = packageApi(params, data);
-    }
+    const adaptee = adaptees[subjectType](params);
 
     return {
         /**
