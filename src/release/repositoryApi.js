@@ -18,16 +18,17 @@
 
 /**
  * This module provides repository-specific implementations of methods to ../release.js
- *
  */
 
 const log = require('../log.js');
 const gitClientFactory = require('../git');
 
 /**
-* @param {Object} params
-*/
-module.exports = function packageApiFactory(params = {}, data) {
+ * Factory for the repository implementation
+ * @param {Object} params
+ * @param {Object} data
+ */
+module.exports = function repositoryApiFactory(params = {}, data) {
 
     return {
 
@@ -51,7 +52,7 @@ module.exports = function packageApiFactory(params = {}, data) {
 
             let name;
             try {
-                //git client is not yet available
+                //git client is not yet available, since it will be created if this fn succeeds
                 name = await gitClientFactory(absolutePathToRepo, params.origin).getRepositoryName();
             }
             catch(err){
@@ -72,6 +73,7 @@ module.exports = function packageApiFactory(params = {}, data) {
         },
 
         publish() {
+            // Not implemented
         },
 
         verifyReleasingBranch(){
@@ -82,7 +84,7 @@ module.exports = function packageApiFactory(params = {}, data) {
             // Not implemented
         },
 
-        async updateVersion() {
+        updateVersion() {
             //Not implemented
         }
     };
