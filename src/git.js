@@ -42,6 +42,20 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
     return {
 
         /**
+         * Get the remote repository name
+         * @returns {Promise<string>} the remote name or URL
+         */
+        getRepositoryName() {
+            return git(repository)
+                .remote(['get-url', origin])
+                .then( result => {
+                    const url = result.trim();
+                    const matches = url.match(/^(?:.*)?:(.*)+\.git$/i);
+                    return matches && matches[1] ? matches[1] : url;
+                });
+        },
+
+        /**
          * Get repository branches
          * @returns {Promise<String[]>} resolves with the list of branch names
          */

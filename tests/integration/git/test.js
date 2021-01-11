@@ -71,7 +71,7 @@ const setUp = async function setUp() {
         await verifyLocal(localGitHelper);
 
         // connect local to remote
-        await localGitHelper.addRemote('origin', remoteRepoPath);
+        await localGitHelper.addRemote('origin', remoteRepoPath.trim());
 
         // checkout master, add all local files, initial commit, and push
         await localGitHelper.checkoutLocalBranch('master');
@@ -336,4 +336,24 @@ test('mergeBack from master to develop', async t => {
     await localRepo.mergeBack('develop', 'master');
     const diff2 = await gitHelper.diff(['develop', 'master']);
     t.equal(diff2.trim().length, 0, 'develop equal with master');
+});
+
+
+test('get remote repository name', async t => {
+    await setUp();
+    t.plan(2);
+    const localRepo = gitFactory(localRepoPath); // module we're testing
+    const gitHelper = simpleGit(localRepoPath); // helper lib
+    await verifyLocal(gitHelper);
+
+    const localPathRemoteName = await localRepo.getRepositoryName();
+    //remote is linked on the local system
+    t.equal(localPathRemoteName, remoteRepoPath);
+
+    //set a github-like url to the origin
+    await gitHelper.remote(['set-url', 'origin', 'git@github.com:oat-sa/tao-extension-oof.git']);
+
+    const ghRemoteName = await localRepo.getRepositoryName();
+    t.equal(ghRemoteName, 'oat-sa/tao-extension-oof');
+    t.end();
 });
