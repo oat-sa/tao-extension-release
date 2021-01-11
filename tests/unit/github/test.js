@@ -120,14 +120,18 @@ test('the method getReleasePRComment', t => {
 
     t.equal(typeof ghclient.getReleasePRComment, 'function', 'The client exposes the method getReleasePRComment');
 
-    t.equal(ghclient.getReleasePRComment(), `Please verify the following points :
+    t.equal(ghclient.getReleasePRComment(), `Release version ?.?.?
+
+Please verify the following points :
 
 - [ ] the manifest (versions ?.?.? and dependencies),
 - [ ] CSS and JavaScript bundles`);
 
     ghclient = github(token, 'oat-sa/tao-core');
 
-    t.equal(ghclient.getReleasePRComment('18.7.3', '18.6.0'), `Please verify the following points :
+    t.equal(ghclient.getReleasePRComment('18.7.3', '18.6.0'), `Release version 18.7.3
+
+Please verify the following points :
 
 - [ ] the manifest (versions 18.7.3 and dependencies),
 - [ ] CSS and JavaScript bundles,
