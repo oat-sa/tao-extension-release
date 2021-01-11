@@ -251,6 +251,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             log.doing('Create release branch');
 
             await gitClient.localBranch(data.releasingBranch);
+            await gitClient.push(origin, data.releasingBranch);
 
             log.done(`${data.releasingBranch} created`);
         },
