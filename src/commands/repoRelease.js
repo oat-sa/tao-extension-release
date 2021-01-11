@@ -41,7 +41,7 @@ if (program.debug) {
     log.info(program.opts());
 }
 
-const release = require('../release.js')({ ...program.opts(), subjectType: 'repo' });
+const release = require('../release.js')({ ...program.opts(), subjectType: 'repository' });
 
 async function repoRelease() {
     try {

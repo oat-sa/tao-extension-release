@@ -68,8 +68,13 @@ module.exports = function repositoryApiFactory(params = {}, data) {
             };
         },
 
-        getMetadata(){
-            return {};
+        /**
+         * get repository metadata
+         */
+        async getMetadata(){
+            return {
+                repoName: data.repository.name  //for compatibility
+            };
         },
 
         publish() {
