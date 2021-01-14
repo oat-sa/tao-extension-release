@@ -67,12 +67,12 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
     let githubClient;
 
     if (!adaptees[subjectType]) {
-        throw new Error(`No implentation found for the type '${subjectType}'`);
+        throw new Error(`No implementation found for the type '${subjectType}'`);
     }
     /**
      * @typedef adaptee - an instance of a supplemental API with methods specific to the release subject type
      */
-    const adaptee = adaptees[subjectType](params);
+    const adaptee = adaptees[subjectType](params, data);
 
     return {
         /**
@@ -205,7 +205,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
-         * Create relase pull request from releasing branch
+         * Create release pull request from releasing branch
          */
         async createPullRequest() {
             log.doing('Create the pull request');
@@ -663,7 +663,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
-         * Verify if local branch has no uncommied changes
+         * Verify if local branch has no un-commtied changes
          */
         async verifyLocalChanges() {
             log.doing(`Checking ${subjectType} status`);
