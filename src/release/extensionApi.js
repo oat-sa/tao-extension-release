@@ -136,9 +136,8 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
          * @returns {Object}
          */
         async getMetadata() {
-            const manifest = await this.taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
             const repoName = await this.taoInstance.getRepoName(data.extension.name);
-            return { ...manifest, repoName };
+            return { repoName };
         },
 
         /**
@@ -256,15 +255,8 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
             // Not implemented
         },
 
-        /**
-         * Update extension version
-         */
-        async updateVersion() {
-            try {
-                await this.taoInstance.updateVersion(`${data.extension.path}/manifest.php`, data.version);
-            } catch(error) {
-                log.exit(`Unable to update version. ${error.message}.`);
-            }
+        updateVersion() {
+            // Not implemented
         }
     };
 };
