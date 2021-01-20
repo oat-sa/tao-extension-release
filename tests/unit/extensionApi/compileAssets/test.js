@@ -53,7 +53,6 @@ const taoInstance = {
     getExtensions: () => [],
     isInstalled: () => true,
     isRoot: () => ({ root: true, dir: taoRoot }),
-    parseManifest: () => ({ version, name: extension }),
     getRepoName: () => ''
 };
 const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
