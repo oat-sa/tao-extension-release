@@ -23,6 +23,7 @@
  */
 
 const git = require('simple-git/promise');
+const gitUrlParse = require('git-url-parse');
 const os  = require('os');
 
 /**
@@ -48,10 +49,9 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
         getRepositoryName() {
             return git(repository)
                 .remote(['get-url', origin])
-                .then( result => {
-                    const url = result.trim();
-                    const matches = url.match(/^(?:.*)?:(.*)+\.git$/i);
-                    return matches && matches[1] ? matches[1] : url;
+                .then( url => {
+                    const parsed = gitUrlParse(url.trim());
+                    return parsed.protocol === 'file' ? parsed.pathname : parsed.full_name;
                 });
         },
 
