@@ -54,3 +54,7 @@
  - Calculate the version from conventional commits. More details https://www.conventionalcommits.org/en/v1.0.0/
  - Introduce new CLI parameter `release-version` which provide version to be taken as new release version
  - Update unit tests
+
+## [Version 2.0.0] 
+
+ - BREAKING CHANGE: change commands to `extensionRelease`, `npmRelease` and `repoRelease`
