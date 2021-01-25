@@ -134,7 +134,7 @@ test('should publish assets', async (t) => {
     await extensionApi.compileAssets(releasingBranch);
 
     t.equal(gitClientInstance.commitAndPush.callCount, 1, 'Assets has been published');
-    t.ok(gitClientInstance.commitAndPush.calledWith(`${branchPrefix}-${version}`, 'bundle assets'), 'Assets of appropriate extension has been published');
+    t.ok(gitClientInstance.commitAndPush.calledWith(`${branchPrefix}-${version}`, 'chore: bundle assets'), 'Assets of appropriate extension has been published');
 
     sandbox.restore();
     t.end();
