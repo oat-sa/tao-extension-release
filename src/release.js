@@ -639,7 +639,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                         type: 'confirm',
                         name: 'acceptDefaultVersion',
                         message: recommendation.stats.unset === recommendation.stats.commits ?
-                            'The commits are non conventional. Exit and provide the version to release or continue and a fix version will be applied?' :
+                            'The commits are non conventional. A PATCH version will be applied for the release. Do you want to continue?' :
                             'There are some non conventional commits. Are you sure you want to continue?',
                     });
 

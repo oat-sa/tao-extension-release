@@ -49,7 +49,7 @@ const release = require('../release.js')({ ...program.opts(), subjectType: 'exte
 
 async function releaseExtension() {
     try {
-        log.title('Release a TAO exntesion');
+        log.title('Release a TAO extension');
 
         await release.loadConfig();
         await release.selectTarget();

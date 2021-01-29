@@ -199,7 +199,7 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
             try {
                 await this.taoInstance.buildAssets(data.extension.name, false);
 
-                const changes = await this.gitClient.commitAndPush(releasingBranch, 'bundle assets');
+                const changes = await this.gitClient.commitAndPush(releasingBranch, 'chore: bundle assets');
 
                 if (changes && changes.length) {
                     log.info(`Commit : [bundle assets - ${changes.length} files]`);
@@ -237,7 +237,7 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
                 try {
                     await this.taoInstance.updateTranslations(data.extension.name);
 
-                    const changes = await this.gitClient.commitAndPush(releasingBranch, 'update translations');
+                    const changes = await this.gitClient.commitAndPush(releasingBranch, 'chore: update translations');
 
                     if (changes && changes.length) {
                         log.info(`Commit : [update translations - ${changes.length} files]`);
