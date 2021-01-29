@@ -60,7 +60,7 @@ Commandline arguments to give you more control over the parameters of the releas
 |`--branch-prefix <prefix>`|releasing branch prefix|`release`|
 |`--origin <remote>`|git repository remote name|`origin`|
 |`--release-branch <branch>`|branch to release to|`master`|
-|`--release-version <version>`|version to be used for the next release|none|
+|`--release-version <version>`|version to be used for the release|version extract from conventional commits|
 |`--release-comment <comment>`|comment to attach to the release|(none - prompted)|
 
 ### extensionRelease extra options

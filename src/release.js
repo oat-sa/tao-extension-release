@@ -51,14 +51,13 @@ const adaptees = {
  * @param {String} [params.pathToTao] - path to the instance root
  * @param {String} [params.extensionToRelease] - name of the extension
  * @param {String} [params.releaseVersion] - version to create
- * @param {String} [params.versionToRelease] - version in xx.x.x format in case of prepared release
  * @param {Boolea unset: 0, commits : 0n} [params.updateTranslations] - should translations be included?
  * @param {String} [params.releaseComment] - the release author's comment
  * @param {String} [params.subjectType='extension'] - extension or package
  * @return {Object} - instance of taoExtensionRelease
  */
 module.exports = function taoExtensionReleaseFactory(params = {}) {
-    const { baseBranch, branchPrefix, origin, releaseBranch, releaseVersion, versionToRelease } = params;
+    const { baseBranch, branchPrefix, origin, releaseBranch, releaseVersion } = params;
     const { subjectType = 'extension' } = params;
     let { releaseComment } = params;
 
@@ -315,31 +314,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
-         * Gets the branch with highest version
-         * @param {String[]} - the list of branches to compare
-         * @returns {Object} with the highest branch and version as property
-         */
-        getHighestVersionBranch(possibleBranches = []) {
-            log.doing('Selecting releasing branch from the biggest version found in branches.');
-
-            const semVerRegex = /(?:(\d+)\.)?(?:(\d+)\.)?(?:(\d+)\.\d+)(-[\w.]+)?/g;
-            const versionedBranches = possibleBranches.filter(branch => branch.match(semVerRegex));
-
-            let version = '0.0';
-            let branch;
-
-            versionedBranches.forEach(b => {
-                const branchVersion = b.replace(`remotes/${origin}/${branchPrefix}-`, '');
-                if (compareVersions(branchVersion, version) > 0) {
-                    branch = b;
-                    version = branchVersion;
-                }
-            });
-
-            return { branch, version };
-        },
-
-        /**
          * Check if there is any diffs between base and release branches and prompt to confirm release user if there is no diffs
          */
         async isReleaseRequired() {
@@ -534,43 +508,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             await gitClient.deleteBranch(data.releasingBranch);
 
             log.done();
-        },
-
-        /**
-         * Select releasing branch
-         * - picking version-to-release CLI option and find branch with version on it
-         * - or find the biggest version and find branch with version on it
-         */
-        async selectReleasingBranch() {
-            // Filter all branches to the ones that have release in the name
-            await gitClient.fetch();
-            const allBranches = await gitClient.getLocalBranches();
-
-            if (versionToRelease) {
-                const branchName = `remotes/${origin}/${branchPrefix}-${versionToRelease}`;
-                if (allBranches.includes(branchName)) {
-                    data.releasingBranch = `${branchPrefix}-${versionToRelease}`;
-                    data.version = versionToRelease;
-                    data.tag = `v${versionToRelease}`;
-                } else {
-                    log.exit(`Cannot find the branch '${branchName}'.`);
-                }
-            } else {
-                const partialBranchName = `remotes/${origin}/${branchPrefix}-`;
-                const possibleBranches = allBranches.filter(branch => branch.startsWith(partialBranchName));
-                const highestVersionBranch = this.getHighestVersionBranch(possibleBranches);
-                if (highestVersionBranch && highestVersionBranch.branch && highestVersionBranch.version) {
-                    data.releasingBranch = `${branchPrefix}-${highestVersionBranch.version}`;
-                    data.version = highestVersionBranch.version;
-                    data.tag = `v${highestVersionBranch.version}`;
-                } else {
-                    log.exit(`Cannot find any branches matching '${partialBranchName}'.`);
-                }
-            }
-
-            if (data.releasingBranch) {
-                log.done(`Branch ${data.releasingBranch} is selected.`);
-            }
         },
 
         /**
