@@ -10,42 +10,43 @@ Please verify installation [prerequisite](#prerequisite). And run :
 npm i -g @oat-sa/tao-extension-release
 ```
 
-## Release an extension
+## Release
 
-Extension release now happens in 2 stages: the preparation and the release.
+This tool offers specialized release process for different types of repositories. 
 
-### prepareRelease
+### TAO extensions
 
-The first stage prepares the releasing branch, compiles assets and translations, and pushes the branch to the remote repo, ready to be tested, deployed or released.
-
-```sh
-taoRelease prepareRelease
-```
-
-### createRelease
-
-The second stage retrieves a prepared releasing branch from the remote repo, brings it up to date, and executes the release.
+If the repository contains a TAO Extension, please use the command `extensionRelease`.
 
 ```sh
-taoRelease createRelease
+taoRelease extensionRelease
 ```
 
 You will be prompted to follow the instructions.
 
-### oldWayRelease (deprecated)
+### NPM packages
 
-The `taoRelease oldWayRelease` command launches the sequence used by the old version (<= 0.4.1) of this tool. Functionally it is equivalent to running `prepareRelease` followed immediately by `createRelease`, but there is no opportunity to do any deployment or testing at the mid-point of the process.
-
-## Release an npm package
-
-There is also a command to perform the Github release, and npm publishing, of frontend packages. Unlike the above commands, this one *must* be run in the root directory of an npm package repo.
+If the repository contains an npm package, please use the command `npmRelease`. This command *must* be run in the root directory of an npm package repository.
 
 ```sh
 cd path/to/my/package/repo
 taoRelease npmRelease
 ```
 
-The sequence of steps to be followed is very similar. At then end, you will be prompted to trigger the execution of `npm publish`. The Github release is already finished at this stage. If the publish step fails, you can try again manually, or ask someone with the necessary privileges to perform the publishing.
+You will be prompted to follow the instructions.
+At then end, you will be prompted to trigger the execution of `npm publish`. The Github release is already finished at this stage. If the publish step fails, you can try again manually, or ask someone with the necessary privileges to perform the publishing.
+
+### Tag based repositories 
+
+For any other repository that doesn't need any special build but only tagging and merging, like PHP libraries, please use the command `repoRelease`. This command *must* be run in the root directory of the repository.
+
+```sh
+cd path/to/my/repo
+taoRelease repoRelease
+```
+
+You will be prompted to follow the instructions.
+
 
 ## Commandline arguments
 
@@ -60,8 +61,9 @@ Commandline arguments to give you more control over the parameters of the releas
 |`--origin <remote>`|git repository remote name|`origin`|
 |`--release-branch <branch>`|branch to release to|`master`|
 |`--release-version <version>`|version to be used for the next release|none|
+|`--release-comment <comment>`|comment to attach to the release|(none - prompted)|
 
-### prepareRelease extra options
+### extensionRelease extra options
 
 | option | description | default |
 |---|---|---|
@@ -70,24 +72,7 @@ Commandline arguments to give you more control over the parameters of the releas
 |`--update-translations`|flag to indicate translation files should be updated|(none - prompted)|
 |`--www-user <user>`|the system user used to launch PHP commands|`www-data`|
 
-### createRelease extra options
 
-| option | description | default |
-|---|---|---|
-|`--path-to-tao <path>`|relative or absolute filesystem path|(none - prompted)|
-|`--extension-to-release <extension>`|extension name (e.g. taoFoobar)|(none - prompted)|
-|`--version-to-release <version>`|version of remote branch to retrieve (e.g. 1.2.3)|(none - prompted)|
-|`--update-translations`|flag to indicate translation files should be updated|(none - prompted)|
-|`--www-user <user>`|the system user used to launch PHP commands|`www-data`|
-|`--release-comment <comment>`|comment to attach to the release|(none - prompted)|
-
-For absolute control, specify both `--branch-prefix` and `--version-to-release`. That way, the program is guaranteed to retrieve the remote branch named e.g. `release-1.2.3`, which could be helpful if there are multiple remote branches with similar names.
-
-### npmRelease extra options
-
-| option | description | default |
-|---|---|---|
-|`--release-comment <comment>`|comment to attach to the release|(none - prompted)|
 
 ## Development
 
@@ -132,7 +117,7 @@ Some treats of the next version calculation:
 - if one or more commits contains a feature change, the version will be increased by one minor semver version
 - if one or more commits contains a bugfix change, the version will be increased by one fix semver version
 - if no commit contains a conventional change information, the version will be increased by one fix semver version and warn the user
-- if `release-version` option provided, it will be taken as next release version and version calculation will be skiped
+- if `release-version` option provided, it will be taken as next release version and version calculation will be skipped
 
 ## System Prerequisite
 <a name="prerequisite"></a>
@@ -168,7 +153,7 @@ You also need the `sudo` command available in your `PATH`.
 
 ### `Task foosass not found`
 
-Everything looks ok but you don't know why the `grunt` task is not found. If you have updated `node` or `npm` recently, you can fix this by :
+Everything looks OK but you don't know why the `grunt` task is not found. If you have updated `node` or `npm` recently, you can fix this by :
 
 ```sh
 cd tao/views/build
@@ -181,5 +166,5 @@ See the [history](HISTORY.md)
 
 ## License
 
-Copyright (c) 2017-2019 Open Assessment Technologies SA;
+Copyright (c) 2017-2021 Open Assessment Technologies SA;
 [GNU General Public License v2.0](https://github.com/oat-sa/tao-extension-release/blob/master/LICENSE)

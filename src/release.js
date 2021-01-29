@@ -23,7 +23,7 @@
  */
 
 const inquirer = require('inquirer');
-const opn = require('opn');
+const open = require('open');
 const compareVersions = require('compare-versions');
 const semverGt = require('semver/functions/gt');
 
@@ -33,9 +33,11 @@ const gitClientFactory = require('./git.js');
 const log = require('./log.js');
 const conventionalCommits = require('./conventionalCommits.js');
 
-
-const extensionApi = require('./release/extensionApi.js');
-const packageApi = require('./release/packageApi.js');
+const adaptees = {
+    extension : require('./release/extensionApi.js'),
+    package: require('./release/packageApi.js'),
+    repository: require('./release/repositoryApi.js')
+};
 
 /**
  * Get the taoExtensionRelease
@@ -64,17 +66,13 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
     let gitClient;
     let githubClient;
 
+    if (!adaptees[subjectType]) {
+        throw new Error(`No implementation found for the type '${subjectType}'`);
+    }
     /**
      * @typedef adaptee - an instance of a supplemental API with methods specific to the release subject type
      */
-    let adaptee = {};
-
-    // Initialise the Adaptee and give it a copy of the release params and loaded data
-    if (subjectType === 'extension') {
-        adaptee = extensionApi(params, data);
-    } else if (subjectType === 'package') {
-        adaptee = packageApi(params, data);
-    }
+    const adaptee = adaptees[subjectType](params, data);
 
     return {
         /**
@@ -207,7 +205,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
-         * Create relase pull request from releasing branch
+         * Create release pull request from releasing branch
          */
         async createPullRequest() {
             log.doing('Create the pull request');
@@ -253,6 +251,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             log.doing('Create release branch');
 
             await gitClient.localBranch(data.releasingBranch);
+            await gitClient.push(origin, data.releasingBranch);
 
             log.done(`${data.releasingBranch} created`);
         },
@@ -369,7 +368,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
             // Request github token if necessary
             if (!data.token) {
-                setTimeout(() => opn('https://github.com/settings/tokens'), 2000);
+                setTimeout(() => open('https://github.com/settings/tokens'), 2000);
 
                 const { token } = await inquirer.prompt({
                     type: 'input',
@@ -434,7 +433,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Merge release pull request
          */
         async mergePullRequest() {
-            setTimeout(() => opn(data.pr.url), 2000);
+            setTimeout(() => open(data.pr.url), 2000);
 
             const { pr } = await inquirer.prompt({
                 type: 'confirm',
@@ -640,7 +639,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                         type: 'confirm',
                         name: 'acceptDefaultVersion',
                         message: recommendation.stats.unset === recommendation.stats.commits ?
-                            'The commits are non conventional. Exit and provide the version to release or continue and a fix version will be applied?' :
+                            'The commits are non conventional. A PATCH version will be applied for the release. Do you want to continue?' :
                             'There are some non conventional commits. Are you sure you want to continue?',
                     });
 
@@ -664,7 +663,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
-         * Verify if local branch has no uncommied changes
+         * Verify if local branch has no un-commtied changes
          */
         async verifyLocalChanges() {
             log.doing(`Checking ${subjectType} status`);
@@ -676,22 +675,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             }
 
             log.done(`${data[subjectType].name} is clean`);
-        },
-
-        /**
-         * Prompt user if he really want to use deprecated way to do the release
-         */
-        async warnAboutDeprecation() {
-            const { isOldWayReleaseSelected } = await inquirer.prompt({
-                type: 'confirm',
-                name: 'isOldWayReleaseSelected',
-                message: 'This release process is deprecated. Are you sure you want to continue?',
-                default: false
-            });
-
-            if (!isOldWayReleaseSelected) {
-                log.exit();
-            }
         },
 
         /**

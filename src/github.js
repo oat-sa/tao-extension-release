@@ -71,6 +71,7 @@ module.exports = function githubFactory(token, repository) {
          * @returns {Promise<Object>} resolves with the pull request data
          */
         createReleasePR(releasingBranch, releaseBranch, version = '?.?.?', fromVersion = '?.?.?', subjectType = 'extension') {
+
             if (!releasingBranch || !releaseBranch) {
                 return Promise.reject(new TypeError('Unable to create a release pull request when the branches are not defined'));
             }
@@ -97,6 +98,7 @@ module.exports = function githubFactory(token, repository) {
          * @returns {String} the comment
          */
         getReleasePRComment(version = '?.?.?', fromVersion = '?.?.?', subjectType = 'extension') {
+            const comment = [`Release version ${version}`];
             const checks = {
                 extension: [
                     `the manifest (versions ${version} and dependencies)`,
@@ -105,13 +107,17 @@ module.exports = function githubFactory(token, repository) {
                 package: [
                     `the package.json version (from ${fromVersion} to ${version})`,
                     'the package-lock.json'
-                ]
+                ],
+                repository: []
             };
 
             if (typeof extensionPRChecks[repository] !== 'undefined') {
                 checks.extension.push(extensionPRChecks[repository]);
             }
-            return `Please verify the following points :\n${checks[subjectType].map(c => '\n- [ ] ' + c)}`;
+            if(checks[subjectType] && checks[subjectType].length){
+                comment.push(`Please verify the following points :\n${checks[subjectType].map(c => '\n- [ ] ' + c)}`);
+            }
+            return comment.join('\n\n');
         },
 
         /**
