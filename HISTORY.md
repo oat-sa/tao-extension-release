@@ -57,4 +57,6 @@
 
 ## [Version 2.0.0] 
 
- - BREAKING CHANGE: change commands to `extensionRelease`, `npmRelease` and `repoRelease`
+ - BREAKING CHANGE: change commands to `extensionRelease`, `npmRelease` and `repoRelease` and remove the commands `oldWayRelease`, `createRelease` and `prepareRelease`
+ - BREAKING CHANGE: next version is computed from conventional commits 
+ - BREAKING CHANGE: `extensionRelease` doesn't update version in the manifest anymore

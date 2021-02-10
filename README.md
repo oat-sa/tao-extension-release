@@ -24,6 +24,11 @@ taoRelease extensionRelease
 
 You will be prompted to follow the instructions.
 
+This command does:
+ - compute the next version from commits
+ - bundle assets
+ - create a tag and a release
+
 ### NPM packages
 
 If the repository contains an npm package, please use the command `npmRelease`. This command *must* be run in the root directory of an npm package repository.
@@ -34,6 +39,14 @@ taoRelease npmRelease
 ```
 
 You will be prompted to follow the instructions.
+
+This command does:
+ - compute the next version from commits
+ - update the package.json and package-lock.json
+ - create a tag and a release
+ - publish the package to npm
+
+
 At then end, you will be prompted to trigger the execution of `npm publish`. The Github release is already finished at this stage. If the publish step fails, you can try again manually, or ask someone with the necessary privileges to perform the publishing.
 
 ### Tag based repositories 
@@ -47,6 +60,9 @@ taoRelease repoRelease
 
 You will be prompted to follow the instructions.
 
+This command does:
+ - compute the next version from commits
+ - create a tag and a release
 
 ## Commandline arguments
 
