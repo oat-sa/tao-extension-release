@@ -24,7 +24,6 @@
 
 const inquirer = require('inquirer');
 const open = require('open');
-const compareVersions = require('compare-versions');
 const semverGt = require('semver/functions/gt');
 
 const config = require('./config.js')();
