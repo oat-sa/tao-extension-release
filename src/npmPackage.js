@@ -25,6 +25,7 @@
 const readPkg = require('read-pkg');
 const crossSpawn = require('cross-spawn');
 const log = require('./log.js');
+const writePkg = require('write-pkg');
 
 /**
  * Get the npmPackage
@@ -144,6 +145,22 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
         publish(registry = 'https://registry.npmjs.org') {
             const publishCommand = `publish --registry ${registry}`;
             return this.npmCommand(publishCommand);
+        },
+
+        /**
+          * Update version in package.json and package-lock.json
+          *
+          * @param {String} folderName - the path to package
+          * @param {String} version - package version
+          * @return {Promise}
+          */
+        async updateVersion(folderName = rootDir, version) {
+            // eslint-disable-next-line no-unused-vars
+            const { readme, _id, ...packageJson } =  await readPkg({ cwd: folderName });
+
+            await writePkg(folderName, { ...packageJson, version });
+
+            return this.npmCommand('i');
         }
     };
 };

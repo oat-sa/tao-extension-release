@@ -23,6 +23,7 @@
  */
 
 const git = require('simple-git/promise');
+const gitUrlParse = require('git-url-parse');
 const os  = require('os');
 
 /**
@@ -42,6 +43,19 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
     return {
 
         /**
+         * Get the remote repository name
+         * @returns {Promise<string>} the remote name or URL
+         */
+        getRepositoryName() {
+            return git(repository)
+                .remote(['get-url', origin])
+                .then( url => {
+                    const parsed = gitUrlParse(url.trim());
+                    return parsed.protocol === 'file' ? parsed.pathname : parsed.full_name;
+                });
+        },
+
+        /**
          * Get repository branches
          * @returns {Promise<String[]>} resolves with the list of branch names
          */
@@ -59,7 +73,14 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
          */
         deleteBranch(branchName){
             return git(repository).push([origin, branchName, '--delete'])
-                .then( () => git(repository).deleteLocalBranch(branchName) );
+                .then( () => git(repository).deleteLocalBranch(branchName) )
+                .then( results => {
+                    if (results.success){
+                        //seems like the content depends on git version
+                        results.branch = branchName;
+                    }
+                    return results;
+                });
         },
 
         /**
@@ -154,6 +175,17 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
         hasTag(tagName){
             return git(repository).tags()
                 .then(tags => tags && tags.all && tags.all.indexOf(tagName) > -1);
+        },
+
+        /**
+         * Get the latest tag
+         *
+         * @param {String} tagName
+         * @returns {Promise<Boolean>}
+         */
+        getLastTag() {
+            return git(repository).tags()
+                .then( tags => tags && tags.latest);
         },
 
         /**

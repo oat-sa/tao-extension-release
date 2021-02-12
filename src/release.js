@@ -23,16 +23,20 @@
  */
 
 const inquirer = require('inquirer');
-const opn = require('opn');
-const compareVersions = require('compare-versions');
+const open = require('open');
+const semverGt = require('semver/functions/gt');
 
 const config = require('./config.js')();
 const github = require('./github.js');
 const gitClientFactory = require('./git.js');
 const log = require('./log.js');
+const conventionalCommits = require('./conventionalCommits.js');
 
-const extensionApi = require('./release/extensionApi.js');
-const packageApi = require('./release/packageApi.js');
+const adaptees = {
+    extension : require('./release/extensionApi.js'),
+    package: require('./release/packageApi.js'),
+    repository: require('./release/repositoryApi.js')
+};
 
 /**
  * Get the taoExtensionRelease
@@ -45,14 +49,14 @@ const packageApi = require('./release/packageApi.js');
  * @param {String} [params.wwwUser] - name of the www user
  * @param {String} [params.pathToTao] - path to the instance root
  * @param {String} [params.extensionToRelease] - name of the extension
- * @param {String} [params.versionToRelease] - version in xx.x.x format
- * @param {Boolean} [params.updateTranslations] - should translations be included?
+ * @param {String} [params.releaseVersion] - version to create
+ * @param {Boolea unset: 0, commits : 0n} [params.updateTranslations] - should translations be included?
  * @param {String} [params.releaseComment] - the release author's comment
  * @param {String} [params.subjectType='extension'] - extension or package
  * @return {Object} - instance of taoExtensionRelease
  */
 module.exports = function taoExtensionReleaseFactory(params = {}) {
-    const { baseBranch, branchPrefix, origin, releaseBranch, versionToRelease } = params;
+    const { baseBranch, branchPrefix, origin, releaseBranch, releaseVersion } = params;
     const { subjectType = 'extension' } = params;
     let { releaseComment } = params;
 
@@ -60,17 +64,13 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
     let gitClient;
     let githubClient;
 
+    if (!adaptees[subjectType]) {
+        throw new Error(`No implementation found for the type '${subjectType}'`);
+    }
     /**
      * @typedef adaptee - an instance of a supplemental API with methods specific to the release subject type
      */
-    let adaptee = {};
-
-    // Initialise the Adaptee and give it a copy of the release params and loaded data
-    if (subjectType === 'extension') {
-        adaptee = extensionApi(params, data);
-    } else if (subjectType === 'package') {
-        adaptee = packageApi(params, data);
-    }
+    const adaptee = adaptees[subjectType](params, data);
 
     return {
         /**
@@ -102,6 +102,9 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             }
             data[subjectType].name = newData[subjectType].name;
             data[subjectType].path = newData[subjectType].path;
+
+            // change root to release target
+            process.chdir(data[subjectType].path);
         },
 
         /**
@@ -200,7 +203,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
-         * Create relase pull request from releasing branch
+         * Create release pull request from releasing branch
          */
         async createPullRequest() {
             log.doing('Create the pull request');
@@ -246,6 +249,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             log.doing('Create release branch');
 
             await gitClient.localBranch(data.releasingBranch);
+            await gitClient.push(origin, data.releasingBranch);
 
             log.done(`${data.releasingBranch} created`);
         },
@@ -309,31 +313,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
-         * Gets the branch with highest version
-         * @param {String[]} - the list of branches to compare
-         * @returns {Object} with the highest branch and version as property
-         */
-        getHighestVersionBranch(possibleBranches = []) {
-            log.doing('Selecting releasing branch from the biggest version found in branches.');
-
-            const semVerRegex = /(?:(\d+)\.)?(?:(\d+)\.)?(?:(\d+)\.\d+)(-[\w.]+)?/g;
-            const versionedBranches = possibleBranches.filter(branch => branch.match(semVerRegex));
-
-            let version = '0.0';
-            let branch;
-
-            versionedBranches.forEach(b => {
-                const branchVersion = b.replace(`remotes/${origin}/${branchPrefix}-`, '');
-                if (compareVersions(branchVersion, version) > 0) {
-                    branch = b;
-                    version = branchVersion;
-                }
-            });
-
-            return { branch, version };
-        },
-
-        /**
          * Check if there is any diffs between base and release branches and prompt to confirm release user if there is no diffs
          */
         async isReleaseRequired() {
@@ -362,7 +341,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
             // Request github token if necessary
             if (!data.token) {
-                setTimeout(() => opn('https://github.com/settings/tokens'), 2000);
+                setTimeout(() => open('https://github.com/settings/tokens'), 2000);
 
                 const { token } = await inquirer.prompt({
                     type: 'input',
@@ -427,7 +406,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Merge release pull request
          */
         async mergePullRequest() {
-            setTimeout(() => opn(data.pr.url), 2000);
+            setTimeout(() => open(data.pr.url), 2000);
 
             const { pr } = await inquirer.prompt({
                 type: 'confirm',
@@ -531,43 +510,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
-         * Select releasing branch
-         * - picking version-to-release CLI option and find branch with version on it
-         * - or find the biggest version and find branch with version on it
-         */
-        async selectReleasingBranch() {
-            // Filter all branches to the ones that have release in the name
-            await gitClient.fetch();
-            const allBranches = await gitClient.getLocalBranches();
-
-            if (versionToRelease) {
-                const branchName = `remotes/${origin}/${branchPrefix}-${versionToRelease}`;
-                if (allBranches.includes(branchName)) {
-                    data.releasingBranch = `${branchPrefix}-${versionToRelease}`;
-                    data.version = versionToRelease;
-                    data.tag = `v${versionToRelease}`;
-                } else {
-                    log.exit(`Cannot find the branch '${branchName}'.`);
-                }
-            } else {
-                const partialBranchName = `remotes/${origin}/${branchPrefix}-`;
-                const possibleBranches = allBranches.filter(branch => branch.startsWith(partialBranchName));
-                const highestVersionBranch = this.getHighestVersionBranch(possibleBranches);
-                if (highestVersionBranch && highestVersionBranch.branch && highestVersionBranch.version) {
-                    data.releasingBranch = `${branchPrefix}-${highestVersionBranch.version}`;
-                    data.version = highestVersionBranch.version;
-                    data.tag = `v${highestVersionBranch.version}`;
-                } else {
-                    log.exit(`Cannot find any branches matching '${partialBranchName}'.`);
-                }
-            }
-
-            if (data.releasingBranch) {
-                log.done(`Branch ${data.releasingBranch} is selected.`);
-            }
-        },
-
-        /**
          * Sign tags (todo, not yet implemented)
          */
         async signTags() {
@@ -592,20 +534,72 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
             // Get last released version:
             await gitClient.pull(releaseBranch);
-            const { version: lastVersion } = await this.getMetadata();
-            data.lastVersion = lastVersion;
-            data.lastTag = `v${lastVersion}`;
-
-            // Get version to release:
             await gitClient.pull(baseBranch);
-            const manifest = await this.getMetadata();
-            data.version = manifest.version;
-            data.tag = `v${manifest.version}`;
-            data.releasingBranch = `${branchPrefix}-${manifest.version}`;
+
         },
 
         /**
-         * Verify if local branch has no uncommied changes
+         * Extract the version from conventionalCommits or parameters
+         */
+        async extractVersion() {
+
+            const lastTag = await gitClient.getLastTag();
+
+            let {
+                recommendation,
+                lastVersion,
+                version,
+            } = await conventionalCommits.getNextVersion(lastTag);
+
+            if (releaseVersion) {
+                if(!semverGt(releaseVersion, lastVersion)) {
+                    log.exit(`The provided version is lesser than the latest version ${lastVersion}.`);
+                }
+                log.info(`Release version provided: ${releaseVersion}`);
+            } else {
+
+                if (recommendation.stats && recommendation.stats.commits === 0) {
+                    const { releaseAgain  } = await inquirer.prompt({
+                        type: 'confirm',
+                        name: 'releaseAgain',
+                        default : false,
+                        message: 'There\'s no new commits, do you really want to release a new version?'
+                    });
+
+                    if (!releaseAgain) {
+                        log.exit();
+                    }
+                }
+                else if (recommendation.stats && recommendation.stats.unset > 0) {
+                    const { acceptDefaultVersion  } = await inquirer.prompt({
+                        type: 'confirm',
+                        name: 'acceptDefaultVersion',
+                        message: recommendation.stats.unset === recommendation.stats.commits ?
+                            'The commits are non conventional. A PATCH version will be applied for the release. Do you want to continue?' :
+                            'There are some non conventional commits. Are you sure you want to continue?',
+                    });
+
+                    if (!acceptDefaultVersion) {
+                        log.exit();
+                    }
+                }
+
+                log.info(`Last version found: ${lastVersion}`);
+                log.info(`Recommended version from commits: ${version}`);
+                log.info(`Reason: ${recommendation.reason}`);
+            }
+
+            version = releaseVersion || version;
+
+            data.lastVersion = `${lastVersion}`;
+            data.lastTag = `v${lastVersion}`;
+            data.version = `${version}`;
+            data.tag = `v${version}`;
+            data.releasingBranch = `${branchPrefix}-${version}`;
+        },
+
+        /**
+         * Verify if local branch has no un-commtied changes
          */
         async verifyLocalChanges() {
             log.doing(`Checking ${subjectType} status`);
@@ -620,19 +614,12 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
-         * Prompt user if he really want to use deprecated way to do the release
-         */
-        async warnAboutDeprecation() {
-            const { isOldWayReleaseSelected } = await inquirer.prompt({
-                type: 'confirm',
-                name: 'isOldWayReleaseSelected',
-                message: 'This release process is deprecated. Are you sure you want to continue?',
-                default: false
-            });
+          * Update version in releasing repository
+          */
+        async updateVersion() {
+            await adaptee.updateVersion();
 
-            if (!isOldWayReleaseSelected) {
-                log.exit();
-            }
+            await gitClient.commitAndPush(data.releasingBranch, 'chore: bump version');
         }
     };
 };

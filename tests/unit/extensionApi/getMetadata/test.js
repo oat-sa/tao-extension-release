@@ -26,15 +26,12 @@
 const proxyquire = require('proxyquire');
 const sinon = require('sinon');
 const test = require('tape');
-const path = require('path');
 
 const sandbox = sinon.sandbox.create();
 
 const taoRoot = 'taoRoot';
 const extension = 'taoFakeExtension';
 const repositoryName = 'testRepository';
-const version = '1.1.1';
-const manifestPath = path.join(taoRoot, extension, 'manifest.php');
 const data = {
     taoRoot,
     extension: {
@@ -54,8 +51,7 @@ const taoInstance = {
     getExtensions: () => [],
     getRepoName: () => repositoryName,
     isInstalled: () => true,
-    isRoot: () => ({ root: true, dir: taoRoot }),
-    parseManifest: () => ({ version, name: extension })
+    isRoot: () => ({ root: true, dir: taoRoot })
 };
 const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
 
@@ -74,17 +70,13 @@ test('should define getMetadata method on extensionApi instance', (t) => {
 });
 
 test('should get extension metadata', async (t) => {
-    t.plan(4);
+    t.plan(2);
 
     await extensionApi.selectTaoInstance();
 
-    sandbox.stub(taoInstance, 'parseManifest').returns({ version, name: extension });
     sandbox.stub(taoInstance, 'getRepoName').returns(repositoryName);
 
     await extensionApi.getMetadata();
-
-    t.equal(taoInstance.parseManifest.callCount, 1, 'Parsing of manifest');
-    t.ok(taoInstance.parseManifest.calledWith(manifestPath), 'Parsing of manifest of appropriate extension');
 
     t.equal(taoInstance.getRepoName.callCount, 1, 'Getting of repository name');
     t.ok(taoInstance.getRepoName.calledWith(extension), 'Getting of repository name of appropriate extension');
@@ -94,18 +86,15 @@ test('should get extension metadata', async (t) => {
 });
 
 test('should return metadata object', async (t) => {
-    t.plan(4);
+    t.plan(2);
 
     await extensionApi.selectTaoInstance();
 
-    sandbox.stub(taoInstance, 'parseManifest').returns({ version, name: extension });
     sandbox.stub(taoInstance, 'getRepoName').returns(repositoryName);
 
     const result = await extensionApi.getMetadata();
 
     t.ok(typeof result === 'object', 'Returns an object');
-    t.ok(result.name, 'Returns an object.name');
-    t.ok(result.version, 'Returns an object.version');
     t.ok(result.repoName, 'Returns an object.repoName');
 
     sandbox.restore();

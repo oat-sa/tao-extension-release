@@ -48,3 +48,15 @@
 ## [Version 1.1.1]
 
  - Bugfix for when data.extension is not already set
+
+ ## [Version 1.2.0]
+
+ - Calculate the version from conventional commits. More details https://www.conventionalcommits.org/en/v1.0.0/
+ - Introduce new CLI parameter `release-version` which provide version to be taken as new release version
+ - Update unit tests
+
+## [Version 2.0.0] 
+
+ - BREAKING CHANGE: change commands to `extensionRelease`, `npmRelease` and `repoRelease` and remove the commands `oldWayRelease`, `createRelease` and `prepareRelease`
+ - BREAKING CHANGE: next version is computed from conventional commits 
+ - BREAKING CHANGE: `extensionRelease` doesn't update version in the manifest anymore

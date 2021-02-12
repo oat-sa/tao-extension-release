@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2017-2019 Open Assessment Technologies SA;
+ * Copyright (c) 2017-2021 Open Assessment Technologies SA;
  */
 
 /**
@@ -22,10 +22,9 @@
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
 
-const fs                      = require('fs');
+const fs                      = require('fs-extra');
 const { normalize, basename } = require('path');
 const { exec }                = require('child_process');
-const phpParser               = require('php-parser');
 const crossSpawn              = require('cross-spawn');
 
 const isWin = /^win/.test(process.platform);
@@ -150,54 +149,6 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
             });
         },
 
-        /**
-        * Parse TAO manifest and extract most of it's info
-        * @param {String} manifestPath - the path to the extension manifest
-        * @return {Promise} resolves with an object that represents the manifest
-        */
-        parseManifest(manifestPath = '') {
-            //reducer AST to JSON for arrays
-            const reduceEntry = (entries) => {
-                return entries.items.reduce((acc, entry) => {
-                    var value;
-
-                    if (entry.value.kind === 'string') {
-                        value = entry.value.value;
-                    }
-                    if (entry.value.kind === 'array') {
-
-                        value = reduceEntry(entry.value);
-                    }
-                    if (entry.key && entry.key.kind === 'string') {
-                        acc[entry.key.value] = value;
-                    }
-
-                    return acc;
-                }, {});
-            };
-
-            return new Promise((resolve, reject) => {
-                fs.readFile(manifestPath, 'utf-8', (err, content) => {
-                    if (err) {
-                        return reject(err);
-                    }
-
-                    //load AST from PHP code
-                    let parsed = phpParser.parseCode(content)
-                        .children
-                        //assume the return expression contains the manifest
-                        .filter(token => token.kind === 'return')
-                        .reduce((acc, token) => {
-                            if (token.expr.kind === 'array') {
-                                return reduceEntry(token.expr);
-                            }
-                            return acc;
-                        }, {});
-
-                    resolve(parsed);
-                });
-            });
-        },
 
         /**
          * Extract the repository name from the extension composer
@@ -350,6 +301,12 @@ module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser
                 execed.stderr.pipe(process.stderr);
                 execed.on('exit', code => code === 0 ? resolve() : reject( new Error('Something went wrong in the translation generation')));
             });
+        },
+
+        /**
+        */
+        async updateVersion() {
+            //NOT NEEDED
         }
     };
 };

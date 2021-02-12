@@ -35,7 +35,7 @@
 const path = require('path');
 const fs = require('fs-extra');
 const replace = require('replace-in-file');
-const test = require('tape');
+const test = require('tape-promise/tape');
 
 const gitFactory = require('../../../src/git.js');
 const simpleGit = require('simple-git/promise');
@@ -71,7 +71,7 @@ const setUp = async function setUp() {
         await verifyLocal(localGitHelper);
 
         // connect local to remote
-        await localGitHelper.addRemote('origin', remoteRepoPath);
+        await localGitHelper.addRemote('origin', remoteRepoPath.trim());
 
         // checkout master, add all local files, initial commit, and push
         await localGitHelper.checkoutLocalBranch('master');
@@ -336,4 +336,78 @@ test('mergeBack from master to develop', async t => {
     await localRepo.mergeBack('develop', 'master');
     const diff2 = await gitHelper.diff(['develop', 'master']);
     t.equal(diff2.trim().length, 0, 'develop equal with master');
+});
+
+
+test('get remote repository name', async t => {
+    await setUp();
+    t.plan(1);
+    const localRepo = gitFactory(localRepoPath); // module we're testing
+    const gitHelper = simpleGit(localRepoPath); // helper lib
+    await verifyLocal(gitHelper);
+
+    const localPathRemoteName = await localRepo.getRepositoryName();
+    //remote is linked on the local system
+    t.equal(localPathRemoteName, remoteRepoPath);
+    t.end();
+});
+
+test('get ssh remote repository name', async t => {
+    await setUp();
+    t.plan(1);
+    const localRepo = gitFactory(localRepoPath); // module we're testing
+    const gitHelper = simpleGit(localRepoPath); // helper lib
+    await verifyLocal(gitHelper);
+
+    //set an ssh-like url to the origin
+    await gitHelper.remote(['set-url', 'origin', 'bar@foo.com:oat-sa/tao-extension-a.git']);
+    const sshRepoName = await localRepo.getRepositoryName();
+    t.equal(sshRepoName, 'oat-sa/tao-extension-a');
+    t.end();
+});
+
+test('get https remote repository name', async t => {
+    await setUp();
+    t.plan(1);
+    const localRepo = gitFactory(localRepoPath); // module we're testing
+    const gitHelper = simpleGit(localRepoPath); // helper lib
+    await verifyLocal(gitHelper);
+
+    //set a https url to the origin
+    await gitHelper.remote(['set-url', 'origin', 'https://foo.com/oat-sa/tao-extension-b.git']);
+    const httpsRepoName = await localRepo.getRepositoryName();
+    t.equal(httpsRepoName, 'oat-sa/tao-extension-b');
+
+    t.end();
+});
+
+test('get smartgit remote repository name', async t => {
+    await setUp();
+    t.plan(1);
+    const localRepo = gitFactory(localRepoPath); // module we're testing
+    const gitHelper = simpleGit(localRepoPath); // helper lib
+    await verifyLocal(gitHelper);
+
+    //set a smartgit url to the origin
+    await gitHelper.remote(['set-url', 'origin', 'https://foo.com/oat-sa/tao-extension-c']);
+    const smartgitRepoName = await localRepo.getRepositoryName();
+    t.equal(smartgitRepoName, 'oat-sa/tao-extension-c');
+
+    t.end();
+});
+
+
+test('get remote repository name without a remote', async t => {
+    await setUp();
+    t.plan(1);
+    const localRepo = gitFactory(localRepoPath); // module we're testing
+    const gitHelper = simpleGit(localRepoPath); // helper lib
+    await verifyLocal(gitHelper);
+
+    //set a smartgit url to the origin
+    await gitHelper.remote(['rm', 'origin']);
+
+    await t.rejects(localRepo.getRepositoryName());
+
+    t.end();
 });

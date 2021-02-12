@@ -113,30 +113,6 @@ test('the createReleasePR method', t => {
     }, 10);
 });
 
-test('the method getReleasePRComment', t => {
-    t.plan(3);
-
-    let ghclient = github(token, repo);
-
-    t.equal(typeof ghclient.getReleasePRComment, 'function', 'The client exposes the method getReleasePRComment');
-
-    t.equal(ghclient.getReleasePRComment(), `Please verify the following points :
-
-- [ ] the manifest (versions ?.?.? and dependencies),
-- [ ] CSS and JavaScript bundles`);
-
-    ghclient = github(token, 'oat-sa/tao-core');
-
-    t.equal(ghclient.getReleasePRComment('18.7.3', '18.6.0'), `Please verify the following points :
-
-- [ ] the manifest (versions 18.7.3 and dependencies),
-- [ ] CSS and JavaScript bundles,
-- [ ] Increase TAO-VERSION in \`manifest.php\``);
-
-    t.end();
-});
-
-
 test('the method formatReleaseNote', t => {
     t.plan(5);
 
