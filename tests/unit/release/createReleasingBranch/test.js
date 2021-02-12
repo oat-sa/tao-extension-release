@@ -36,10 +36,12 @@ const version = '1.1.1';
 const tag = 'v1.1.1';
 const token = 'abc123';
 const releasingBranch = 'release-1.1.1';
+const origin = 'origin';
 
 const gitClientInstance = {
     pull: () => { },
     localBranch: () => { },
+    push: () => { }
 };
 const gitClientFactory = sandbox.stub().callsFake(() => gitClientInstance);
 
@@ -56,7 +58,7 @@ const release = proxyquire.noCallThru().load('../../../../src/release.js', {
     './git.js': gitClientFactory,
     './log.js': log,
     inquirer,
-})({ branchPrefix });
+})({ branchPrefix, origin });
 
 release.setData({ releasingBranch, version, tag, token, extension: {} });
 
@@ -68,17 +70,21 @@ test('should define createReleasingBranch method on release instance', (t) => {
     t.end();
 });
 
-test('should create releasing branch', async (t) => {
-    t.plan(2);
+test('should create and push releasing branch', async (t) => {
+    t.plan(4);
 
     await release.initialiseGitClient();
 
     sandbox.stub(gitClientInstance, 'localBranch');
+    sandbox.stub(gitClientInstance, 'push');
 
     await release.createReleasingBranch();
 
     t.equal(gitClientInstance.localBranch.callCount, 1, 'Branch has been created');
     t.equal(gitClientInstance.localBranch.getCall(0).args[0], `${branchPrefix}-${version}`, 'Appropriate branch has been created');
+
+    t.equal(gitClientInstance.localBranch.callCount, 1, 'Branch has been pushed');
+    t.deepEqual(gitClientInstance.push.getCall(0).args, ['origin', `${branchPrefix}-${version}`],  'Pushed to correct remote');
 
     sandbox.restore();
     t.end();

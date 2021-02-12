@@ -49,14 +49,6 @@ module.exports = function githubFactory(token, repository) {
     const githubApiClient = githubApiClientFactory(token);
 
     /**
-     * Add the checks to display in a release PR for a given repository
-     */
-    const extensionPRChecks = {
-        'oat-sa/tao-core': 'Increase TAO-VERSION in `manifest.php`',
-        'oat-sa/extension-tao-delivery-rdf': 'Do not forget to update the dependency and release oat-sa/extension-tao-community'
-    };
-
-    /**
      * @typedef {Object} githubClient
      */
     return {
@@ -67,17 +59,17 @@ module.exports = function githubFactory(token, repository) {
          * @param {String} releaseBranch - the base branch
          * @param {String} version - the version of the release
          * @param {String} fromVersion - the last version
-         * @param {String} [subjectType='extension'] - extension or package
          * @returns {Promise<Object>} resolves with the pull request data
          */
-        createReleasePR(releasingBranch, releaseBranch, version = '?.?.?', fromVersion = '?.?.?', subjectType = 'extension') {
+        createReleasePR(releasingBranch, releaseBranch, version = '?.?.?', fromVersion = '?.?.?') {
+
             if (!releasingBranch || !releaseBranch) {
                 return Promise.reject(new TypeError('Unable to create a release pull request when the branches are not defined'));
             }
             return new Promise((resolve, reject) => {
                 ghrepo.pr({
                     title: `Release ${version}`,
-                    body: this.getReleasePRComment(version, fromVersion, subjectType),
+                    body: `Release ${version} from ${fromVersion}`,
                     head: releasingBranch,
                     base: releaseBranch
                 }, (err, data) => {
@@ -87,31 +79,6 @@ module.exports = function githubFactory(token, repository) {
                     return resolve(data);
                 });
             });
-        },
-
-        /**
-         * Get the comment of the release pull request
-         * @param {String} version - the version of the release
-         * @param {String} fromVersion - the last version
-         * @param {String} [subjectType='extension'] - extension or package
-         * @returns {String} the comment
-         */
-        getReleasePRComment(version = '?.?.?', fromVersion = '?.?.?', subjectType = 'extension') {
-            const checks = {
-                extension: [
-                    `the manifest (versions ${version} and dependencies)`,
-                    'CSS and JavaScript bundles'
-                ],
-                package: [
-                    `the package.json version (from ${fromVersion} to ${version})`,
-                    'the package-lock.json'
-                ]
-            };
-
-            if (typeof extensionPRChecks[repository] !== 'undefined') {
-                checks.extension.push(extensionPRChecks[repository]);
-            }
-            return `Please verify the following points :\n${checks[subjectType].map(c => '\n- [ ] ' + c)}`;
         },
 
         /**

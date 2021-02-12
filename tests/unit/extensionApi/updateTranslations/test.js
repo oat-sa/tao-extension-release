@@ -56,7 +56,6 @@ const taoInstance = {
     getExtensions: () => [],
     isInstalled: () => true,
     isRoot: () => ({ root: true, dir: taoRoot }),
-    parseManifest: () => ({ version, name: extension }),
     updateTranslations: () => { },
     getRepoName: () => ''
 };
@@ -167,7 +166,7 @@ test('should publish translations', async (t) => {
 
     t.equal(gitClientInstance.commitAndPush.callCount, 1, 'Translations has been published');
     t.equal(gitClientInstance.commitAndPush.getCall(0).args[0], `${branchPrefix}-${version}`, 'Branch name is correct');
-    t.equal(gitClientInstance.commitAndPush.getCall(0).args[1], 'update translations', 'Commit message is present and correct');
+    t.equal(gitClientInstance.commitAndPush.getCall(0).args[1], 'chore: update translations', 'Commit message is present and correct');
 
     sandbox.restore();
     t.end();

@@ -32,7 +32,7 @@ module.exports = {
     // options which fall back to user prompts if undefined
     pathToTao: ['--path-to-tao <path>', 'path to local TAO instance'],
     extensionToRelease: ['--extension-to-release <extension>', 'camelCase name of the extension to release'],
-    versionToRelease: ['--version-to-release <version>', 'version of the extension to release'],
     updateTranslations: ['--update-translations', 'indicates if we need to update translations'],
-    releaseComment: ['--release-comment <comment>', 'comment to add to github release']
+    releaseComment: ['--release-comment <comment>', 'comment to add to github release'],
+    releaseVersion: ['--release-version <version>', 'version to be used for the next release'],
 };

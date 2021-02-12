@@ -36,16 +36,13 @@ program
     .version(pkg.version)
     .name('taoRelease')
     .usage('command [options]')
-    .command('prepareRelease', 'prepare an extension release', {
-        executableFile: './src/commands/prepareRelease'
+    .command('extensionRelease', 'release a TAO extension', {
+        executableFile: './src/commands/extensionRelease'
     })
-    .command('createRelease', 'create a release from a prepared release branch', {
-        executableFile: './src/commands/createRelease'
-    })
-    .command('oldWayRelease', '[deprecated] run the whole release process from start to finish', {
-        executableFile: './src/commands/oldWayRelease'
-    })
-    .command('npmRelease', 'release and publish a npm package', {
+    .command('npmRelease', 'release and publish an npm package', {
         executableFile: './src/commands/npmRelease'
+    })
+    .command('repoRelease', 'release any repository', {
+        executableFile: './src/commands/repoRelease'
     })
     .parse(process.argv);
