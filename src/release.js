@@ -69,7 +69,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         throw new Error(`No implementation found for the type '${subjectType}'`);
     }
 
-    if ( releaseVersion && semverValid(releaseVersion) === null) {
+    if (releaseVersion && semverValid(releaseVersion) === null) {
         throw new Error(`'${releaseVersion}' is not a valid semver version.`);
     }
 
