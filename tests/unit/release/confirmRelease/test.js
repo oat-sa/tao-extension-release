@@ -65,7 +65,7 @@ test('should prompt to confirm release', async (t) => {
         .callsFake(({ type, name, message }) => {
             t.equal(type, 'confirm', 'The type should be "confirm"');
             t.equal(name, 'go', 'The param name should be go');
-            t.equal(message, `Let's release version ${extension}@${version} 🚀 ?`, 'Should display appropriate message');
+            t.equal(message, `Let's release version ${extension}@${version} 🚀?`, 'Should display appropriate message');
 
             return { go: true };
         });

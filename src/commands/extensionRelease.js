@@ -34,10 +34,13 @@ program
     .option(...cliOptions.origin)
     .option(...cliOptions.releaseBranch)
     .option(...cliOptions.wwwUser)
+    .option(...cliOptions.updateTranslations)
+    .option(...cliOptions.interactive)
+
     // options which fall back to user prompts if undefined
     .option(...cliOptions.pathToTao)
     .option(...cliOptions.extensionToRelease)
-    .option(...cliOptions.updateTranslations)
+
     .option(...cliOptions.releaseComment)
     .parse(process.argv);
 

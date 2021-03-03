@@ -60,7 +60,7 @@ const extensionApi = proxyquire.noCallThru().load('../../../../src/release/exten
     '../log.js': log,
     '../taoInstance.js': taoInstanceFactory,
     inquirer,
-})({ branchPrefix });
+})({ branchPrefix, interactive: true });
 extensionApi.gitClient = gitClientInstance;
 
 test('should define compileAssets method on extensionApi instance', (t) => {

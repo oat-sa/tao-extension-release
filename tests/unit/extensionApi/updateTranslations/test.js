@@ -49,7 +49,7 @@ const log = {
     warn: () => { },
 };
 const inquirer = {
-    prompt: () => ({ extension, taoRoot, translation: true }),
+    prompt: () => ({ extension, taoRoot, runTranslations: true }),
 };
 
 const taoInstance = {
@@ -65,7 +65,7 @@ const extensionApi = proxyquire.noCallThru().load('../../../../src/release/exten
     '../log.js': log,
     '../taoInstance.js': taoInstanceFactory,
     inquirer,
-})({ branchPrefix });
+})({ branchPrefix, interactive: true, updateTranslations: true }, { extension: {name : extension } });
 
 test('should define updateTranslations method on extensionApi instance', (t) => {
     t.plan(1);
@@ -79,7 +79,6 @@ test('should log doing message', async (t) => {
     t.plan(2);
 
     await extensionApi.selectTaoInstance();
-    await extensionApi.selectExtension();
     extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(log, 'doing');
@@ -97,7 +96,6 @@ test('should log warn message', async (t) => {
     t.plan(2);
 
     await extensionApi.selectTaoInstance();
-    await extensionApi.selectExtension();
     extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(log, 'warn');
@@ -115,16 +113,15 @@ test('should prompt to update translations', async (t) => {
     t.plan(5);
 
     await extensionApi.selectTaoInstance();
-    await extensionApi.selectExtension();
     extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message, default: defaultValue }) => {
         t.equal(type, 'confirm', 'The type should be "confirm"');
-        t.equal(name, 'translation', 'The param name should be translation');
+        t.equal(name, 'runTranslations', 'The param name should be translation');
         t.equal(message, `${extension} needs updated translations ? `, 'Should display appropriate message');
         t.equal(defaultValue, false, 'Default value should be false');
 
-        return { translation: false };
+        return { runTranslations : false };
     });
 
     await extensionApi.updateTranslations(releasingBranch);
@@ -139,7 +136,6 @@ test('should update translations', async (t) => {
     t.plan(2);
 
     await extensionApi.selectTaoInstance();
-    await extensionApi.selectExtension();
     extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(taoInstance, 'updateTranslations');
@@ -152,12 +148,10 @@ test('should update translations', async (t) => {
     sandbox.restore();
     t.end();
 });
-
 test('should publish translations', async (t) => {
     t.plan(3);
 
     await extensionApi.selectTaoInstance();
-    await extensionApi.selectExtension();
     extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(gitClientInstance, 'commitAndPush');
@@ -178,7 +172,6 @@ test('should log error message if update failed', async (t) => {
     const errorMessage = 'testError';
 
     await extensionApi.selectTaoInstance();
-    await extensionApi.selectExtension();
     extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(log, 'error');
@@ -199,7 +192,6 @@ test('should log info message after update of translations', async (t) => {
     const changes = ['change1', 'change2'];
 
     await extensionApi.selectTaoInstance();
-    await extensionApi.selectExtension();
     extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(log, 'info');
@@ -221,10 +213,9 @@ test('should skip translations if "no" answered', async (t) => {
     t.plan(3);
 
     await extensionApi.selectTaoInstance();
-    await extensionApi.selectExtension();
     extensionApi.gitClient = gitClientInstance;
 
-    sandbox.stub(inquirer, 'prompt').returns({ translation: false });
+    sandbox.stub(inquirer, 'prompt').returns({ runTranslations: false });
     sandbox.stub(taoInstance, 'updateTranslations');
     sandbox.stub(log, 'done');
 
@@ -242,7 +233,6 @@ test('should log done message', async (t) => {
     t.plan(1);
 
     await extensionApi.selectTaoInstance();
-    await extensionApi.selectExtension();
     extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(log, 'done');
@@ -259,14 +249,13 @@ const extensionApiWithCliOption = proxyquire.noCallThru().load('../../../../src/
     '../log.js': log,
     '../taoInstance.js': taoInstanceFactory,
     inquirer,
-})({ updateTranslations: true });
+})({ updateTranslations: true, interactive : false }, { extension : { name : extension }});
 
 test('should use CLI updateTranslations instead of prompting', async (t) => {
     t.plan(3);
 
     await extensionApiWithCliOption.selectTaoInstance();
-    await extensionApiWithCliOption.selectExtension();
-    extensionApi.gitClient = gitClientInstance;
+    extensionApiWithCliOption.gitClient = gitClientInstance;
 
     sandbox.stub(inquirer, 'prompt');
     sandbox.stub(taoInstance, 'updateTranslations');

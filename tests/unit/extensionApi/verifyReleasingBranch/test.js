@@ -66,7 +66,8 @@ const releaseOptions = {
     branchPrefix: 'release',
     origin: 'origin',
     versionToRelease: '0.9.0',
-    releaseBranch: 'master'
+    releaseBranch: 'master',
+    interactive: true
 };
 
 const extensionApi = proxyquire.noCallThru().load('../../../../src/release/extensionApi.js', {

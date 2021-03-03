@@ -37,6 +37,7 @@ const log = {
 };
 const origin = 'testOrigin';
 const taoRoot = 'testRoot';
+const interactive = true;
 const inquirer = {
     prompt: () => ({ taoRoot }),
 };
@@ -51,7 +52,7 @@ const extensionApi = proxyquire.noCallThru().load('../../../../src/release/exten
     '../log.js': log,
     '../taoInstance.js': taoInstanceFactory,
     inquirer,
-})({ origin });
+})({ origin, interactive });
 
 test('should define selectExtension method on extensionApi instance', (t) => {
     t.plan(1);

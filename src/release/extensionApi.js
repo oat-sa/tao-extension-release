@@ -35,10 +35,14 @@ const log = require('../log.js');
  * @param {String} [params.wwwUser] - name of the www user
  * @param {String} [params.pathToTao] - path to the instance root
  * @param {String} [params.extensionToRelease] - name of the extension
- * @param {Boolean} [params.updateTranslations] - should translations be included?
+ * @param {boolean} [params.updateTranslations=false] - should translations be included?
+ * @param {boolean} [params.interactive=true] - run in interactive mode
  * @param {Object} data - copy of global data object
  */
 module.exports = function extensionApiFactory(params = {}, data = { extension: {} }) {
+
+    const { interactive, updateTranslations } = params;
+
     return {
         gitClient: null,
 
@@ -78,7 +82,7 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
             // Start with CLI option, if it's missing we'll prompt user
             let taoRoot = params.pathToTao;
 
-            if (!taoRoot) {
+            if (!taoRoot && interactive) {
                 ({ taoRoot } = await inquirer.prompt({
                     type: 'input',
                     name: 'taoRoot',
@@ -87,11 +91,11 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
                 }));
             }
 
-            this.taoInstance = taoInstanceFactory(path.resolve(taoRoot), false, params.wwwUser);
+            this.taoInstance = taoInstanceFactory(path.resolve(taoRoot || '.'), false, params.wwwUser);
             const { dir, root } = await this.taoInstance.isRoot();
 
             if (!root) {
-                log.exit(`${dir} is not a TAO instance`);
+                log.exit(`${dir} is not a TAO instance.`);
             }
 
             if (!(await this.taoInstance.isInstalled())) {
@@ -114,9 +118,8 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
 
             const availableExtensions = await this.taoInstance.getExtensions();
 
-            if (extension && !availableExtensions.includes(extension)) {
-                log.exit(`Specified extension ${extension} not found in ${data.taoRoot}`);
-            } else if (!extension) {
+
+            if (!extension && interactive) {
                 ({ extension } = await inquirer.prompt({
                     type: 'list',
                     name: 'extension',
@@ -125,6 +128,12 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
                     choices: availableExtensions,
                     default: data.extension.name
                 }));
+            }
+            if (extension && !availableExtensions.includes(extension)) {
+                log.exit(`Specified extension ${extension} not found in ${data.taoRoot}`);
+            } else if (!extension) {
+                log.exit(`Missing extension. Please set an extension using the parameter '--extensionToRelease' from one available in ${data.taoRoot}.`);
+
             }
 
             data.extension.name = extension;
@@ -217,38 +226,39 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
          * @param {String} releasingBranch
          */
         async updateTranslations(releasingBranch) {
-            log.doing('Translations');
-
-            // Start with CLI option, if it's missing we'll prompt user
-            let translation = params.updateTranslations;
-
-            if (!translation) {
+            if (updateTranslations) {
+                log.doing('Translations');
                 log.warn('Update translations during a release only if you know what you are doing');
 
-                ({ translation } = await inquirer.prompt({
-                    type: 'confirm',
-                    name: 'translation',
-                    message: `${data.extension.name} needs updated translations ? `,
-                    default: false
-                }));
-            }
+                let runTranslations = true;
 
-            if (translation) {
-                try {
-                    await this.taoInstance.updateTranslations(data.extension.name);
-
-                    const changes = await this.gitClient.commitAndPush(releasingBranch, 'chore: update translations');
-
-                    if (changes && changes.length) {
-                        log.info(`Commit : [update translations - ${changes.length} files]`);
-                        changes.forEach(file => log.info(`  - ${file}`));
-                    }
-                } catch (error) {
-                    log.error(`Unable to update translations. ${error.message}. Continue.`);
+                if (interactive) {
+                    ({ runTranslations } = await inquirer.prompt({
+                        type: 'confirm',
+                        name: 'runTranslations',
+                        message: `${data.extension.name} needs updated translations ? `,
+                        default: false
+                    }));
                 }
+                if (runTranslations) {
+                    try {
+                        await this.taoInstance.updateTranslations(data.extension.name);
+
+                        const changes = await this.gitClient.commitAndPush(releasingBranch, 'chore: update translations');
+
+                        if (changes && changes.length) {
+                            log.info(`Commit : [update translations - ${changes.length} files]`);
+                            changes.forEach(file => log.info(`  - ${file}`));
+                        }
+                    } catch (error) {
+                        log.error(`Unable to update translations. ${error.message}. Continue.`);
+                    }
+                }
+
+                log.done();
             }
 
-            log.done();
+
         },
 
         publish() {
