@@ -115,10 +115,6 @@ module.exports = function packageApiFactory(params = {}, data) {
             log.exit();
         },
 
-        verifyReleasingBranch(){
-            // Not implemented
-        },
-
         build(){
             // Not implemented
         },

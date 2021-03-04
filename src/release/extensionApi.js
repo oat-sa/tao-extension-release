@@ -24,8 +24,6 @@
 
 const path = require('path');
 const inquirer = require('inquirer');
-const compareVersions = require('compare-versions');
-
 const taoInstanceFactory = require('../taoInstance.js');
 const log = require('../log.js');
 
@@ -147,45 +145,6 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
         async getMetadata() {
             const repoName = await this.taoInstance.getRepoName(data.extension.name);
             return { repoName };
-        },
-
-        /**
-         * Verify that the version that we are going to release is valid
-         * - is the same on branch name and manifest
-         * - is bigger than current release branch version
-         * @param {String} releasingBranch
-         * @returns {Object}
-         */
-        async verifyReleasingBranch(releasingBranch, versionToRelease) {
-            log.doing('Checking out and verifying releasing branch.');
-
-            // Cross check releasing branch version with manifest version
-            const releasingBranchManifest = await this.taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
-
-            if (compareVersions(releasingBranchManifest.version, versionToRelease) === 0) {
-                log.doing(`Branch ${releasingBranch} has valid manifest.`);
-            } else {
-                log.exit(
-                    `Branch '${releasingBranch}' cannot be released because its branch name does not match its own manifest version (${releasingBranchManifest.version}).`
-                );
-            }
-
-            // Cross check releasing branch wth release branch and make sure new version is highest
-            await this.gitClient.checkout(params.releaseBranch);
-
-            const releaseBranchManifest = await this.taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
-
-            if (compareVersions(releasingBranchManifest.version, releaseBranchManifest.version) === 1) {
-                data.lastVersion = releaseBranchManifest.version;
-                data.lastTag = `v${releaseBranchManifest.version}`;
-                log.done(`Branch ${releasingBranch} is valid.`);
-            } else {
-                log.exit(
-                    `Branch '${releasingBranch}' cannot be released because its manifest version (${versionToRelease}) is not greater than the manifest version of '${params.releaseBranch}' (${releaseBranchManifest.version}).`
-                );
-            }
-
-            return data;
         },
 
         /**

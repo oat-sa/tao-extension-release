@@ -133,14 +133,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
-         * Verify that the version that we are going to release is valid
-         */
-        async verifyReleasingBranch() {
-            const { lastVersion, lastTag } = await adaptee.verifyReleasingBranch(data.releasingBranch, data.version);
-            data = { ...data, lastVersion, lastTag };
-        },
-
-        /**
          * Build assets, commit them to the releasing branch and push that branch
          *
          * @returns

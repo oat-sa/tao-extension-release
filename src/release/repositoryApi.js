@@ -81,10 +81,6 @@ module.exports = function repositoryApiFactory(params = {}, data) {
             // Not implemented
         },
 
-        verifyReleasingBranch(){
-            // Not implemented
-        },
-
         build(){
             // Not implemented
         },
