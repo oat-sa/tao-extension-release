@@ -63,10 +63,9 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         origin,
         releaseBranch,
         releaseVersion,
-        subjectType = 'extension',
-        interactive = true
+        subjectType = 'extension'
     } = params;
-    let { releaseComment } = params;
+    let { releaseComment, interactive = true } = params;
 
     let data = {};
     let gitClient;
@@ -75,6 +74,12 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
     if (!adaptees[subjectType]) {
         throw new Error(`No implementation found for the type '${subjectType}'`);
     }
+
+    //in non TTY shells we turn off the interactive mode
+    if (!process.stdin.isTTY) {
+        interactive = false;
+    }
+
     /**
      * @typedef adaptee - an instance of a supplemental API with methods specific to the release subject type
      */
@@ -357,7 +362,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             if (!data.token) {
 
                 if (!interactive) {
-                    return log.exit('Missing configured GITHUB_TOKEN');
+                    return log.exit('Unable to find the GITHUB_TOKEN. Please configure a token in the config file or set it as an env variable.');
                 }
                 setTimeout(() => open('https://github.com/settings/tokens'), 2000);
 

@@ -72,15 +72,15 @@ Commandline arguments to give you more control over the parameters of the releas
 
 ### Common options
 
-| option                        | description                                | default                                     |
-| ----------------------------- | ------------------------------------------ | ------------------------------------------- |
-| `--base-branch <branch>`      | branch to release from                     | `develop`                                   |
-| `--branch-prefix <prefix>`    | releasing branch prefix                    | `release`                                   |
-| `--origin <remote>`           | git repository remote name                 | `origin`                                    |
-| `--release-branch <branch>`   | branch to release to                       | `master`                                    |
-| `--release-version <version>` | version to be used for the release         | version extracted from conventional commits |
-| `--release-comment <comment>` | comment to attach to the release           | (none - prompted)                           |
-| `--interactive <boolean>`     | to run or not the tool in interactive mode | `true` (`false` on non TTY envs)            |
+| option                        | description                        | default                                                  |
+| ----------------------------- | ---------------------------------- | -------------------------------------------------------- |
+| `--base-branch <branch>`      | branch to release from             | `develop`                                                |
+| `--branch-prefix <prefix>`    | releasing branch prefix            | `release`                                                |
+| `--origin <remote>`           | git repository remote name         | `origin`                                                 |
+| `--release-branch <branch>`   | branch to release to               | `master`                                                 |
+| `--release-version <version>` | version to be used for the release | version extracted from conventional commits              |
+| `--release-comment <comment>` | comment to attach to the release   | (none - prompted)                                        |
+| `--no-interactive`            | turns off the interactive mode     | interactive mode is by default, except on non TTY shells |
 
 ### extensionRelease extra options
 

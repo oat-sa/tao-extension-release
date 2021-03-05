@@ -45,7 +45,7 @@ const npmPackageFactory = sandbox.stub().callsFake(() => npmPackage);
 const packageApi = proxyquire.noCallThru().load('../../../../src/release/packageApi.js', {
     '../log.js': log,
     '../npmPackage.js': npmPackageFactory,
-})();
+})({ interactive: true });
 
 test('should define selectTarget method on packageApi instance', (t) => {
     t.plan(1);

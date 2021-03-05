@@ -130,8 +130,7 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
             if (extension && !availableExtensions.includes(extension)) {
                 log.exit(`Specified extension ${extension} not found in ${data.taoRoot}`);
             } else if (!extension) {
-                log.exit(`Missing extension. Please set an extension using the parameter '--extensionToRelease' from one available in ${data.taoRoot}.`);
-
+                log.exit(`Missing extension. Please set an extension using the parameter '--extension-to-release' from one available in ${data.taoRoot}.`);
             }
 
             data.extension.name = extension;

@@ -34,7 +34,7 @@ const log = require('../log.js');
 */
 module.exports = function packageApiFactory(params = {}, data) {
 
-    const { interactive = true } = params;
+    const { interactive } = params;
 
     return {
 

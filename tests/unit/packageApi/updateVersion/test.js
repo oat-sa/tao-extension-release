@@ -34,7 +34,7 @@ const npmPackageFactory = sandbox.stub().callsFake(() => npmPackage);
 
 const packageApi = proxyquire.noCallThru().load('../../../../src/release/packageApi.js', {
     '../npmPackage.js': npmPackageFactory,
-})({}, { version });
+})({}, { version, interactive: true });
 
 test('should define updateVersion method on packageApi instance', (t) => {
     t.plan(1);

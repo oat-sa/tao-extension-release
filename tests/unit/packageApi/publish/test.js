@@ -71,7 +71,7 @@ test('should define publish method on packageApi instance', (t) => {
 test('should checkout releasing branch', async (t) => {
     t.plan(1);
 
-    const packageApi = packageApiFactory({ releaseBranch });
+    const packageApi = packageApiFactory({ releaseBranch, interactive: true });
     packageApi.gitClient = gitClientInstance;
 
     sandbox.stub(process, 'cwd').returns(taoRoot);
@@ -91,7 +91,7 @@ test('should checkout releasing branch', async (t) => {
 test('should prompt about publishing', async (t) => {
     t.plan(5);
 
-    const packageApi = packageApiFactory({ releaseBranch });
+    const packageApi = packageApiFactory({ releaseBranch, interactive: true });
     packageApi.gitClient = gitClientInstance;
 
     sandbox.stub(process, 'cwd').returns(taoRoot);
@@ -118,7 +118,7 @@ test('should prompt about publishing', async (t) => {
 test('should call npmPackage.publish', async (t) => {
     t.plan(3);
 
-    const packageApi = packageApiFactory({ releaseBranch });
+    const packageApi = packageApiFactory({ releaseBranch, interactive: true });
     packageApi.gitClient = gitClientInstance;
 
     sandbox.stub(process, 'cwd').returns(taoRoot);

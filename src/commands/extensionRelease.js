@@ -35,7 +35,7 @@ program
     .option(...cliOptions.releaseBranch)
     .option(...cliOptions.wwwUser)
     .option(...cliOptions.updateTranslations)
-    .option(...cliOptions.interactive)
+    .option(...cliOptions.noInteractive)
 
     // options which fall back to user prompts if undefined
     .option(...cliOptions.pathToTao)

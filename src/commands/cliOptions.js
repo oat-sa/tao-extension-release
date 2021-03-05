@@ -30,7 +30,7 @@ module.exports = {
     releaseBranch: ['--release-branch <branch>', 'the target branch for the release PR', 'master'],
     wwwUser: ['--www-user <user>', 'the user who runs php commands', 'www-data'],
     updateTranslations: ['--update-translations', 'indicates if we need to update translations', false],
-    interactive: ['-i, --interactive', 'does the tools prompt for data and confirmation in the shell, deactivated on non TTY env', process.stdin.isTTY],
+    noInteractive: ['--no-interactive', 'non interactive mode, always off on non TTY env'],
 
     // options which fall back to user prompts if undefined
     pathToTao: ['--path-to-tao <path>', 'path to local TAO instance'],
