@@ -28,12 +28,15 @@ program
     .usage('[options]')
     .option(...cliOptions.debug)
     .option(...cliOptions.releaseVersion)
+
     // options with defaults
     .option(...cliOptions.baseBranch)
     .option(...cliOptions.branchPrefix)
     .option(...cliOptions.origin)
     .option(...cliOptions.releaseBranch)
     .option(...cliOptions.noInteractive)
+    .option(...cliOptions.noWrite)
+
     // options which fall back to user prompts if undefined
     .option(...cliOptions.releaseComment)
     .parse(process.argv);

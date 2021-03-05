@@ -28,6 +28,7 @@ program
     .usage('[options]')
     .option(...cliOptions.debug)
     .option(...cliOptions.releaseVersion)
+
     // options with defaults
     .option(...cliOptions.baseBranch)
     .option(...cliOptions.branchPrefix)
@@ -36,6 +37,7 @@ program
     .option(...cliOptions.wwwUser)
     .option(...cliOptions.updateTranslations)
     .option(...cliOptions.noInteractive)
+    .option(...cliOptions.noWrite)
 
     // options which fall back to user prompts if undefined
     .option(...cliOptions.pathToTao)

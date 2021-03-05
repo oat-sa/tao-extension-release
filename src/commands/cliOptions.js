@@ -31,6 +31,7 @@ module.exports = {
     wwwUser: ['--www-user <user>', 'the user who runs php commands', 'www-data'],
     updateTranslations: ['--update-translations', 'indicates if we need to update translations', false],
     noInteractive: ['--no-interactive', 'non interactive mode, always off on non TTY env'],
+    noWrite: ['--no-write', 'turns off writting data like the config'],
 
     // options which fall back to user prompts if undefined
     pathToTao: ['--path-to-tao <path>', 'path to local TAO instance'],

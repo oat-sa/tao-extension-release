@@ -53,6 +53,7 @@ const adaptees = {
  * @param {Boolean} [params.updateTranslations] - should translations be included?
  * @param {String} [params.releaseComment] - the release author's comment
  * @param {boolean} [params.interactive=true] - interactive mode
+ * @param {boolean} [params.write=true] - allow to write data in host file system
  * @param {String} [params.subjectType='extension'] - extension or package
  * @return {Object} - instance of taoExtensionRelease
  */
@@ -63,7 +64,8 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         origin,
         releaseBranch,
         releaseVersion,
-        subjectType = 'extension'
+        subjectType = 'extension',
+        write = true
     } = params;
     let { releaseComment, interactive = true } = params;
 
@@ -375,9 +377,8 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 });
 
                 data.token = token;
-
-                await config.write(data);
             }
+            await this.writeConfig();
 
             adaptee.setData(data);
         },
@@ -387,7 +388,9 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * @returns true
          */
         async writeConfig() {
-            await config.write(data);
+            if (write) {
+                await config.write(data);
+            }
             return true;
         },
 

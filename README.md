@@ -72,15 +72,16 @@ Commandline arguments to give you more control over the parameters of the releas
 
 ### Common options
 
-| option                        | description                        | default                                                  |
-| ----------------------------- | ---------------------------------- | -------------------------------------------------------- |
-| `--base-branch <branch>`      | branch to release from             | `develop`                                                |
-| `--branch-prefix <prefix>`    | releasing branch prefix            | `release`                                                |
-| `--origin <remote>`           | git repository remote name         | `origin`                                                 |
-| `--release-branch <branch>`   | branch to release to               | `master`                                                 |
-| `--release-version <version>` | version to be used for the release | version extracted from conventional commits              |
-| `--release-comment <comment>` | comment to attach to the release   | (none - prompted)                                        |
-| `--no-interactive`            | turns off the interactive mode     | interactive mode is on by default, except on non TTY shells |
+| option                        | description                              | default                                                     |
+| ----------------------------- | ---------------------------------------- | ----------------------------------------------------------- |
+| `--base-branch <branch>`      | branch to release from                   | `develop`                                                   |
+| `--branch-prefix <prefix>`    | releasing branch prefix                  | `release`                                                   |
+| `--origin <remote>`           | git repository remote name               | `origin`                                                    |
+| `--release-branch <branch>`   | branch to release to                     | `master`                                                    |
+| `--release-version <version>` | version to be used for the release       | version extracted from conventional commits                 |
+| `--release-comment <comment>` | comment to attach to the release         | (none - prompted)                                           |
+| `--no-interactive`            | turns off the interactive mode           | interactive mode is on by default, except on non TTY shells |
+| `--no-write`                  | turns off writting config to file system | no set                                                      |
 
 ### extensionRelease extra options
 
@@ -90,7 +91,6 @@ Commandline arguments to give you more control over the parameters of the releas
 | `--extension-to-release <extension>` | extension name (e.g. taoFoobar)                      | (none - prompted) |
 | `--update-translations`              | flag to indicate translation files should be updated | `false`           |
 | `--www-user <user>`                  | the system user used to launch PHP commands          | `www-data`        |
-
 
 ## Development
 

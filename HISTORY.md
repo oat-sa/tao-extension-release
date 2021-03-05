@@ -64,6 +64,8 @@
 
 ## [Version 2.1.0] 
 
- - Support non interactive mode. (see `--no-interactive` options).
+ - Support non interactive mode. (see `--no-interactive` option).
+ - Writing to the config is configurable. (see `--no-write` option). 
  - translation update in extension is off by default.
  - can read the `GITHUB_TOKEN` from env.
+
