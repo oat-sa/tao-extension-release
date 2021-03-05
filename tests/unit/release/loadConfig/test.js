@@ -36,16 +36,21 @@ const config = {
 const inquirer = {
     prompt: () => ({}),
 };
+const log = {
+    exit: () => { },
+};
 const open = sandbox.spy();
-const release = proxyquire.noCallThru().load('../../../../src/release.js', {
+const releaseFactory = proxyquire.noCallThru().load('../../../../src/release.js', {
     './config.js': () => config,
+    './log.js': log,
     inquirer,
     open,
-})();
+});
 
 test('should define loadConfig method on release instance', (t) => {
     t.plan(1);
 
+    const release = releaseFactory();
     t.equal(typeof release.loadConfig, 'function', 'The release instance has loadConfig method');
 
     t.end();
@@ -58,6 +63,7 @@ test('should load config', async (t) => {
 
     sandbox.stub(config, 'load').returns(data);
 
+    const release = releaseFactory();
     await release.loadConfig();
 
     t.equal(config.load.callCount, 1, 'Config has been loaded');
@@ -71,6 +77,7 @@ test('should open github token settings if there is no token in the config', asy
 
     const clock = sandbox.useFakeTimers();
 
+    const release = releaseFactory();
     await release.loadConfig();
 
     clock.tick(2000);
@@ -94,6 +101,7 @@ test('should prompt user to provide a token if there is no token in the config',
         return {};
     });
 
+    const release = releaseFactory();
     await release.loadConfig();
 
     t.equal(inquirer.prompt.callCount, 1, 'Prompt has been initialised');
@@ -115,6 +123,7 @@ test('should validate provided token', async (t) => {
         return {};
     });
 
+    const release = releaseFactory();
     await release.loadConfig();
 
     sandbox.restore();
@@ -130,6 +139,7 @@ test('should trim token', async (t) => {
         return {};
     });
 
+    const release = releaseFactory();
     await release.loadConfig();
 
     sandbox.restore();
@@ -145,11 +155,46 @@ test('should save provided token', async (t) => {
 
     sandbox.stub(inquirer, 'prompt').returns({ token });
 
+    const release = releaseFactory();
     await release.loadConfig();
 
     t.equal(config.write.callCount, 1, 'The config has been saved');
     t.ok(config.write.calledWith({ token }), 'The token has been saved in the config');
 
     sandbox.restore();
+    t.end();
+});
+
+test('should exit without a token in non interaction mode', async (t) => {
+    t.plan(2);
+
+    sandbox.stub(inquirer, 'prompt');
+    sandbox.stub(log, 'exit');
+
+    const release = releaseFactory({ interactive: false });
+    await release.loadConfig();
+
+
+    t.equal(inquirer.prompt.callCount, 0, 'No prompt is displayed');
+    t.equal(log.exit.callCount, 1, 'Without a token we exit');
+
+    sandbox.restore();
+    t.end();
+});
+
+test('fallback to env token if not set', async (t) => {
+    t.plan(2);
+
+    const release = releaseFactory();
+    t.equal(typeof release.getData().token, 'undefined', 'The token is not set');
+
+    process.env.GITHUB_TOKEN = 'foo';
+    await release.loadConfig();
+
+    t.equal(release.getData().token, 'foo', 'The token is read from env');
+
+    sandbox.restore();
+
+    delete process.env.GITHUB_TOKEN;
     t.end();
 });

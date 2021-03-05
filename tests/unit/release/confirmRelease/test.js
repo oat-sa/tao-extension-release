@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019-2020 Open Assessment Technologies SA;
+ * Copyright (c) 2019-2021 Open Assessment Technologies SA;
  */
 
 /**
@@ -32,7 +32,12 @@ const sandbox = sinon.sandbox.create();
 const extension = 'testExtension';
 const version = '1.1.1';
 
+const data = {
+    version,
+    extension: { name: extension }
+};
 const log = {
+    info: () => { },
     exit: () => { },
     doing: () => { },
     done: () => { },
@@ -41,14 +46,15 @@ const inquirer = {
     prompt: () => { },
 };
 
-const release = proxyquire.noCallThru().load('../../../../src/release.js', {
+const releaseFactory = proxyquire.noCallThru().load('../../../../src/release.js', {
     './log.js': log,
     inquirer
-})();
+});
 
 test('should define confirmRelease method on release instance', (t) => {
     t.plan(1);
 
+    const release = releaseFactory();
     t.ok(typeof release.confirmRelease === 'function', 'The release instance has confirmRelease method');
 
     t.end();
@@ -59,8 +65,8 @@ test('should prompt to confirm release', async (t) => {
 
     sandbox.stub(log, 'exit');
 
-    release.setData({ version, extension: { name: extension } });
-
+    const release = releaseFactory();
+    release.setData(data);
     sandbox.stub(inquirer, 'prompt')
         .callsFake(({ type, name, message }) => {
             t.equal(type, 'confirm', 'The type should be "confirm"');
@@ -84,9 +90,31 @@ test('should log exit if release was not confirmed', async (t) => {
     sandbox.stub(inquirer, 'prompt').returns({ go: false });
     sandbox.stub(log, 'exit');
 
+    const release = releaseFactory();
+    release.setData(data);
     await release.confirmRelease();
 
     t.equal(log.exit.callCount, 1, 'Exit has been logged');
+
+    sandbox.restore();
+    t.end();
+});
+
+
+test('should log only when not interactive', async (t) => {
+    t.plan(3);
+
+    sandbox.stub(inquirer, 'prompt');
+    sandbox.stub(log, 'exit');
+    sandbox.stub(log, 'info');
+
+    const release = releaseFactory({ interactive : false});
+    release.setData(data);
+    await release.confirmRelease();
+
+    t.equal(log.info.callCount, 1, 'An info message has been displayed');
+    t.equal(inquirer.prompt.callCount, 0, 'No prompt called');
+    t.equal(log.exit.callCount, 0, 'Exit is not called');
 
     sandbox.restore();
     t.end();
