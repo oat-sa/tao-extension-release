@@ -60,3 +60,10 @@
  - BREAKING CHANGE: change commands to `extensionRelease`, `npmRelease` and `repoRelease` and remove the commands `oldWayRelease`, `createRelease` and `prepareRelease`
  - BREAKING CHANGE: next version is computed from conventional commits 
  - BREAKING CHANGE: `extensionRelease` doesn't update version in the manifest anymore
+
+
+## [Version 2.1.0] 
+
+ - Support non interactive mode. (see `--no-interactive` options).
+ - translation update in extension is off by default.
+ - can read the `GITHUB_TOKEN` from env.

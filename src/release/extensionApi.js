@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2020 Open Assessment Technologies SA;
+ * Copyright (c) 2020-2021 Open Assessment Technologies SA;
  */
 
 /**
@@ -116,7 +116,6 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
 
             const availableExtensions = await this.taoInstance.getExtensions();
 
-
             if (!extension && interactive) {
                 ({ extension } = await inquirer.prompt({
                     type: 'list',
@@ -215,8 +214,6 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
 
                 log.done();
             }
-
-
         },
 
         publish() {

@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019-2020 Open Assessment Technologies SA;
+ * Copyright (c) 2019-2021 Open Assessment Technologies SA;
  */
 
 /**
@@ -126,7 +126,6 @@ test('should log exit', async (t) => {
     sandbox.restore();
     t.end();
 });
-
 
 test('should directly exit without a diff in non interactive mode', async (t) => {
     t.plan(2);

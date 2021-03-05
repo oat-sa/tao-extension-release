@@ -100,7 +100,6 @@ test('should log exit if release was not confirmed', async (t) => {
     t.end();
 });
 
-
 test('should log only when not interactive', async (t) => {
     t.plan(3);
 

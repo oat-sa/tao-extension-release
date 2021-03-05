@@ -80,7 +80,7 @@ Commandline arguments to give you more control over the parameters of the releas
 | `--release-branch <branch>`   | branch to release to               | `master`                                                 |
 | `--release-version <version>` | version to be used for the release | version extracted from conventional commits              |
 | `--release-comment <comment>` | comment to attach to the release   | (none - prompted)                                        |
-| `--no-interactive`            | turns off the interactive mode     | interactive mode is by default, except on non TTY shells |
+| `--no-interactive`            | turns off the interactive mode     | interactive mode is on by default, except on non TTY shells |
 
 ### extensionRelease extra options
 
@@ -90,6 +90,7 @@ Commandline arguments to give you more control over the parameters of the releas
 | `--extension-to-release <extension>` | extension name (e.g. taoFoobar)                      | (none - prompted) |
 | `--update-translations`              | flag to indicate translation files should be updated | `false`           |
 | `--www-user <user>`                  | the system user used to launch PHP commands          | `www-data`        |
+
 
 ## Development
 

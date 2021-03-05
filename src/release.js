@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019 Open Assessment Technologies SA;
+ * Copyright (c) 2019-2021 Open Assessment Technologies SA;
  */
 
 /**
@@ -198,7 +198,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             // Start with CLI option, if it's missing we'll prompt user
             let comment = releaseComment;
 
-            if ( interactive && (!comment || !comment.length) ) {
+            if (interactive && (!comment || !comment.length)) {
                 ({ comment } = await inquirer.prompt({
                     type: 'input',
                     name: 'comment',
@@ -331,7 +331,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             const diffMessage = `It seems there is no changes between ${baseBranch} and ${releaseBranch}.`;
             if (!hasDiff) {
 
-                if(interactive) {
+                if (interactive) {
                     const { diff } = await inquirer.prompt({
                         type: 'confirm',
                         name: 'diff',
