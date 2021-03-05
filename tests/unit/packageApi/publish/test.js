@@ -49,21 +49,20 @@ const npmPackage = {
 };
 const npmPackageFactory = sandbox.stub().callsFake(() => npmPackage);
 
-const packageApi = proxyquire.noCallThru().load('../../../../src/release/packageApi.js', {
+const packageApiFactory = proxyquire.noCallThru().load('../../../../src/release/packageApi.js', {
     '../log.js': log,
     '../npmPackage.js': npmPackageFactory,
     inquirer,
-})({ releaseBranch });
+});
 
 const gitClientInstance = {
     checkout: () => { },
 };
 
-packageApi.gitClient = gitClientInstance;
-
 test('should define publish method on packageApi instance', (t) => {
     t.plan(1);
 
+    const packageApi = packageApiFactory();
     t.ok(typeof packageApi.publish === 'function', 'The packageApi instance has publish method');
 
     t.end();
@@ -71,6 +70,9 @@ test('should define publish method on packageApi instance', (t) => {
 
 test('should checkout releasing branch', async (t) => {
     t.plan(1);
+
+    const packageApi = packageApiFactory({ releaseBranch });
+    packageApi.gitClient = gitClientInstance;
 
     sandbox.stub(process, 'cwd').returns(taoRoot);
     sandbox.stub(fs, 'existsSync').returns(true);
@@ -88,6 +90,9 @@ test('should checkout releasing branch', async (t) => {
 
 test('should prompt about publishing', async (t) => {
     t.plan(5);
+
+    const packageApi = packageApiFactory({ releaseBranch });
+    packageApi.gitClient = gitClientInstance;
 
     sandbox.stub(process, 'cwd').returns(taoRoot);
     sandbox.stub(fs, 'existsSync').returns(true);
@@ -113,6 +118,9 @@ test('should prompt about publishing', async (t) => {
 test('should call npmPackage.publish', async (t) => {
     t.plan(3);
 
+    const packageApi = packageApiFactory({ releaseBranch });
+    packageApi.gitClient = gitClientInstance;
+
     sandbox.stub(process, 'cwd').returns(taoRoot);
     sandbox.stub(fs, 'existsSync').returns(true);
     sandbox.stub(gitClientInstance, 'checkout').returns(Promise.resolve());
@@ -126,6 +134,31 @@ test('should call npmPackage.publish', async (t) => {
     t.equal(log.doing.callCount, 2, 'Doing has been logged');
     t.ok(log.doing.getCall(1).args[0].startsWith('Publishing package'), 'Doing has been logged with appropriate message');
     t.equal(npmPackage.publish.callCount, 1, 'npmPackage.publish has been called');
+
+    sandbox.restore();
+    t.end();
+});
+
+
+test('should not prompt in non interactive mode', async (t) => {
+    t.plan(3);
+
+    const packageApi = packageApiFactory({ releaseBranch, interactive : false });
+    packageApi.gitClient = gitClientInstance;
+
+    sandbox.stub(process, 'cwd').returns(taoRoot);
+    sandbox.stub(fs, 'existsSync').returns(true);
+    sandbox.stub(gitClientInstance, 'checkout').returns(Promise.resolve());
+    sandbox.stub(inquirer, 'prompt');
+    sandbox.stub(log, 'doing');
+    sandbox.stub(npmPackage, 'publish');
+
+    await packageApi.selectTarget();
+    await packageApi.publish();
+
+    t.equal(log.doing.callCount, 2, 'Doing has been logged');
+    t.ok(log.doing.getCall(1).args[0].startsWith('Publishing package'), 'Doing has been logged with appropriate message');
+    t.equal(inquirer.prompt.callCount, 0, 'No prompt called');
 
     sandbox.restore();
     t.end();
