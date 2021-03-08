@@ -249,10 +249,10 @@ const extensionApiWithCliOption = proxyquire.noCallThru().load('../../../../src/
     '../log.js': log,
     '../taoInstance.js': taoInstanceFactory,
     inquirer,
-})({ updateTranslations: true, interactive : false }, { extension : { name : extension }});
+})({ updateTranslations: true, interactive : false });
 
 test('should use CLI updateTranslations instead of prompting', async (t) => {
-    t.plan(3);
+    t.plan(2);
 
     await extensionApiWithCliOption.selectTaoInstance();
     extensionApiWithCliOption.gitClient = gitClientInstance;
@@ -262,9 +262,8 @@ test('should use CLI updateTranslations instead of prompting', async (t) => {
 
     await extensionApiWithCliOption.updateTranslations(releasingBranch);
 
-    t.equal(taoInstance.updateTranslations.callCount, 1, 'Translations has been updated');
-    t.ok(taoInstance.updateTranslations.calledWith(extension), 'Translations of appropriate extension has been updated');
-    t.ok(inquirer.prompt.notCalled, 'No prompt shown');
+    t.ok(taoInstance.updateTranslations.notCalled, 'Translations are not updated in non interactive mode');
+    t.ok(inquirer.prompt.notCalled, 'No prompt called');
 
     sandbox.restore();
     t.end();

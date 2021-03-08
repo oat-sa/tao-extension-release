@@ -176,7 +176,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          */
         async confirmRelease() {
             const confirmMessage = `Let's release version ${data[subjectType].name}@${data.version} 🚀`;
-            if( interactive ) {
+            if (interactive) {
                 const { go } = await inquirer.prompt({
                     type: 'confirm',
                     name: 'go',
@@ -198,7 +198,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             log.doing(`Creating github release ${data.version}`);
 
             // Start with CLI option, if it's missing we'll prompt user
-            let comment = releaseComment;
+            let comment = releaseComment || '';
 
             if (interactive && (!comment || !comment.length)) {
                 ({ comment } = await inquirer.prompt({
@@ -568,7 +568,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             // Get last released version:
             await gitClient.pull(releaseBranch);
             await gitClient.pull(baseBranch);
-
         },
 
         /**

@@ -183,20 +183,17 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
          * @param {String} releasingBranch
          */
         async updateTranslations(releasingBranch) {
-            if (updateTranslations) {
+            //translations runs only in interactive mode
+            if (interactive && updateTranslations) {
                 log.doing('Translations');
                 log.warn('Update translations during a release only if you know what you are doing');
 
-                let runTranslations = true;
-
-                if (interactive) {
-                    ({ runTranslations } = await inquirer.prompt({
-                        type: 'confirm',
-                        name: 'runTranslations',
-                        message: `${data.extension.name} needs updated translations ? `,
-                        default: false
-                    }));
-                }
+                const { runTranslations } = await inquirer.prompt({
+                    type: 'confirm',
+                    name: 'runTranslations',
+                    message: `${data.extension.name} needs updated translations ? `,
+                    default: false
+                });
                 if (runTranslations) {
                     try {
                         await this.taoInstance.updateTranslations(data.extension.name);

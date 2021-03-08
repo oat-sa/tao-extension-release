@@ -146,24 +146,13 @@ Some treats of the next version calculation:
 
 You need a recent version of [node.js](https://nodejs.org) for your platform :
 
-- [Windows installer](https://nodejs.org/dist/v8.7.0/node-v8.7.0-x86.msi)
-- [OSX installer](https://nodejs.org/dist/v8.7.0/node-v8.7.0.pkg)
-- Linux package
-
-```sh
-curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
-sudo apt-get install -y nodejs
-```
-
-- or using [nvm](https://github.com/creationix/nvm#installation) for multiple versions.
-
 #### git
 
 You need to have the `git` > `1.7.0` command available in your `PATH`.
 
 #### PHP
 
-You also need the `php` command available in your `PATH`.
+To release TAO extension, you may also need the `php`command available in your `PATH`
 
 #### sudo (linux and OSX)
 
