@@ -89,7 +89,7 @@ Commandline arguments to give you more control over the parameters of the releas
 | ------------------------------------ | ---------------------------------------------------- | ----------------- |
 | `--path-to-tao <path>`               | relative or absolute filesystem path                 | (none - prompted) |
 | `--extension-to-release <extension>` | extension name (e.g. taoFoobar)                      | (none - prompted) |
-| `--update-translations`              | flag to indicate translation files should be updated | `false`           |
+| `--update-translations`              | flag to indicate translation files should be updated. Only available in interative mode. | `true`           |
 | `--www-user <user>`                  | the system user used to launch PHP commands          | `www-data`        |
 
 ## Development
