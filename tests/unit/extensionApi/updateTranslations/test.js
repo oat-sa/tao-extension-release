@@ -61,15 +61,18 @@ const taoInstance = {
 };
 const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
 
-const extensionApi = proxyquire.noCallThru().load('../../../../src/release/extensionApi.js', {
+const extensionApiFactory = proxyquire.noCallThru().load('../../../../src/release/extensionApi.js', {
     '../log.js': log,
     '../taoInstance.js': taoInstanceFactory,
-    inquirer,
-})({ branchPrefix, interactive: true, updateTranslations: true }, { extension: {name : extension } });
+    inquirer
+});
+
+const data = {  extension: {name : extension } };
 
 test('should define updateTranslations method on extensionApi instance', (t) => {
     t.plan(1);
 
+    const extensionApi = extensionApiFactory();
     t.ok(typeof extensionApi.updateTranslations === 'function', 'The extensionApi instance has updateTranslations method');
 
     t.end();
@@ -77,6 +80,8 @@ test('should define updateTranslations method on extensionApi instance', (t) => 
 
 test('should log doing message', async (t) => {
     t.plan(2);
+
+    const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: false }, data);
 
     await extensionApi.selectTaoInstance();
     extensionApi.gitClient = gitClientInstance;
@@ -95,6 +100,7 @@ test('should log doing message', async (t) => {
 test('should log warn message', async (t) => {
     t.plan(2);
 
+    const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: false }, data);
     await extensionApi.selectTaoInstance();
     extensionApi.gitClient = gitClientInstance;
 
@@ -112,6 +118,7 @@ test('should log warn message', async (t) => {
 test('should prompt to update translations', async (t) => {
     t.plan(5);
 
+    const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: false }, data);
     await extensionApi.selectTaoInstance();
     extensionApi.gitClient = gitClientInstance;
 
@@ -135,6 +142,7 @@ test('should prompt to update translations', async (t) => {
 test('should update translations', async (t) => {
     t.plan(2);
 
+    const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: false }, data);
     await extensionApi.selectTaoInstance();
     extensionApi.gitClient = gitClientInstance;
 
@@ -148,9 +156,11 @@ test('should update translations', async (t) => {
     sandbox.restore();
     t.end();
 });
+
 test('should publish translations', async (t) => {
     t.plan(3);
 
+    const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: false }, data);
     await extensionApi.selectTaoInstance();
     extensionApi.gitClient = gitClientInstance;
 
@@ -171,6 +181,7 @@ test('should log error message if update failed', async (t) => {
 
     const errorMessage = 'testError';
 
+    const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: false }, data);
     await extensionApi.selectTaoInstance();
     extensionApi.gitClient = gitClientInstance;
 
@@ -191,6 +202,7 @@ test('should log info message after update of translations', async (t) => {
 
     const changes = ['change1', 'change2'];
 
+    const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: false }, data);
     await extensionApi.selectTaoInstance();
     extensionApi.gitClient = gitClientInstance;
 
@@ -212,6 +224,7 @@ test('should log info message after update of translations', async (t) => {
 test('should skip translations if "no" answered', async (t) => {
     t.plan(3);
 
+    const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: false }, data);
     await extensionApi.selectTaoInstance();
     extensionApi.gitClient = gitClientInstance;
 
@@ -232,6 +245,7 @@ test('should skip translations if "no" answered', async (t) => {
 test('should log done message', async (t) => {
     t.plan(1);
 
+    const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: false }, data);
     await extensionApi.selectTaoInstance();
     extensionApi.gitClient = gitClientInstance;
 
@@ -245,22 +259,37 @@ test('should log done message', async (t) => {
     t.end();
 });
 
-const extensionApiWithCliOption = proxyquire.noCallThru().load('../../../../src/release/extensionApi.js', {
-    '../log.js': log,
-    '../taoInstance.js': taoInstanceFactory,
-    inquirer,
-})({ updateTranslations: true, interactive : false });
-
-test('should use CLI updateTranslations instead of prompting', async (t) => {
+test('should skip prompt if updateTranslations is set', async (t) => {
     t.plan(2);
 
-    await extensionApiWithCliOption.selectTaoInstance();
-    extensionApiWithCliOption.gitClient = gitClientInstance;
+    const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: true }, data);
+
+    await extensionApi.selectTaoInstance();
+    extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(inquirer, 'prompt');
     sandbox.stub(taoInstance, 'updateTranslations');
 
-    await extensionApiWithCliOption.updateTranslations(releasingBranch);
+    await extensionApi.updateTranslations(releasingBranch);
+
+    t.ok(taoInstance.updateTranslations.callCount, 1, 'Update translation is called');
+    t.ok(inquirer.prompt.notCalled, 'No prompt called');
+
+    sandbox.restore();
+    t.end();
+});
+
+test('should not update translations in non interaction mode', async (t) => {
+    t.plan(2);
+
+    const extensionApi = extensionApiFactory({ branchPrefix, interactive: false, updateTranslations: true });
+    await extensionApi.selectTaoInstance();
+    extensionApi.gitClient = gitClientInstance;
+
+    sandbox.stub(inquirer, 'prompt');
+    sandbox.stub(taoInstance, 'updateTranslations');
+
+    await extensionApi.updateTranslations(releasingBranch);
 
     t.ok(taoInstance.updateTranslations.notCalled, 'Translations are not updated in non interactive mode');
     t.ok(inquirer.prompt.notCalled, 'No prompt called');

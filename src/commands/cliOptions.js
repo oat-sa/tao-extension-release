@@ -29,7 +29,7 @@ module.exports = {
     origin: ['--origin <remotename>', 'the name of the remote repo', 'origin'],
     releaseBranch: ['--release-branch <branch>', 'the target branch for the release PR', 'master'],
     wwwUser: ['--www-user <user>', 'the user who runs php commands', 'www-data'],
-    updateTranslations: ['--update-translations', 'indicates if we need to update translations. Only available in interactive mode.', true],
+    updateTranslations: ['--update-translations', 'indicates if we need to update translations. Only available in interactive mode.'],
     noInteractive: ['--no-interactive', 'non interactive mode, always off on non TTY env'],
     noWrite: ['--no-write', 'turns off writting data like the config'],
 

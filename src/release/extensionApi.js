@@ -33,7 +33,7 @@ const log = require('../log.js');
  * @param {String} [params.wwwUser] - name of the www user
  * @param {String} [params.pathToTao] - path to the instance root
  * @param {String} [params.extensionToRelease] - name of the extension
- * @param {boolean} [params.updateTranslations=false] - should translations be included?
+ * @param {boolean} [params.updateTranslations] - if true we do not prompt to update translations
  * @param {boolean} [params.interactive=true] - run in interactive mode
  * @param {Object} data - copy of global data object
  */
@@ -184,16 +184,22 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
          */
         async updateTranslations(releasingBranch) {
             //translations runs only in interactive mode
-            if (interactive && updateTranslations) {
+            if (interactive) {
                 log.doing('Translations');
                 log.warn('Update translations during a release only if you know what you are doing');
 
-                const { runTranslations } = await inquirer.prompt({
-                    type: 'confirm',
-                    name: 'runTranslations',
-                    message: `${data.extension.name} needs updated translations ? `,
-                    default: false
-                });
+                let runTranslations = false;
+
+                if (updateTranslations) {
+                    runTranslations = true;
+                } else {
+                    ({ runTranslations } = await inquirer.prompt({
+                        type: 'confirm',
+                        name: 'runTranslations',
+                        message: `${data.extension.name} needs updated translations ? `,
+                        default: false
+                    }));
+                }
                 if (runTranslations) {
                     try {
                         await this.taoInstance.updateTranslations(data.extension.name);

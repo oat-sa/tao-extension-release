@@ -85,12 +85,12 @@ Commandline arguments to give you more control over the parameters of the releas
 
 ### extensionRelease extra options
 
-| option                               | description                                          | default           |
-| ------------------------------------ | ---------------------------------------------------- | ----------------- |
-| `--path-to-tao <path>`               | relative or absolute filesystem path                 | (none - prompted) |
-| `--extension-to-release <extension>` | extension name (e.g. taoFoobar)                      | (none - prompted) |
-| `--update-translations`              | flag to indicate translation files should be updated. Only available in interative mode. | `true`           |
-| `--www-user <user>`                  | the system user used to launch PHP commands          | `www-data`        |
+| option                               | description                                                                                        | default           |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------- | ----------------- |
+| `--path-to-tao <path>`               | relative or absolute filesystem path                                                               | (none - prompted) |
+| `--extension-to-release <extension>` | extension name (e.g. taoFoobar)                                                                    | (none - prompted) |
+| `--update-translations`              | run translation update without prompting. Translation update is only available in interative mode. |                   |
+| `--www-user <user>`                  | the system user used to launch PHP commands                                                        | `www-data`        |
 
 ## Development
 
