@@ -144,7 +144,7 @@ Some treats of the next version calculation:
 
 #### node.js
 
-You need a recent version of [node.js](https://nodejs.org) for your platform :
+You need a recent version of [node.js](https://nodejs.org) for your platform.
 
 #### git
 
