@@ -89,7 +89,7 @@ Commandline arguments to give you more control over the parameters of the releas
 | ------------------------------------ | -------------------------------------------------------------------------------------------------- | ----------------- |
 | `--path-to-tao <path>`               | relative or absolute filesystem path                                                               | (none - prompted) |
 | `--extension-to-release <extension>` | extension name (e.g. taoFoobar)                                                                    | (none - prompted) |
-| `--update-translations`              | run translation update without prompting. Translation update is only available in interative mode. |                   |
+| `--update-translations`              | run translation update without prompting. Translations update is only available in interative mode. |                   |
 | `--www-user <user>`                  | the system user used to launch PHP commands                                                        | `www-data`        |
 
 ## Development
@@ -152,7 +152,7 @@ You need to have the `git` > `1.7.0` command available in your `PATH`.
 
 #### PHP
 
-To release TAO extension, you may also need the `php`command available in your `PATH`
+To release TAO extension, you may also need the `php` command available in your `PATH`
 
 #### sudo (linux and OSX)
 

@@ -186,13 +186,13 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
             //translations runs only in interactive mode
             if (interactive) {
                 log.doing('Translations');
-                log.warn('Update translations during a release only if you know what you are doing');
 
-                let runTranslations = false;
+                //if the flag update-translations is set, we run translations and we don't prompt
+                let runTranslations = !!updateTranslations;
 
-                if (updateTranslations) {
-                    runTranslations = true;
-                } else {
+                if (!runTranslations) {
+                    log.warn('Update translations during a release only if you know what you are doing');
+
                     ({ runTranslations } = await inquirer.prompt({
                         type: 'confirm',
                         name: 'runTranslations',
