@@ -31,6 +31,7 @@ const github = require('./github.js');
 const gitClientFactory = require('./git.js');
 const log = require('./log.js');
 const conventionalCommits = require('./conventionalCommits.js');
+const semverValid = require('semver/functions/valid');
 
 const adaptees = {
     extension : require('./release/extensionApi.js'),
@@ -75,6 +76,10 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
     if (!adaptees[subjectType]) {
         throw new Error(`No implementation found for the type '${subjectType}'`);
+    }
+
+    if (releaseVersion && semverValid(releaseVersion) === null) {
+        throw new Error(`'${releaseVersion}' is not a valid semver version.`);
     }
 
     //in non TTY shells we turn off the interactive mode
