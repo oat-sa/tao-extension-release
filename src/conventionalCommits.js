@@ -27,8 +27,10 @@
 const conventionalChangelogCore = require('conventional-changelog-core');
 const conventionalPresetConfig = require('@oat-sa/conventional-changelog-tao');
 const conventionalRecommendedBump = require('conventional-recommended-bump');
-const semverParse = require('semver/functions/parse');
 const semverInc = require('semver/functions/inc');
+const semverValid = require('semver/functions/valid');
+const semverCoerce = require('semver/functions/coerce');
+const semverParse = require('semver/functions/coerce');
 
 module.exports = {
     /**
@@ -59,9 +61,9 @@ module.exports = {
      * @returns {Promise}
      */
     async getNextVersion(lastTag) {
-        const lastVersionObject = semverParse(lastTag);
+        const lastVersionObject = semverValid(lastTag) === null ? semverParse(lastTag) : semverCoerce(lastTag);
         if (!lastVersionObject) {
-            throw new Error('Unable to retrieve last version from tags');
+            throw new Error('Unable to retrieve last version from tags or the last tag is not semver compliant');
         }
 
         return new Promise((resolve, reject) => {

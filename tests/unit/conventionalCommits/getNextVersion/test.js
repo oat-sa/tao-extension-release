@@ -27,22 +27,12 @@ const test = require('tape');
 const sandbox = sinon.sandbox.create();
 
 const recommendation = {
-    releaseType: 'path',
-};
-const version = '1.1.1';
-const lastVersionObject = {
-    version,
+    releaseType: 'minor'
 };
 
 const conventionalRecommendedBump = sandbox.stub().callsFake((preset, config, callback) => callback(undefined, recommendation));
-const semverParse = sandbox.stub().returns(lastVersionObject);
-const semverInc = sandbox.stub().returns(version);
-
-
 const conventionalCommits = proxyquire.noCallThru().load('../../../../src/conventionalCommits.js', {
-    'conventional-recommended-bump': conventionalRecommendedBump,
-    'semver/functions/parse': semverParse,
-    'semver/functions/inc': semverInc,
+    'conventional-recommended-bump': conventionalRecommendedBump
 });
 
 test('should define getNextVersion method on conventionalCommits', (t) => {
@@ -53,46 +43,51 @@ test('should define getNextVersion method on conventionalCommits', (t) => {
     t.end();
 });
 
-test('should parse last tag', async (t) => {
+test('should parse last tag and increment', async (t) => {
     t.plan(2);
 
-    const lastTag = 'testTag';
+    const lastTag = '1.2.3';
 
-    semverParse.resetHistory();
+    const results = await conventionalCommits.getNextVersion(lastTag);
 
-    await conventionalCommits.getNextVersion(lastTag);
-
-    t.equals(semverParse.callCount, 1, 'parse lat version');
-    t.ok(semverParse.calledWith(lastTag), 'parse lat version');
+    t.equals(results.version, '1.3.0');
+    t.equals(results.lastVersion, '1.2.3');
 
     t.end();
 });
 
-test('should get version bump', async (t) => {
+test('should coerce and increment a bad tag', async (t) => {
+    t.plan(2);
+
+    const lastTag = '3.2.5.8';
+
+    const results = await conventionalCommits.getNextVersion(lastTag);
+
+    t.equals(results.version, '3.3.0');
+    t.equals(results.lastVersion, '3.2.5');
+
+    t.end();
+});
+
+test('should coerce version with a pre-release', async (t) => {
+    t.plan(2);
+
+    const lastTag = '4.12.13-8';
+
+    const results = await conventionalCommits.getNextVersion(lastTag);
+
+    t.equals(results.version, '4.13.0');
+    t.equals(results.lastVersion, '4.12.13');
+
+    t.end();
+});
+
+test('fails when the last cannot be parsed', t => {
     t.plan(1);
 
-    const lastTag = 'testTag';
-
-    conventionalRecommendedBump.resetHistory();
-
-    await conventionalCommits.getNextVersion(lastTag);
-
-    t.equals(conventionalRecommendedBump.callCount, 1, 'get version bump');
-
-    t.end();
+    conventionalCommits.getNextVersion('foo').catch(err => {
+        t.equals(err.message, 'Unable to retrieve last version from tags or the last tag is not semver compliant');
+        t.end();
+    });
 });
 
-test('should get version increment', async (t) => {
-    t.plan(2);
-
-    const lastTag = 'testTag';
-
-    semverInc.resetHistory();
-
-    await conventionalCommits.getNextVersion(lastTag);
-
-    t.equals(semverInc.callCount, 1, 'get version increment');
-    t.ok(semverInc.calledWith(lastVersionObject, recommendation.releaseType), 'get version increment');
-
-    t.end();
-});
