@@ -38,15 +38,14 @@ const inquirer = {
     prompt: () => ({ extension, taoRoot }),
 };
 
-const release = proxyquire.noCallThru().load('../../../../src/release.js', {
-    inquirer,
-})({ origin });
-
-release.setData({ releasingBranch, token, extension: {} });
+const releaseFactory = proxyquire.noCallThru().load('../../../../src/release.js', {
+    inquirer
+});
 
 test('should define promptToResolveConflicts method on release instance', (t) => {
     t.plan(1);
 
+    const release = releaseFactory();
     t.ok(typeof release.promptToResolveConflicts === 'function', 'The release instance has promptToResolveConflicts method');
 
     t.end();
@@ -55,6 +54,8 @@ test('should define promptToResolveConflicts method on release instance', (t) =>
 test('should prompt to confirm resolution', async (t) => {
     t.plan(5);
 
+    const release = releaseFactory({ origin });
+    release.setData({ releasingBranch, token, extension: {} });
     await release.initialiseGitClient();
 
     sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message, default: defaultValue }) => {
@@ -69,6 +70,20 @@ test('should prompt to confirm resolution', async (t) => {
     await release.promptToResolveConflicts();
 
     t.equal(inquirer.prompt.callCount, 1, 'Prompt has been initialised');
+
+    sandbox.restore();
+    t.end();
+});
+
+test('cannot merge in non interactive mode', async (t) => {
+    t.plan(2);
+
+    sandbox.stub(inquirer, 'prompt');
+
+    const release = releaseFactory({ interactive: false });
+    const result = await release.promptToResolveConflicts();
+    t.equal(result, false, 'exit with false when not interactive');
+    t.equal(inquirer.prompt.callCount, 0, 'No prompt was called');
 
     sandbox.restore();
     t.end();

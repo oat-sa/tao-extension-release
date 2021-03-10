@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019-2020 Open Assessment Technologies SA;
+ * Copyright (c) 2019-2021 Open Assessment Technologies SA;
  */
 
 /**
@@ -50,17 +50,17 @@ const log = {
     exit: () => { },
 };
 
-const release = proxyquire.noCallThru().load('../../../../src/release.js', {
+const releaseFactory = proxyquire.noCallThru().load('../../../../src/release.js', {
     './git.js': gitClientFactory,
     './log.js': log,
-    inquirer,
-})({ baseBranch, releaseBranch });
+    inquirer
+});
 
-release.setData({ releasingBranch, token, extension: {} });
 
 test('should define isReleaseRequired method on release instance', (t) => {
     t.plan(1);
 
+    const release = releaseFactory();
     t.ok(typeof release.isReleaseRequired === 'function', 'The release instance has isReleaseRequired method');
 
     t.end();
@@ -69,6 +69,8 @@ test('should define isReleaseRequired method on release instance', (t) => {
 test('should check for diffs between base and release branches', async (t) => {
     t.plan(2);
 
+    const release = releaseFactory({ baseBranch, releaseBranch });
+    release.setData({ releasingBranch, token, extension: {} });
     await release.initialiseGitClient();
 
     sandbox.stub(gitClientInstance, 'hasDiff').returns(true);
@@ -85,6 +87,8 @@ test('should check for diffs between base and release branches', async (t) => {
 test('should prompt about release if there is no diffs', async (t) => {
     t.plan(4);
 
+    const release = releaseFactory({ baseBranch, releaseBranch });
+    release.setData({ releasingBranch, token, extension: {} });
     await release.initialiseGitClient();
 
     sandbox.stub(gitClientInstance, 'hasDiff').returns(false);
@@ -107,6 +111,8 @@ test('should prompt about release if there is no diffs', async (t) => {
 test('should log exit', async (t) => {
     t.plan(1);
 
+    const release = releaseFactory({ baseBranch, releaseBranch });
+    release.setData({ releasingBranch, token, extension: {} });
     await release.initialiseGitClient();
 
     sandbox.stub(gitClientInstance, 'hasDiff').returns(false);
@@ -121,9 +127,31 @@ test('should log exit', async (t) => {
     t.end();
 });
 
+test('should directly exit without a diff in non interactive mode', async (t) => {
+    t.plan(2);
+
+    const release = releaseFactory({ baseBranch, releaseBranch, interactive: false });
+    release.setData({ releasingBranch, token, extension: {} });
+    await release.initialiseGitClient();
+
+    sandbox.stub(gitClientInstance, 'hasDiff').returns(false);
+    sandbox.stub(inquirer, 'prompt');
+    sandbox.stub(log, 'exit');
+
+    await release.isReleaseRequired();
+
+    t.equal(inquirer.prompt.callCount, 0, 'In interactive mode the user is not prompted');
+    t.equal(log.exit.callCount, 1, 'Exit has been called.');
+
+    sandbox.restore();
+    t.end();
+});
+
 test('should log done message', async (t) => {
     t.plan(1);
 
+    const release = releaseFactory({ baseBranch, releaseBranch });
+    release.setData({ releasingBranch, token, extension: {} });
     await release.initialiseGitClient();
 
     sandbox.stub(log, 'done');

@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2020 Open Assessment Technologies SA;
+ * Copyright (c) 2020-2021 Open Assessment Technologies SA;
  */
 
 /**
@@ -24,8 +24,6 @@
 
 const path = require('path');
 const inquirer = require('inquirer');
-const compareVersions = require('compare-versions');
-
 const taoInstanceFactory = require('../taoInstance.js');
 const log = require('../log.js');
 
@@ -35,10 +33,14 @@ const log = require('../log.js');
  * @param {String} [params.wwwUser] - name of the www user
  * @param {String} [params.pathToTao] - path to the instance root
  * @param {String} [params.extensionToRelease] - name of the extension
- * @param {Boolean} [params.updateTranslations] - should translations be included?
+ * @param {boolean} [params.updateTranslations] - if true we do not prompt to update translations
+ * @param {boolean} [params.interactive=true] - run in interactive mode
  * @param {Object} data - copy of global data object
  */
 module.exports = function extensionApiFactory(params = {}, data = { extension: {} }) {
+
+    const { interactive, updateTranslations } = params;
+
     return {
         gitClient: null,
 
@@ -78,7 +80,7 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
             // Start with CLI option, if it's missing we'll prompt user
             let taoRoot = params.pathToTao;
 
-            if (!taoRoot) {
+            if (!taoRoot && interactive) {
                 ({ taoRoot } = await inquirer.prompt({
                     type: 'input',
                     name: 'taoRoot',
@@ -87,11 +89,11 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
                 }));
             }
 
-            this.taoInstance = taoInstanceFactory(path.resolve(taoRoot), false, params.wwwUser);
+            this.taoInstance = taoInstanceFactory(path.resolve(taoRoot || '.'), false, params.wwwUser);
             const { dir, root } = await this.taoInstance.isRoot();
 
             if (!root) {
-                log.exit(`${dir} is not a TAO instance`);
+                log.exit(`${dir} is not a TAO instance.`);
             }
 
             if (!(await this.taoInstance.isInstalled())) {
@@ -114,9 +116,7 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
 
             const availableExtensions = await this.taoInstance.getExtensions();
 
-            if (extension && !availableExtensions.includes(extension)) {
-                log.exit(`Specified extension ${extension} not found in ${data.taoRoot}`);
-            } else if (!extension) {
+            if (!extension && interactive) {
                 ({ extension } = await inquirer.prompt({
                     type: 'list',
                     name: 'extension',
@@ -125,6 +125,11 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
                     choices: availableExtensions,
                     default: data.extension.name
                 }));
+            }
+            if (extension && !availableExtensions.includes(extension)) {
+                log.exit(`Specified extension ${extension} not found in ${data.taoRoot}`);
+            } else if (!extension) {
+                log.exit(`Missing extension. Please set an extension using the parameter '--extension-to-release' from one available in ${data.taoRoot}.`);
             }
 
             data.extension.name = extension;
@@ -138,45 +143,6 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
         async getMetadata() {
             const repoName = await this.taoInstance.getRepoName(data.extension.name);
             return { repoName };
-        },
-
-        /**
-         * Verify that the version that we are going to release is valid
-         * - is the same on branch name and manifest
-         * - is bigger than current release branch version
-         * @param {String} releasingBranch
-         * @returns {Object}
-         */
-        async verifyReleasingBranch(releasingBranch, versionToRelease) {
-            log.doing('Checking out and verifying releasing branch.');
-
-            // Cross check releasing branch version with manifest version
-            const releasingBranchManifest = await this.taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
-
-            if (compareVersions(releasingBranchManifest.version, versionToRelease) === 0) {
-                log.doing(`Branch ${releasingBranch} has valid manifest.`);
-            } else {
-                log.exit(
-                    `Branch '${releasingBranch}' cannot be released because its branch name does not match its own manifest version (${releasingBranchManifest.version}).`
-                );
-            }
-
-            // Cross check releasing branch wth release branch and make sure new version is highest
-            await this.gitClient.checkout(params.releaseBranch);
-
-            const releaseBranchManifest = await this.taoInstance.parseManifest(`${data.extension.path}/manifest.php`);
-
-            if (compareVersions(releasingBranchManifest.version, releaseBranchManifest.version) === 1) {
-                data.lastVersion = releaseBranchManifest.version;
-                data.lastTag = `v${releaseBranchManifest.version}`;
-                log.done(`Branch ${releasingBranch} is valid.`);
-            } else {
-                log.exit(
-                    `Branch '${releasingBranch}' cannot be released because its manifest version (${versionToRelease}) is not greater than the manifest version of '${params.releaseBranch}' (${releaseBranchManifest.version}).`
-                );
-            }
-
-            return data;
         },
 
         /**
@@ -217,38 +183,40 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
          * @param {String} releasingBranch
          */
         async updateTranslations(releasingBranch) {
-            log.doing('Translations');
+            //translations runs only in interactive mode
+            if (interactive) {
+                log.doing('Translations');
 
-            // Start with CLI option, if it's missing we'll prompt user
-            let translation = params.updateTranslations;
+                //if the flag update-translations is set, we run translations and we don't prompt
+                let runTranslations = !!updateTranslations;
 
-            if (!translation) {
-                log.warn('Update translations during a release only if you know what you are doing');
+                if (!runTranslations) {
+                    log.warn('Update translations during a release only if you know what you are doing');
 
-                ({ translation } = await inquirer.prompt({
-                    type: 'confirm',
-                    name: 'translation',
-                    message: `${data.extension.name} needs updated translations ? `,
-                    default: false
-                }));
-            }
-
-            if (translation) {
-                try {
-                    await this.taoInstance.updateTranslations(data.extension.name);
-
-                    const changes = await this.gitClient.commitAndPush(releasingBranch, 'chore: update translations');
-
-                    if (changes && changes.length) {
-                        log.info(`Commit : [update translations - ${changes.length} files]`);
-                        changes.forEach(file => log.info(`  - ${file}`));
-                    }
-                } catch (error) {
-                    log.error(`Unable to update translations. ${error.message}. Continue.`);
+                    ({ runTranslations } = await inquirer.prompt({
+                        type: 'confirm',
+                        name: 'runTranslations',
+                        message: `${data.extension.name} needs updated translations ? `,
+                        default: false
+                    }));
                 }
-            }
+                if (runTranslations) {
+                    try {
+                        await this.taoInstance.updateTranslations(data.extension.name);
 
-            log.done();
+                        const changes = await this.gitClient.commitAndPush(releasingBranch, 'chore: update translations');
+
+                        if (changes && changes.length) {
+                            log.info(`Commit : [update translations - ${changes.length} files]`);
+                            changes.forEach(file => log.info(`  - ${file}`));
+                        }
+                    } catch (error) {
+                        log.error(`Unable to update translations. ${error.message}. Continue.`);
+                    }
+                }
+
+                log.done();
+            }
         },
 
         publish() {

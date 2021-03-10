@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019-2020 Open Assessment Technologies SA;
+ * Copyright (c) 2019-2021 Open Assessment Technologies SA;
  */
 
 /**
@@ -49,7 +49,7 @@ const log = {
     warn: () => { },
 };
 const inquirer = {
-    prompt: () => ({ extension, taoRoot, translation: true }),
+    prompt: () => ({ extension, taoRoot, runTranslations: true }),
 };
 
 const taoInstance = {
@@ -61,15 +61,18 @@ const taoInstance = {
 };
 const taoInstanceFactory = sandbox.stub().callsFake(() => taoInstance);
 
-const extensionApi = proxyquire.noCallThru().load('../../../../src/release/extensionApi.js', {
+const extensionApiFactory = proxyquire.noCallThru().load('../../../../src/release/extensionApi.js', {
     '../log.js': log,
     '../taoInstance.js': taoInstanceFactory,
-    inquirer,
-})({ branchPrefix });
+    inquirer
+});
+
+const data = {  extension: {name : extension } };
 
 test('should define updateTranslations method on extensionApi instance', (t) => {
     t.plan(1);
 
+    const extensionApi = extensionApiFactory();
     t.ok(typeof extensionApi.updateTranslations === 'function', 'The extensionApi instance has updateTranslations method');
 
     t.end();
@@ -78,8 +81,9 @@ test('should define updateTranslations method on extensionApi instance', (t) => 
 test('should log doing message', async (t) => {
     t.plan(2);
 
+    const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: false }, data);
+
     await extensionApi.selectTaoInstance();
-    await extensionApi.selectExtension();
     extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(log, 'doing');
@@ -96,8 +100,8 @@ test('should log doing message', async (t) => {
 test('should log warn message', async (t) => {
     t.plan(2);
 
+    const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: false }, data);
     await extensionApi.selectTaoInstance();
-    await extensionApi.selectExtension();
     extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(log, 'warn');
@@ -114,17 +118,17 @@ test('should log warn message', async (t) => {
 test('should prompt to update translations', async (t) => {
     t.plan(5);
 
+    const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: false }, data);
     await extensionApi.selectTaoInstance();
-    await extensionApi.selectExtension();
     extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(inquirer, 'prompt').callsFake(({ type, name, message, default: defaultValue }) => {
         t.equal(type, 'confirm', 'The type should be "confirm"');
-        t.equal(name, 'translation', 'The param name should be translation');
+        t.equal(name, 'runTranslations', 'The param name should be translation');
         t.equal(message, `${extension} needs updated translations ? `, 'Should display appropriate message');
         t.equal(defaultValue, false, 'Default value should be false');
 
-        return { translation: false };
+        return { runTranslations : false };
     });
 
     await extensionApi.updateTranslations(releasingBranch);
@@ -138,8 +142,8 @@ test('should prompt to update translations', async (t) => {
 test('should update translations', async (t) => {
     t.plan(2);
 
+    const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: false }, data);
     await extensionApi.selectTaoInstance();
-    await extensionApi.selectExtension();
     extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(taoInstance, 'updateTranslations');
@@ -156,8 +160,8 @@ test('should update translations', async (t) => {
 test('should publish translations', async (t) => {
     t.plan(3);
 
+    const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: false }, data);
     await extensionApi.selectTaoInstance();
-    await extensionApi.selectExtension();
     extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(gitClientInstance, 'commitAndPush');
@@ -177,8 +181,8 @@ test('should log error message if update failed', async (t) => {
 
     const errorMessage = 'testError';
 
+    const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: false }, data);
     await extensionApi.selectTaoInstance();
-    await extensionApi.selectExtension();
     extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(log, 'error');
@@ -198,8 +202,8 @@ test('should log info message after update of translations', async (t) => {
 
     const changes = ['change1', 'change2'];
 
+    const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: false }, data);
     await extensionApi.selectTaoInstance();
-    await extensionApi.selectExtension();
     extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(log, 'info');
@@ -220,11 +224,11 @@ test('should log info message after update of translations', async (t) => {
 test('should skip translations if "no" answered', async (t) => {
     t.plan(3);
 
+    const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: false }, data);
     await extensionApi.selectTaoInstance();
-    await extensionApi.selectExtension();
     extensionApi.gitClient = gitClientInstance;
 
-    sandbox.stub(inquirer, 'prompt').returns({ translation: false });
+    sandbox.stub(inquirer, 'prompt').returns({ runTranslations: false });
     sandbox.stub(taoInstance, 'updateTranslations');
     sandbox.stub(log, 'done');
 
@@ -241,8 +245,8 @@ test('should skip translations if "no" answered', async (t) => {
 test('should log done message', async (t) => {
     t.plan(1);
 
+    const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: false }, data);
     await extensionApi.selectTaoInstance();
-    await extensionApi.selectExtension();
     extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(log, 'done');
@@ -255,27 +259,40 @@ test('should log done message', async (t) => {
     t.end();
 });
 
-const extensionApiWithCliOption = proxyquire.noCallThru().load('../../../../src/release/extensionApi.js', {
-    '../log.js': log,
-    '../taoInstance.js': taoInstanceFactory,
-    inquirer,
-})({ updateTranslations: true });
+test('should skip prompt if updateTranslations is set', async (t) => {
+    t.plan(2);
 
-test('should use CLI updateTranslations instead of prompting', async (t) => {
-    t.plan(3);
+    const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: true }, data);
 
-    await extensionApiWithCliOption.selectTaoInstance();
-    await extensionApiWithCliOption.selectExtension();
+    await extensionApi.selectTaoInstance();
     extensionApi.gitClient = gitClientInstance;
 
     sandbox.stub(inquirer, 'prompt');
     sandbox.stub(taoInstance, 'updateTranslations');
 
-    await extensionApiWithCliOption.updateTranslations(releasingBranch);
+    await extensionApi.updateTranslations(releasingBranch);
 
-    t.equal(taoInstance.updateTranslations.callCount, 1, 'Translations has been updated');
-    t.ok(taoInstance.updateTranslations.calledWith(extension), 'Translations of appropriate extension has been updated');
-    t.ok(inquirer.prompt.notCalled, 'No prompt shown');
+    t.ok(taoInstance.updateTranslations.callCount, 1, 'Update translation is called');
+    t.ok(inquirer.prompt.notCalled, 'No prompt called');
+
+    sandbox.restore();
+    t.end();
+});
+
+test('should not update translations in non interaction mode', async (t) => {
+    t.plan(2);
+
+    const extensionApi = extensionApiFactory({ branchPrefix, interactive: false, updateTranslations: true });
+    await extensionApi.selectTaoInstance();
+    extensionApi.gitClient = gitClientInstance;
+
+    sandbox.stub(inquirer, 'prompt');
+    sandbox.stub(taoInstance, 'updateTranslations');
+
+    await extensionApi.updateTranslations(releasingBranch);
+
+    t.ok(taoInstance.updateTranslations.notCalled, 'Translations are not updated in non interactive mode');
+    t.ok(inquirer.prompt.notCalled, 'No prompt called');
 
     sandbox.restore();
     t.end();

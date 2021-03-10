@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2020 Open Assessment Technologies SA;
+ * Copyright (c) 2020-2021 Open Assessment Technologies SA;
  */
 
 /**
@@ -33,6 +33,8 @@ const log = require('../log.js');
 * @param {String} [params.releaseBranch] - branch to release to
 */
 module.exports = function packageApiFactory(params = {}, data) {
+
+    const { interactive } = params;
 
     return {
 
@@ -95,28 +97,27 @@ module.exports = function packageApiFactory(params = {}, data) {
             if (this.gitClient) {
                 await this.gitClient.checkout(params.releaseBranch);
             }
-
+            let publishPackage = !interactive;
             log.doing('Preparing for npm publish');
-            log.info(`
-    Before publishing, please be sure your npm account is configured and is a member of the appropriate organisation.
-    https://docs.npmjs.com/getting-started/setting-up-your-npm-user-account
-    https://www.npmjs.com/settings/oat-sa/packages
-            `);
-            const { confirmPublish } = await inquirer.prompt({
-                name: 'confirmPublish',
-                type: 'confirm',
-                message: 'Do you want to proceed with the \'npm publish\' command?',
-                default: false
-            });
-            if (confirmPublish) {
+            if (interactive) {
+                log.info(`
+        Before publishing, please be sure your npm account is configured and is a member of the appropriate organisation.
+        https://docs.npmjs.com/getting-started/setting-up-your-npm-user-account
+        https://www.npmjs.com/settings/oat-sa/packages
+                `);
+                const { confirmPublish } = await inquirer.prompt({
+                    name: 'confirmPublish',
+                    type: 'confirm',
+                    message: 'Do you want to proceed with the \'npm publish\' command?',
+                    default: false
+                });
+                publishPackage = confirmPublish;
+            }
+            if (publishPackage)     {
                 log.doing(`Publishing package ${this.npmPackage.name} @ ${this.npmPackage.version}`);
                 return this.npmPackage.publish();
             }
             log.exit();
-        },
-
-        verifyReleasingBranch(){
-            // Not implemented
         },
 
         build(){

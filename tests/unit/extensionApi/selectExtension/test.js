@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019-2020 Open Assessment Technologies SA;
+ * Copyright (c) 2019-2021 Open Assessment Technologies SA;
  */
 
 /**
@@ -37,6 +37,7 @@ const log = {
 };
 const origin = 'testOrigin';
 const taoRoot = 'testRoot';
+const interactive = true;
 const inquirer = {
     prompt: () => ({ taoRoot }),
 };
@@ -51,7 +52,7 @@ const extensionApi = proxyquire.noCallThru().load('../../../../src/release/exten
     '../log.js': log,
     '../taoInstance.js': taoInstanceFactory,
     inquirer,
-})({ origin });
+})({ origin, interactive });
 
 test('should define selectExtension method on extensionApi instance', (t) => {
     t.plan(1);

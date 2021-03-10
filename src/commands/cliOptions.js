@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019 Open Assessment Technologies SA;
+ * Copyright (c) 2019-2021 Open Assessment Technologies SA;
  */
 
 /**
@@ -29,10 +29,13 @@ module.exports = {
     origin: ['--origin <remotename>', 'the name of the remote repo', 'origin'],
     releaseBranch: ['--release-branch <branch>', 'the target branch for the release PR', 'master'],
     wwwUser: ['--www-user <user>', 'the user who runs php commands', 'www-data'],
+    updateTranslations: ['--update-translations', 'indicates if we need to update translations. Only available in interactive mode.'],
+    noInteractive: ['--no-interactive', 'non interactive mode, always off on non TTY env'],
+    noWrite: ['--no-write', 'turns off writting data like the config'],
+
     // options which fall back to user prompts if undefined
     pathToTao: ['--path-to-tao <path>', 'path to local TAO instance'],
     extensionToRelease: ['--extension-to-release <extension>', 'camelCase name of the extension to release'],
-    updateTranslations: ['--update-translations', 'indicates if we need to update translations'],
     releaseComment: ['--release-comment <comment>', 'comment to add to github release'],
     releaseVersion: ['--release-version <version>', 'version to be used for the next release'],
 };
