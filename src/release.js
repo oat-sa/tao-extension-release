@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019 Open Assessment Technologies SA;
+ * Copyright (c) 2019-2021 Open Assessment Technologies SA;
  */
 
 /**
@@ -51,15 +51,24 @@ const adaptees = {
  * @param {String} [params.pathToTao] - path to the instance root
  * @param {String} [params.extensionToRelease] - name of the extension
  * @param {String} [params.releaseVersion] - version to create
- * @param {Boolea unset: 0, commits : 0n} [params.updateTranslations] - should translations be included?
+ * @param {Boolean} [params.updateTranslations] - should translations be included?
  * @param {String} [params.releaseComment] - the release author's comment
+ * @param {boolean} [params.interactive=true] - interactive mode
+ * @param {boolean} [params.write=true] - allow to write data in host file system
  * @param {String} [params.subjectType='extension'] - extension or package
  * @return {Object} - instance of taoExtensionRelease
  */
 module.exports = function taoExtensionReleaseFactory(params = {}) {
-    const { baseBranch, branchPrefix, origin, releaseBranch, releaseVersion } = params;
-    const { subjectType = 'extension' } = params;
-    let { releaseComment } = params;
+    const {
+        baseBranch,
+        branchPrefix,
+        origin,
+        releaseBranch,
+        releaseVersion,
+        subjectType = 'extension',
+        write = true
+    } = params;
+    let { releaseComment, interactive = true } = params;
 
     let data = {};
     let gitClient;
@@ -71,6 +80,11 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
     if (releaseVersion && semverValid(releaseVersion) === null) {
         throw new Error(`'${releaseVersion}' is not a valid semver version.`);
+    }
+
+    //in non TTY shells we turn off the interactive mode
+    if (!process.stdin.isTTY) {
+        interactive = false;
     }
 
     /**
@@ -131,14 +145,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
-         * Verify that the version that we are going to release is valid
-         */
-        async verifyReleasingBranch() {
-            const { lastVersion, lastTag } = await adaptee.verifyReleasingBranch(data.releasingBranch, data.version);
-            data = { ...data, lastVersion, lastTag };
-        },
-
-        /**
          * Build assets, commit them to the releasing branch and push that branch
          *
          * @returns
@@ -174,14 +180,19 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Prompt user to confirm release
          */
         async confirmRelease() {
-            const { go } = await inquirer.prompt({
-                type: 'confirm',
-                name: 'go',
-                message: `Let's release version ${data[subjectType].name}@${data.version} 🚀 ?`
-            });
+            const confirmMessage = `Let's release version ${data[subjectType].name}@${data.version} 🚀`;
+            if (interactive) {
+                const { go } = await inquirer.prompt({
+                    type: 'confirm',
+                    name: 'go',
+                    message: `${confirmMessage}?`
+                });
 
-            if (!go) {
-                log.exit();
+                if (!go) {
+                    log.exit();
+                }
+            } else {
+                log.info(confirmMessage);
             }
         },
 
@@ -192,9 +203,9 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             log.doing(`Creating github release ${data.version}`);
 
             // Start with CLI option, if it's missing we'll prompt user
-            let comment = releaseComment;
+            let comment = releaseComment || '';
 
-            if (!comment || !comment.length) {
+            if (interactive && (!comment || !comment.length)) {
                 ({ comment } = await inquirer.prompt({
                     type: 'input',
                     name: 'comment',
@@ -324,15 +335,21 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         async isReleaseRequired() {
             log.doing(`Diff ${baseBranch}..${releaseBranch}`);
             const hasDiff = await gitClient.hasDiff(baseBranch, releaseBranch);
+            const diffMessage = `It seems there is no changes between ${baseBranch} and ${releaseBranch}.`;
             if (!hasDiff) {
-                const { diff } = await inquirer.prompt({
-                    type: 'confirm',
-                    name: 'diff',
-                    message: `It seems there is no changes between ${baseBranch} and ${releaseBranch}. Do you want to release anyway?`
-                });
 
-                if (!diff) {
-                    log.exit();
+                if (interactive) {
+                    const { diff } = await inquirer.prompt({
+                        type: 'confirm',
+                        name: 'diff',
+                        message: `${diffMessage} Do you want to release anyway?`
+                    });
+
+                    if (!diff) {
+                        log.exit();
+                    }
+                } else {
+                    log.exit(`${diffMessage}. Nothing to release.`);
                 }
             }
 
@@ -345,8 +362,15 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         async loadConfig() {
             data = Object.assign({}, await config.load());
 
+            if (!data.token && process.env.GITHUB_TOKEN) {
+                data.token = process.env.GITHUB_TOKEN;
+            }
             // Request github token if necessary
             if (!data.token) {
+
+                if (!interactive) {
+                    return log.exit('Unable to find the GITHUB_TOKEN. Please configure a token in the config file or set it as an env variable.');
+                }
                 setTimeout(() => open('https://github.com/settings/tokens'), 2000);
 
                 const { token } = await inquirer.prompt({
@@ -358,9 +382,8 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 });
 
                 data.token = token;
-
-                await config.write(data);
             }
+            await this.writeConfig();
 
             adaptee.setData(data);
         },
@@ -370,7 +393,9 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * @returns true
          */
         async writeConfig() {
-            await config.write(data);
+            if (write) {
+                await config.write(data);
+            }
             return true;
         },
 
@@ -384,7 +409,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 await gitClient.mergeBack(baseBranch, releaseBranch);
                 log.done();
             } catch (err) {
-                if (err && err.message && err.message.startsWith('CONFLICTS:')) {
+                if (err && err.message && err.message.startsWith('CONFLICTS:') && interactive) {
                     log.error(`There were conflicts preventing the merge of ${releaseBranch} back into ${baseBranch}.`);
                     log.warn(
                         'Please resolve the conflicts and complete the merge manually (including making the merge commit).'
@@ -412,16 +437,18 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Merge release pull request
          */
         async mergePullRequest() {
-            setTimeout(() => open(data.pr.url), 2000);
+            if (interactive) {
+                setTimeout(() => open(data.pr.url), 2000);
 
-            const { pr } = await inquirer.prompt({
-                type: 'confirm',
-                name: 'pr',
-                message: 'Please review the release PR (you can make the last changes now). Can I merge it now ?'
-            });
+                const { pr } = await inquirer.prompt({
+                    type: 'confirm',
+                    name: 'pr',
+                    message: 'Please review the release PR (you can make the last changes now). Can I merge it now ?'
+                });
 
-            if (!pr) {
-                log.exit();
+                if (!pr) {
+                    log.exit();
+                }
             }
 
             log.doing('Merging the pull request');
@@ -453,7 +480,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 log.done(`'${releaseBranch}' merged into '${branchPrefix}-${data.version}'.`);
             } catch (err) {
                 // error is about merging conflicts
-                if (err && err.message && err.message.startsWith('CONFLICTS:')) {
+                if (err && err.message && err.message.startsWith('CONFLICTS:') && interactive) {
                     log.warn(
                         'Please resolve the conflicts and complete the merge manually (including making the merge commit).'
                     );
@@ -483,6 +510,9 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * @returns {Promise}
          */
         async promptToResolveConflicts() {
+            if (!interactive) {
+                return false;
+            }
             const { isMergeDone } = await inquirer.prompt({
                 name: 'isMergeDone',
                 type: 'confirm',
@@ -526,14 +556,16 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Fetch and pull branches, extract manifests and repo name
          */
         async verifyBranches() {
-            const { pull } = await inquirer.prompt({
-                type: 'confirm',
-                name: 'pull',
-                message: `Can I checkout and pull ${baseBranch} and ${releaseBranch}  ?`
-            });
+            if (interactive) {
+                const { pull } = await inquirer.prompt({
+                    type: 'confirm',
+                    name: 'pull',
+                    message: `Can I checkout and pull ${baseBranch} and ${releaseBranch}  ?`
+                });
 
-            if (!pull) {
-                log.exit();
+                if (!pull) {
+                    log.exit();
+                }
             }
 
             log.doing(`Updating ${data[subjectType].name}`);
@@ -541,7 +573,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             // Get last released version:
             await gitClient.pull(releaseBranch);
             await gitClient.pull(baseBranch);
-
         },
 
         /**
@@ -564,29 +595,31 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 log.info(`Release version provided: ${releaseVersion}`);
             } else {
 
-                if (recommendation.stats && recommendation.stats.commits === 0) {
-                    const { releaseAgain  } = await inquirer.prompt({
-                        type: 'confirm',
-                        name: 'releaseAgain',
-                        default : false,
-                        message: 'There\'s no new commits, do you really want to release a new version?'
-                    });
+                if (interactive) {
+                    if (recommendation.stats && recommendation.stats.commits === 0) {
+                        const { releaseAgain  } = await inquirer.prompt({
+                            type: 'confirm',
+                            name: 'releaseAgain',
+                            default : false,
+                            message: 'There\'s no new commits, do you really want to release a new version?'
+                        });
 
-                    if (!releaseAgain) {
-                        log.exit();
+                        if (!releaseAgain) {
+                            log.exit();
+                        }
                     }
-                }
-                else if (recommendation.stats && recommendation.stats.unset > 0) {
-                    const { acceptDefaultVersion  } = await inquirer.prompt({
-                        type: 'confirm',
-                        name: 'acceptDefaultVersion',
-                        message: recommendation.stats.unset === recommendation.stats.commits ?
-                            'The commits are non conventional. A PATCH version will be applied for the release. Do you want to continue?' :
-                            'There are some non conventional commits. Are you sure you want to continue?',
-                    });
+                    else if (recommendation.stats && recommendation.stats.unset > 0) {
+                        const { acceptDefaultVersion  } = await inquirer.prompt({
+                            type: 'confirm',
+                            name: 'acceptDefaultVersion',
+                            message: recommendation.stats.unset === recommendation.stats.commits ?
+                                'The commits are non conventional. A PATCH version will be applied for the release. Do you want to continue?' :
+                                'There are some non conventional commits. Are you sure you want to continue?',
+                        });
 
-                    if (!acceptDefaultVersion) {
-                        log.exit();
+                        if (!acceptDefaultVersion) {
+                            log.exit();
+                        }
                     }
                 }
 

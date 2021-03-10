@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019-2020 Open Assessment Technologies SA;
+ * Copyright (c) 2019-2021 Open Assessment Technologies SA;
  */
 
 /**
@@ -47,7 +47,7 @@ const release = proxyquire.noCallThru().load('../../../../src/release/extensionA
     '../log.js': log,
     '../taoInstance.js': taoInstanceFactory,
     inquirer,
-})({ wwwUser });
+})({ wwwUser, interactive: true });
 
 test('should define selectTaoInstance method on extensionApi instance', (t) => {
     t.plan(1);
@@ -123,7 +123,7 @@ test('should log exit if provided path is not a tao root', async (t) => {
     await release.selectTaoInstance();
 
     t.equal(log.exit.callCount, 1, 'Exit message has been logged');
-    t.ok(log.exit.calledWith(`${dir} is not a TAO instance`), 'Exit message has been logged with appropriate message');
+    t.ok(log.exit.calledWith(`${dir} is not a TAO instance.`), 'Exit message has been logged with appropriate message');
 
     sandbox.restore();
     t.end();

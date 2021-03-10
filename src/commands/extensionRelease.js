@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019-2020 Open Assessment Technologies SA;
+ * Copyright (c) 2019-2021 Open Assessment Technologies SA;
  */
 
 const log = require('../log.js');
@@ -28,16 +28,22 @@ program
     .usage('[options]')
     .option(...cliOptions.debug)
     .option(...cliOptions.releaseVersion)
+
     // options with defaults
     .option(...cliOptions.baseBranch)
     .option(...cliOptions.branchPrefix)
     .option(...cliOptions.origin)
     .option(...cliOptions.releaseBranch)
     .option(...cliOptions.wwwUser)
+
+    .option(...cliOptions.noInteractive)
+    .option(...cliOptions.noWrite)
+
     // options which fall back to user prompts if undefined
     .option(...cliOptions.pathToTao)
     .option(...cliOptions.extensionToRelease)
     .option(...cliOptions.updateTranslations)
+
     .option(...cliOptions.releaseComment)
     .parse(process.argv);
 
