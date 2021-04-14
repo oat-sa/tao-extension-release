@@ -32,7 +32,7 @@ test('the module api', t => {
 });
 
 test('the githubToken method', t => {
-    t.plan(12);
+    t.plan(14);
 
     t.ok(typeof validate.githubToken === 'function', 'The module expose a githubToken method');
 
@@ -41,10 +41,11 @@ test('the githubToken method', t => {
     t.throws(() => validate.githubToken('12'), TypeError);
     t.throws(() => validate.githubToken(12), TypeError);
     t.throws(() => validate.githubToken('AE'), TypeError);
+    t.throws(() => validate.githubToken('gho_12345abc'), TypeError);
     try {
         validate.githubToken('foo');
     } catch(err){
-        t.equal(err.message, 'The Github token is missing or not well formatted, we expect a long hexa string.');
+        t.equal(err.message, 'The Github token is missing or not well formatted.');
     }
     try {
         validate.githubToken('foo', 'Custom Message');
@@ -55,6 +56,7 @@ test('the githubToken method', t => {
     t.doesNotThrow( () => validate.githubToken('01AF9E99BFE0'),'Upper case small token');
     t.doesNotThrow( () => validate.githubToken('01af9e99fe012a01'), 'Lower case small token');
     t.doesNotThrow( () => validate.githubToken('23acf5dd2087369942acef7a30b4c5e070ee0b79'), 'Real token');
+    t.doesNotThrow( () => validate.githubToken('ghp_XhtlFn124mUjukG6lzGgJvX6AhC5UZ0PnT5Y'), 'Real token, prefixed format');
 
     t.deepEqual(validate.githubToken('01af9e99fe012a01'), validate, 'The method chains');
 
