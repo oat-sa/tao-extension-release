@@ -32,8 +32,8 @@ const validate = {
      * @returns {validate} chains
      * @throws {TypeError} when invalid
      */
-    githubToken(token, errorMsg = 'The Github token is missing or not well formatted, we expect a long hexa string.'){
-        if(typeof token !== 'string' || !/[0-9A-Fa-f]{6,}/g.test(token)){
+    githubToken(token, errorMsg = 'The Github token is missing or not well formatted.') {
+        if (typeof token !== 'string' || !/^(ghp_)?[0-9A-Za-z]{6,}/g.test(token)) {
             throw new TypeError(errorMsg);
         }
         return this;
