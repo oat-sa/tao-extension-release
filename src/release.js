@@ -279,7 +279,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
             await gitClient.pruneRemote(origin);
 
-            log.done(`Remote branches pruned`);
+            log.done('Remote branches pruned');
         },
 
         /**
