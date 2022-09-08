@@ -168,6 +168,16 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
         },
 
         /**
+         * Prune the remote origin, clearing the branches that no longer exist
+         *
+         * @param {String} origin - name of the remote
+         * @returns {Promise<Boolean>}
+         */
+        pruneRemote(origin) {
+            return git(repository).remote(['prune', origin]);
+        },
+
+        /**
          * Does the given tag exists
          * @param {String} tagName
          * @returns {Promise<Boolean>}

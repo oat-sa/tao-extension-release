@@ -272,6 +272,17 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
+         * Prune no longer existing branches in the remote origin
+         */
+        async pruneRemoteOrigin() {
+            log.doing('Pruning the remote branches');
+
+            await gitClient.pruneRemote(origin);
+
+            log.done('Remote branches pruned');
+        },
+
+        /**
          * Check if release tag exists
          */
         async doesTagExists() {

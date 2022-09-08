@@ -65,6 +65,7 @@ async function releaseExtension() {
         await release.signTags();
         await release.verifyBranches();
         await release.extractVersion();
+        await release.pruneRemoteOrigin();
         await release.doesTagExists();
         await release.doesReleasingBranchExists();
         await release.isReleaseRequired();
