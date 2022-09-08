@@ -48,7 +48,7 @@
     "cross-spawn": "^6.0.3",
     "fs-extra": "^5.0.0",
     "git-url-parse": "^11.4.4",
-    "graphql-request": "^1.8.2",
+    "graphql-request": "^5.0.0",
     "inquirer": "^7.3.0",
     "minimist": "^1.2.0",
     "octonode": "^0.10.0",
