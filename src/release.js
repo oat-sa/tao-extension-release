@@ -236,7 +236,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
             const pullRequest = await githubClient.createReleasePR(
                 data.releasingBranch,
-                releaseBranch,
+                params.releaseBranch,
                 data.version,
                 data.lastVersion,
                 subjectType
@@ -263,7 +263,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         async createReleaseTag() {
             log.doing(`Add and push tag ${data.tag}`);
 
-            await gitClient.tag(releaseBranch, data.tag, `version ${data.version}`);
+            await gitClient.tag(params.releaseBranch, data.tag, `version ${data.version}`);
 
             log.done();
         },
@@ -364,9 +364,9 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Check if there is any diffs between base and release branches and prompt to confirm release user if there is no diffs
          */
         async isReleaseRequired() {
-            log.doing(`Diff ${baseBranch}..${releaseBranch}`);
-            const hasDiff = await gitClient.hasDiff(baseBranch, releaseBranch);
-            const diffMessage = `It seems there is no changes between ${baseBranch} and ${releaseBranch}.`;
+            log.doing(`Diff ${baseBranch}..${params.releaseBranch}`);
+            const hasDiff = await gitClient.hasDiff(baseBranch, params.releaseBranch);
+            const diffMessage = `It seems there is no changes between ${baseBranch} and ${params.releaseBranch}.`;
             if (!hasDiff) {
 
                 if (interactive) {
@@ -434,14 +434,14 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Merge release branch back into base branch
          */
         async mergeBack() {
-            log.doing(`Merging back ${releaseBranch} into ${baseBranch}`);
+            log.doing(`Merging back ${params.releaseBranch} into ${baseBranch}`);
 
             try {
-                await gitClient.mergeBack(baseBranch, releaseBranch);
+                await gitClient.mergeBack(baseBranch, params.releaseBranch);
                 log.done();
             } catch (err) {
                 if (err && err.message && err.message.startsWith('CONFLICTS:') && interactive) {
-                    log.error(`There were conflicts preventing the merge of ${releaseBranch} back into ${baseBranch}.`);
+                    log.error(`There were conflicts preventing the merge of ${params.releaseBranch} back into ${baseBranch}.`);
                     log.warn(
                         'Please resolve the conflicts and complete the merge manually (including making the merge commit).'
                     );
@@ -484,7 +484,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
             log.doing('Merging the pull request');
 
-            await gitClient.mergePr(releaseBranch, data.releasingBranch);
+            await gitClient.mergePr(params.releaseBranch, data.releasingBranch);
 
             log.done('PR merged');
         },
@@ -493,22 +493,22 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Merge release branch into releasing branch and ask user to resolve conflicts manually if any
          */
         async mergeWithReleaseBranch() {
-            log.doing(`Merging '${releaseBranch}' into '${data.releasingBranch}'.`);
+            log.doing(`Merging '${params.releaseBranch}' into '${data.releasingBranch}'.`);
 
             // checkout master
-            await gitClient.checkout(releaseBranch);
+            await gitClient.checkout(params.releaseBranch);
 
             // pull master
-            await gitClient.pull(releaseBranch);
+            await gitClient.pull(params.releaseBranch);
 
             // checkout releasingBranch
             await this.checkoutReleasingBranch();
 
             try {
                 // merge release branch into releasingBranch
-                await gitClient.merge([releaseBranch]);
+                await gitClient.merge([params.releaseBranch]);
 
-                log.done(`'${releaseBranch}' merged into '${branchPrefix}-${data.version}'.`);
+                log.done(`'${params.releaseBranch}' merged into '${branchPrefix}-${data.version}'.`);
             } catch (err) {
                 // error is about merging conflicts
                 if (err && err.message && err.message.startsWith('CONFLICTS:') && interactive) {
@@ -524,10 +524,10 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                             );
                         } else {
                             await gitClient.push(origin, data.releasingBranch);
-                            log.done(`'${releaseBranch}' merged into '${branchPrefix}-${data.version}'.`);
+                            log.done(`'${params.releaseBranch}' merged into '${branchPrefix}-${data.version}'.`);
                         }
                     } else {
-                        await gitClient.abortMerge([releaseBranch]);
+                        await gitClient.abortMerge([params.releaseBranch]);
                         log.exit();
                     }
                 } else {
