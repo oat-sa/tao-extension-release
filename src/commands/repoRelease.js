@@ -52,6 +52,8 @@ async function repoRelease() {
         log.title('Release a repository');
 
         await release.loadConfig();
+        await release.initialiseGithubClient();
+        await release.verifyCredentials();
         await release.selectTarget();
         await release.writeConfig();
         await release.initialiseGitClient();
@@ -65,7 +67,6 @@ async function repoRelease() {
         await release.isReleaseRequired();
         await release.confirmRelease();
         await release.createReleasingBranch();
-        await release.initialiseGithubClient();
         await release.createPullRequest();
         await release.extractReleaseNotes();
         await release.mergePullRequest();
