@@ -63,7 +63,6 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         baseBranch,
         branchPrefix,
         origin,
-        releaseBranch,
         releaseVersion,
         subjectType = 'extension',
         write = true
@@ -576,11 +575,9 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Fetch and pull branches, extract manifests and repo name
          */
         async verifyBranches() {
-            let releaseBranchTracked = null;
-            if (releaseBranchTracked = await gitClient.hasReleaseBranch(params.releaseBranch)) {
-                if (releaseBranchTracked !== params.releaseBranch) {
-                    this.setParam('releaseBranch', releaseBranchTracked);
-                }
+            let releaseBranchTracked = await gitClient.hasReleaseBranch(params.releaseBranch);
+            if (releaseBranchTracked && releaseBranchTracked !== params.releaseBranch) {
+                this.setParam('releaseBranch', releaseBranchTracked);
             }
 
             if (interactive) {
