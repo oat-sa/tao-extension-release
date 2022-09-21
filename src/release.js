@@ -112,6 +112,15 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
+         * Change a property of the params object
+         * @param paramName
+         * @param paramValue
+         */
+        setParam(paramName, paramValue) {
+            params[paramName] = paramValue;
+        },
+
+        /**
          * Allows the user to specify the path to what they want to release
          */
         async selectTarget() {
@@ -578,11 +587,18 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Fetch and pull branches, extract manifests and repo name
          */
         async verifyBranches() {
+            let releaseBranchTracked = null;
+            if (releaseBranchTracked = await gitClient.hasReleaseBranch(params.releaseBranch)) {
+                if (releaseBranchTracked !== params.releaseBranch) {
+                    this.setParam('releaseBranch', releaseBranchTracked);
+                }
+            }
+
             if (interactive) {
                 const { pull } = await inquirer.prompt({
                     type: 'confirm',
                     name: 'pull',
-                    message: `Can I checkout and pull ${baseBranch} and ${releaseBranch}  ?`
+                    message: `Can I checkout and pull ${baseBranch} and ${params.releaseBranch}  ?`
                 });
 
                 if (!pull) {
@@ -593,7 +609,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             log.doing(`Updating ${data[subjectType].name}`);
 
             // Get last released version:
-            await gitClient.pull(releaseBranch);
+            await gitClient.pull(params.releaseBranch);
             await gitClient.pull(baseBranch);
         },
 

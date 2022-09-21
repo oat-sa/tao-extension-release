@@ -66,6 +66,29 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
         },
 
         /**
+         * Check if the release branch for master exists or suggest main instead.
+         * @param {String} branchName - the branch name
+         * @returns {Promise}
+         */
+        hasReleaseBranch(branchName) {
+            return git(repository).fetch(origin)
+                .then(() => this.getLocalBranches() )
+                .then( branches => {
+                    if (!branches) {
+                        return null;
+                    }
+
+                    if (branches.indexOf(branchName) > -1) {
+                        return branchName;
+                    } else if (branchName === 'master' && branches.indexOf('main') > -1) {
+                        return 'main';
+                    } else {
+                        return null;
+                    }
+                });
+        },
+
+        /**
          * Delete a branch, remotely and locally.
          * This operation requires git >= 1.8
          * @param {String} branchName - the branch name
