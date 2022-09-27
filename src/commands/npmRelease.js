@@ -52,9 +52,9 @@ async function npmRelease() {
         log.title('Release an npm package');
 
         await release.loadConfig();
+        await release.selectTarget();
         await release.initialiseGithubClient();
         await release.verifyCredentials();
-        await release.selectTarget();
         await release.writeConfig();
         await release.initialiseGitClient();
         await release.verifyLocalChanges();

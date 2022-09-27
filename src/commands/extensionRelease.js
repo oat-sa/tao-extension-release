@@ -58,9 +58,9 @@ async function releaseExtension() {
         log.title('Release a TAO extension');
 
         await release.loadConfig();
+        await release.selectTarget();
         await release.initialiseGithubClient();
         await release.verifyCredentials();
-        await release.selectTarget();
         await release.writeConfig();
         await release.initialiseGitClient();
         await release.verifyLocalChanges();
