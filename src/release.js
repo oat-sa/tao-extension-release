@@ -341,6 +341,17 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
+         * Check if the github token credentials are valid
+         */
+        async verifyCredentials() {
+            log.doing('Checking the GitHub token before we go anywhere');
+
+            if (await githubClient.verifyRepository()) {
+                log.done();
+            }
+        },
+
+        /**
          * Check if there is any diffs between base and release branches and prompt to confirm release user if there is no diffs
          */
         async isReleaseRequired() {

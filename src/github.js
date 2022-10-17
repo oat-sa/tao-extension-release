@@ -54,6 +54,22 @@ module.exports = function githubFactory(token, repository) {
     return {
 
         /**
+         * Verify the credentials for said repository by checking it's info
+         * @returns {Promise<Object>} resolves with the repository data, if the credentials are valid
+         */
+        verifyRepository() {
+            return new Promise((resolve, reject) => {
+                ghrepo.info((err, data) => {
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    return resolve(data);
+                });
+            });
+        },
+
+        /**
          * Create the release pull request
          * @param {String} releasingBranch - the temp branch that contains the commits to release
          * @param {String} releaseBranch - the base branch

@@ -53,6 +53,8 @@ async function npmRelease() {
 
         await release.loadConfig();
         await release.selectTarget();
+        await release.initialiseGithubClient();
+        await release.verifyCredentials();
         await release.writeConfig();
         await release.initialiseGitClient();
         await release.verifyLocalChanges();
@@ -66,7 +68,6 @@ async function npmRelease() {
         await release.confirmRelease();
         await release.createReleasingBranch();
         await release.updateVersion();
-        await release.initialiseGithubClient();
         await release.createPullRequest();
         await release.extractReleaseNotes();
         await release.mergePullRequest();
