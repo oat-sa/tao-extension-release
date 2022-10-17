@@ -575,7 +575,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
          * Fetch and pull branches, extract manifests and repo name
          */
         async verifyBranches() {
-            let releaseBranchTracked = await gitClient.hasReleaseBranch(params.releaseBranch);
+            let releaseBranchTracked = await gitClient.getReleaseBranchName(params.releaseBranch);
             if (releaseBranchTracked && releaseBranchTracked !== params.releaseBranch) {
                 this.setParam('releaseBranch', releaseBranchTracked);
             }

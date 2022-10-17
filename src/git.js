@@ -70,7 +70,7 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
          * @param {String} branchName - the branch name
          * @returns {Promise}
          */
-        hasReleaseBranch(branchName) {
+        getReleaseBranchName(branchName) {
             return git(repository).fetch(origin)
                 .then(() => this.getLocalBranches() )
                 .then( branches => {
