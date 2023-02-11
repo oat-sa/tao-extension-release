@@ -56,7 +56,7 @@
     "read-pkg": "^5.2.0",
     "semver": "^7.3.4",
     "simple-git": "^1.126.0",
-    "update-notifier": "^5.1.0",
+    "update-notifier": "^6.0.2",
     "write-pkg": "^4.0.0"
   },
   "engine": {
