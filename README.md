@@ -4,7 +4,18 @@ This tool automates TAO extension release
 
 ## Installation
 
-Please verify installation [prerequisite](#prerequisite). And run :
+Please verify installation [prerequisite](#prerequisite).
+
+You also need an installed instance of tao:
+```sh
+git clone git@github.com:oat-sa/package-tao.git
+cd package-tao/
+git checkout develop
+composer install
+php tao/scripts/taoInstall.php --db_driver pdo_mysql --db_host localhost --db_name <dbname> --db_user <username> --db_pass <password> --module_namespace http://tao.local/mytao.rdf --module_url <root directory> --user_login admin --user_pass admin -e taoCe
+```
+
+Then run :
 
 ```sh
 npm i -g @oat-sa/tao-extension-release
