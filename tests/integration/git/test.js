@@ -353,7 +353,7 @@ test('get remote repository name', async t => {
     await verifyLocal(gitHelper);
     const localPathRemoteName = await localRepo.getRepositoryName();
     //remote is linked on the local system
-    t.equal(remoteRepoPath, remoteRepoPath);
+    t.equal(localPathRemoteName.trim(), remoteRepoPath.trim());
     t.end();
 });
 
