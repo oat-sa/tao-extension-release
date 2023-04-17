@@ -61,9 +61,6 @@
     "update-notifier": "^6.0.2",
     "write-pkg": "^4.0.0"
   },
-  "engine": {
-    "node": ">=10.0.0"
-  },
   "devDependencies": {
     "@randomgoods/tap-spec": "^5.0.3",
     "eslint": "^8.38.0",
