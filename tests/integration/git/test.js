@@ -96,14 +96,14 @@ const setUp = async function setUp() {
         await localGitHelper.checkoutLocalBranch('remote-is-ahead');
         await localGitHelper.push('origin', 'remote-is-ahead');
 
-        // // make a branch unknown to localRepo
+        // make a branch unknown to localRepo
         await secondLocalGitHelper.fetch();
         await secondLocalGitHelper.checkoutLocalBranch('remote-only');
         await secondLocalGitHelper.add('.');
         await secondLocalGitHelper.commit('Initial commit');
         await secondLocalGitHelper.push('origin', 'remote-only');
 
-        // // make a remote branch with different content
+        // make a remote branch with different content
         await secondLocalGitHelper.checkoutLocalBranch('remote-is-ahead');
         await secondLocalGitHelper.pull('origin', 'remote-is-ahead', ['--no-rebase','--allow-unrelated-histories']);
         fs.writeFileSync(path.join(secondLocalRepoPath, 'data.txt'), 'new content');
