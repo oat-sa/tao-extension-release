@@ -50,8 +50,12 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
             return git(repository)
                 .remote(['get-url', origin])
                 .then( url => {
-                    const parsed = gitUrlParse(url.trim());
-                    return parsed.protocol === 'file' ? parsed.pathname : parsed.full_name;
+                    try {
+                        const parsed = gitUrlParse(url.trim());
+                        return parsed.protocol === 'file' ? parsed.pathname : parsed.full_name;
+                    } catch(e) {
+                        return url;
+                    }
                 });
         },
 

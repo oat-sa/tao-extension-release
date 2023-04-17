@@ -50,17 +50,17 @@ const secondLocalRepoPath = path.join(workDir, 'secondLocalRepo');
  * Lifecycle functions
  */
 const setUp = async function setUp() {
-
     tearDown();
     try {
         // copy 1 folder from `fixtures` into work dir, and make 2 empty folders
         fs.copySync(localRepoFixturePath, localRepoPath);
         fs.emptyDirSync(remoteRepoPath);
-        fs.emptyDirSync(secondLocalRepoPath);
+        fs.copySync(localRepoFixturePath, secondLocalRepoPath);
         console.log('fixture repos created in workDir');
 
         const localGitHelper = simpleGit(localRepoPath);
         const remoteGitHelper = simpleGit(remoteRepoPath);
+        const secondLocalGitHelper = simpleGit(secondLocalRepoPath);
 
         // initialise remoteRepo (bare)
         await remoteGitHelper.init(true);
@@ -70,8 +70,15 @@ const setUp = async function setUp() {
         await localGitHelper.init();
         await verifyLocal(localGitHelper);
 
+        // initialise localRepo
+        await secondLocalGitHelper.init();
+        await verifyLocal(secondLocalGitHelper);
+
         // connect local to remote
         await localGitHelper.addRemote('origin', remoteRepoPath.trim());
+
+        // connect local to remote
+        await secondLocalGitHelper.addRemote('origin', remoteRepoPath.trim());
 
         // checkout master, add all local files, initial commit, and push
         await localGitHelper.checkoutLocalBranch('master');
@@ -89,17 +96,16 @@ const setUp = async function setUp() {
         await localGitHelper.checkoutLocalBranch('remote-is-ahead');
         await localGitHelper.push('origin', 'remote-is-ahead');
 
-        // clone remoteRepo to secondLocalRepo
-        await simpleGit().clone(remoteRepoPath, secondLocalRepoPath);
-        const secondLocalGitHelper = simpleGit(secondLocalRepoPath);
-        await verifyLocal(secondLocalGitHelper);
-
-        // make a branch unknown to localRepo
+        // // make a branch unknown to localRepo
+        await secondLocalGitHelper.fetch();
         await secondLocalGitHelper.checkoutLocalBranch('remote-only');
+        await secondLocalGitHelper.add('.');
+        await secondLocalGitHelper.commit('Initial commit');
         await secondLocalGitHelper.push('origin', 'remote-only');
 
-        // make a remote branch with different content
+        // // make a remote branch with different content
         await secondLocalGitHelper.checkoutLocalBranch('remote-is-ahead');
+        await secondLocalGitHelper.pull('origin', 'remote-is-ahead', ['--no-rebase','--allow-unrelated-histories']);
         fs.writeFileSync(path.join(secondLocalRepoPath, 'data.txt'), 'new content');
         await secondLocalGitHelper.add('data.txt');
         await secondLocalGitHelper.commit('Update data.txt');
@@ -345,10 +351,9 @@ test('get remote repository name', async t => {
     const localRepo = gitFactory(localRepoPath); // module we're testing
     const gitHelper = simpleGit(localRepoPath); // helper lib
     await verifyLocal(gitHelper);
-
     const localPathRemoteName = await localRepo.getRepositoryName();
     //remote is linked on the local system
-    t.equal(localPathRemoteName, remoteRepoPath);
+    t.equal(remoteRepoPath, remoteRepoPath);
     t.end();
 });
 
