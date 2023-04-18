@@ -10,9 +10,9 @@
     "test:unit:cov": "nyc npm run test:unit",
     "test:cov:html": "nyc report --reporter=lcov && open-cli coverage/lcov-report/index.html",
     "test:cov:clover": "nyc report --reporter=clover",
-    "test": "tape \"tests/**/test.js\" | node_modules/.bin/tap-spec || true",
-    "test:unit": "tape \"tests/unit/**/test.js\" | node_modules/.bin/tap-spec || true",
-    "test:integ": "tape \"tests/integration/**/test.js\" | node_modules/.bin/tap-spec || true",
+    "test": "tape \"tests/**/test.js\" | tap-spec || true",
+    "test:unit": "tape \"tests/unit/**/test.js\" | tap-spec || true",
+    "test:integ": "tape \"tests/integration/**/test.js\" | tap-spec || true",
     "lint": "eslint index.js \"src/**/*.js\" \"tests/**/test.js\"",
     "lint:report": "eslint index.js \"src/**/*.js\" \"tests/**/test.js\" --output-file ./eslint_report.json --format json"
   },
