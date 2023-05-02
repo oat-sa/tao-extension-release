@@ -69,4 +69,4 @@ const validate = {
     }
 };
 
-module.exports = validate;
+export default validate;

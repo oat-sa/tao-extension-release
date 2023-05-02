@@ -22,9 +22,9 @@
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
 
-const git = require('simple-git/promise');
-const gitUrlParse = require('git-url-parse');
-const os  = require('os');
+import git from 'simple-git';
+import gitUrlParse from 'git-url-parse';
+import os  from 'os';
 
 /**
  * Creates a git client
@@ -33,7 +33,7 @@ const os  = require('os');
  * @param {String} origin - remote name
  * @returns {githubClient} the client
  */
-module.exports = function gitFactory(repository = '', origin = 'origin') {
+export default function gitFactory(repository = '', origin = 'origin') {
 
 
     /**

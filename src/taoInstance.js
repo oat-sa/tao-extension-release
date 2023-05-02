@@ -22,10 +22,10 @@
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
 
-const fs                      = require('fs-extra');
-const { normalize, basename } = require('path');
-const { exec }                = require('child_process');
-const crossSpawn              = require('cross-spawn');
+import fs from 'fs-extra';
+import { normalize, basename } from 'path';
+import { exec } from 'child_process';
+import crossSpawn from 'cross-spawn';
 
 const isWin = /^win/.test(process.platform);
 
@@ -37,7 +37,7 @@ const isWin = /^win/.test(process.platform);
  * @param {String} [wwwUser = www-data] - the user with web server rights
  * @return {Promise} resolves with a result object
  */
-module.exports = function taoInstanceFactory(rootDir = '', quiet = true, wwwUser = 'www-data') {
+export default function taoInstanceFactory(rootDir = '', quiet = true, wwwUser = 'www-data') {
 
     return {
 

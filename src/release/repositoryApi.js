@@ -20,15 +20,15 @@
  * This module provides repository-specific implementations of methods to ../release.js
  */
 
-const log = require('../log.js');
-const gitClientFactory = require('../git');
+import log from '../log.js';
+import gitClientFactory from '../git.js';
 
 /**
  * Factory for the repository implementation
  * @param {Object} params
  * @param {Object} data
  */
-module.exports = function repositoryApiFactory(params = {}, data) {
+export default function repositoryApiFactory(params = {}, data) {
 
     return {
 

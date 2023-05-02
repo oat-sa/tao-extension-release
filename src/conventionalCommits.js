@@ -24,15 +24,14 @@
  * To work around the problem mentioned above the root of the process changed
  * to release target during traget select
  */
-const conventionalChangelogCore = require('conventional-changelog-core');
-const conventionalPresetConfig = require('@oat-sa/conventional-changelog-tao');
-const conventionalRecommendedBump = require('conventional-recommended-bump');
-const semverInc = require('semver/functions/inc');
-const semverValid = require('semver/functions/valid');
-const semverCoerce = require('semver/functions/coerce');
-const semverParse = require('semver/functions/coerce');
+import conventionalChangelogCore from 'conventional-changelog-core';
+import conventionalPresetConfig from '@oat-sa/conventional-changelog-tao';
+import conventionalRecommendedBump from 'conventional-recommended-bump';
+import semverInc from 'semver/functions/inc.js';
+import semverValid from 'semver/functions/valid.js';
+import semverCoerce from 'semver/functions/coerce.js';
 
-module.exports = {
+export default {
     /**
      * Build change log
      *
@@ -61,7 +60,7 @@ module.exports = {
      * @returns {Promise}
      */
     async getNextVersion(lastTag) {
-        const lastVersionObject = semverValid(lastTag) === null ? semverParse(lastTag) : semverCoerce(lastTag);
+        const lastVersionObject = semverValid(lastTag) === null ? semverCoerce(lastTag) : semverCoerce(lastTag);
         if (!lastVersionObject) {
             throw new Error('Unable to retrieve last version from tags or the last tag is not semver compliant');
         }

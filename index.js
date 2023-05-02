@@ -23,13 +23,18 @@
  *
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
-const updateNotifier = require('update-notifier');
+import updateNotifier from 'update-notifier';
 
-const pkg = require('./package.json');
+import { readFile } from 'fs/promises';
+const pkg = JSON.parse(
+  await readFile(
+    new URL('./package.json', import.meta.url)
+  )
+);
 
 updateNotifier({ pkg }).notify();
 
-const commander = require('commander');
+import commander from 'commander';
 const program = new commander.Command();
 
 program

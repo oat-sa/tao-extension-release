@@ -3,7 +3,9 @@
   "version": "2.2.0",
   "description": "Helps you to release TAO extensions",
   "main": "index.js",
-  "engines" : { "node" : ">=14.0.0" },
+  "engines": {
+    "node": ">=14.0.0"
+  },
   "scripts": {
     "test:dev": "nodemon -e js --watch tests --watch src --delay 1 --exec npm run test",
     "test:cov": "nyc npx tape \"tests/**/test.js\" ",
@@ -16,6 +18,8 @@
     "lint": "eslint index.js \"src/**/*.js\" \"tests/**/test.js\"",
     "lint:report": "eslint index.js \"src/**/*.js\" \"tests/**/test.js\" --output-file ./eslint_report.json --format json"
   },
+  "type": "module",
+	"exports": "./index.js",
   "bin": {
     "taoRelease": "./index.js"
   },
