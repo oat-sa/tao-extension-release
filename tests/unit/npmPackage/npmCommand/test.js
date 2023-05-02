@@ -23,9 +23,9 @@
  * @author Martin Nicholson <martin@taotesting.com>
  */
 
-const proxyquire = require('proxyquire');
-const tape = require('tape');
-const _test = require('tape-promise').default;
+import proxyquire from 'proxyquire';
+import test from 'tape';
+import _test  from 'tape-promise';
 const test = _test(tape); // decorate tape
 
 const log = {

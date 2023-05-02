@@ -23,9 +23,9 @@
  * @author Martin Nicholson <martin@taotesting.com>
  */
 
-const test = require('tape');
-const sinon = require('sinon');
-const npmPackageFactory = require('../../../../src/npmPackage.js');
+import sinon from 'sinon';
+import test from 'tape';
+import npmPackageFactory from '../../../../src/npmPackage.js';
 const npmPackage = npmPackageFactory();
 
 const sandbox = sinon.sandbox.create();

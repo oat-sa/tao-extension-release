@@ -1,8 +1,13 @@
-const test = require('tape');
-const fs   = require('fs-extra');
-const config = require('../../../src/config.js');
+import test from 'tape';
+import fs from 'fs-extra';
+import config from '../../../src/config.js';
+import path from 'path';
 
-const workDir        = require('path').join(__dirname, 'work');
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const workDir        = path.join(__dirname, 'work');
 const configFile     = '.test-file';
 const configFilePath = `${workDir}/${configFile}`;
 

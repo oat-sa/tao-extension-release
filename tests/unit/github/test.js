@@ -23,9 +23,9 @@
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
 
-const test       = require('tape');
-const proxyquire = require('proxyquire');
-const sinon = require('sinon');
+import proxyquire from 'proxyquire';
+import sinon from 'sinon';
+import test from 'tape';
 
 const token = 'ffaaffe5a8';
 const repo  = 'foo-sa/bar-project';

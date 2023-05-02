@@ -1,5 +1,5 @@
-const test = require('tape');
-const config = require('../../../src/config.js');
+import test from 'tape';
+import config from '../../../src/config.js';
 
 test('API', t => {
     t.plan(4);

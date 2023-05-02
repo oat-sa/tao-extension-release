@@ -22,8 +22,8 @@
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
 
-const test     = require('tape');
-const validate = require('../../../src/validate.js');
+import test from 'tape';
+import validate from '../../../src/validate.js';
 
 test('the module api', t => {
     t.plan(1);

@@ -23,9 +23,9 @@
  * @author Martin Nicholson <martin@taotesting.com>
  */
 
-const proxyquire = require('proxyquire');
-const test = require('tape');
-const sinon = require('sinon');
+import proxyquire from 'proxyquire';
+import sinon from 'sinon';
+import test from 'tape';
 
 const sandbox = sinon.sandbox.create();
 

@@ -32,13 +32,17 @@
  * @author Martin Nicholson <martin@taotesting.com>
  */
 
-const path = require('path');
-const fs = require('fs-extra');
-const replace = require('replace-in-file');
-const test = require('tape-promise/tape');
+import path from 'path';
+import fs from 'fs-extra';
+import replace from 'replace-in-file';
+import test from 'tape-promise/tape.js';
 
-const gitFactory = require('../../../src/git.js');
-const simpleGit = require('simple-git/promise');
+import gitFactory from '../../../src/git.js';
+import simpleGit from 'simple-git';
+
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const localRepoFixturePath = path.resolve(__dirname, '../fixtures/localRepo');
 const workDir = path.resolve(__dirname, '../work');
