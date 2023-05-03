@@ -28,7 +28,7 @@ jobs:
       uses: ArtiomTr/jest-coverage-report-action@v2
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        test-script: npm test:unit
+        test-script: npm run test:unit
     - name: Save Code Linting Report JSON
       if: always()
       run: npm run lint:report
