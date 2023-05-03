@@ -28,7 +28,7 @@ const config = {
     collectCoverageFrom: ['<rootDir>/src/**/*.js'],
     testMatch: ['**/*.spec.js'],
     testPathIgnorePatterns: ['node_modules'],
-    coverageReporters: ['json', 'text', 'html'],
+    coverageReporters: ['json', 'text', 'html', 'clover', 'lcov'],
     coveragePathIgnorePatterns: ['/node_modules/'],
     setupFilesAfterEnv: ['./jest.setup.js', 'jest-extended']
 };

@@ -25,10 +25,13 @@ jobs:
         npm run test:cov
     - name: Report coverage
       if: always()
-      uses: ArtiomTr/jest-coverage-report-action@v2
+      uses: slavcodev/coverage-monitor-action@1.1.0
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        test-script: npm run test:unit
+        clover_file: coverage/clover.xml
+        threshold_alert: 50
+        threshold_warning: 75
+        comment_mode: update
     - name: Save Code Linting Report JSON
       if: always()
       run: npm run lint:report
