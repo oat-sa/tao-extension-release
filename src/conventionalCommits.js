@@ -60,7 +60,7 @@ export default {
      * @returns {Promise}
      */
     async getNextVersion(lastTag) {
-        const lastVersionObject = semverValid(lastTag) === null ? semverCoerce(lastTag) : semverCoerce(lastTag);
+        const lastVersionObject = semverCoerce(lastTag);
         if (!lastVersionObject) {
             throw new Error('Unable to retrieve last version from tags or the last tag is not semver compliant');
         }
