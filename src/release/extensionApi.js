@@ -227,4 +227,4 @@ export default function extensionApiFactory(params = {}, data = { extension: {} 
             // Not implemented
         }
     };
-};
+}

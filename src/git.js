@@ -313,4 +313,4 @@ export default function gitFactory(repository = '', origin = 'origin') {
                 .then(() => changes);
         },
     };
-};
+}

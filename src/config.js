@@ -59,4 +59,4 @@ export default function configFactory(dir = os.homedir(), fileName = '.tao-exten
             return fs.writeJson(configFile, data, { spaces : 2 });
         }
     };
-};
+}

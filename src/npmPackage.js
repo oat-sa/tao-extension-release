@@ -163,4 +163,4 @@ export default function npmPackageFactory(rootDir = '', quiet = true) {
             return this.npmCommand('i');
         }
     };
-};
+}

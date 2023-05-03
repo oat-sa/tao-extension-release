@@ -341,4 +341,4 @@ export default function githubFactory(token, repository) {
                 .reduce((acc, note) => note ? `${acc} - ${note}\n` : acc, '');
         }
     };
-};
+}

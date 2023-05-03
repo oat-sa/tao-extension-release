@@ -686,4 +686,4 @@ export default function taoExtensionReleaseFactory(params = {}) {
             await gitClient.commitAndPush(data.releasingBranch, 'chore: bump version');
         }
     };
-};
+}

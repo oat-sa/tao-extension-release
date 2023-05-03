@@ -131,4 +131,4 @@ export default function packageApiFactory(params = {}, data) {
             await this.npmPackage.updateVersion(undefined, data.version);
         }
     };
-};
+}

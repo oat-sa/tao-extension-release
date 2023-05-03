@@ -24,7 +24,7 @@
  */
 
 import proxyquire from 'proxyquire';
-import test from 'tape';
+import tape from 'tape';
 import _test  from 'tape-promise';
 const test = _test(tape); // decorate tape
 

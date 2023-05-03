@@ -89,4 +89,4 @@ export default function repositoryApiFactory(params = {}, data) {
             //Not implemented
         }
     };
-};
+}

@@ -28,7 +28,6 @@ import conventionalChangelogCore from 'conventional-changelog-core';
 import conventionalPresetConfig from '@oat-sa/conventional-changelog-tao';
 import conventionalRecommendedBump from 'conventional-recommended-bump';
 import semverInc from 'semver/functions/inc.js';
-import semverValid from 'semver/functions/valid.js';
 import semverCoerce from 'semver/functions/coerce.js';
 
 export default {

@@ -111,4 +111,4 @@ export default function githubApiClientFactory(token) {
             return graphQLClient.request(query);
         }
     };
-};
+}

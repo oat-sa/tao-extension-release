@@ -25,12 +25,8 @@
  */
 import updateNotifier from 'update-notifier';
 
-import { readFile } from 'fs/promises';
-const pkg = JSON.parse(
-  await readFile(
-    new URL('./package.json', import.meta.url)
-  )
-);
+import fs from 'fs';
+const pkg = JSON.parse(fs.readFileSync('./package.json'));
 
 updateNotifier({ pkg }).notify();
 

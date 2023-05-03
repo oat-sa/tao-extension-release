@@ -309,4 +309,4 @@ export default function taoInstanceFactory(rootDir = '', quiet = true, wwwUser =
             //NOT NEEDED
         }
     };
-};
+}
