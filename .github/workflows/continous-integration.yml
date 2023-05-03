@@ -22,17 +22,13 @@ jobs:
         NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
     - name: Running tests
       run: |
-        npm run test:unit:cov
-        npm run test:cov:html
+        npm run test:cov
     - name: Report coverage
       if: always()
-      uses: slavcodev/coverage-monitor-action@1.1.0
+      uses: ArtiomTr/jest-coverage-report-action@v2
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        clover_file: coverage/index.html
-        threshold_alert: 50
-        threshold_warning: 75
-        comment_mode: update
+        test-script: npm test:unit
     - name: Save Code Linting Report JSON
       if: always()
       run: npm run lint:report

@@ -8,9 +8,7 @@
   "scripts": {
     "test:dev": "nodemon -e js --watch tests --watch src --delay 1 --exec npm run test",
     "test:cov": "npm run test:unit -- --coverage",
-    "test:unit:cov": "nyc npm run test:unit",
-    "test:cov:html": "open-cli coverage/index.html",
-    "test:cov:clover": "nyc report --reporter=clover",
+    "test:cov:html": "open-cli coverage/lcov-report/index.html",
     "test:integ": "tape \"tests/integration/**/test.js\" | tap-spec || true",
     "test:unit": "jest --config=./jest.config.js",
     "test": "npm run test:unit && npm run test:integ",
