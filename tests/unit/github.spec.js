@@ -59,7 +59,7 @@ jest.mock('../../src/githubApiClient.js', () => {
     return {
         __esModule: true,
         ...originalModule,
-        default: jest.fn(api => ({
+        default: jest.fn(() => ({
             getPRCommits: jest.fn(() => commits),
             searchPullRequests: jest.fn(arg => ({
                 search: {
@@ -77,8 +77,7 @@ jest.mock('../../src/githubApiClient.js', () => {
                         }
                     ]
                 }
-            })),
-            ...api
+            }))
         }))
     };
 });
@@ -89,59 +88,22 @@ describe('src/github.js', () => {
         expect(typeof github(token, repo)).toBe('object');
     });
     it('the github client factory', () => {
-        try {
-            github();
-        } catch(err)  {
-            expect(err instanceof TypeError).toBe(true);
-            expect(err.message).toBe('The Github token is missing or not well formatted.');
-        };
-        try {
-            github('');
-        } catch(err)  {
-            expect(err instanceof TypeError).toBe(true);
-            expect(err.message).toBe('The Github token is missing or not well formatted.');
-        };
-        try {
-            github('foo');
-        } catch(err)  {
-            expect(err instanceof TypeError).toBe(true);
-            expect(err.message).toBe('The Github token is missing or not well formatted.');
-        };
-        try {
-            github(token);
-        } catch(err)  {
-            expect(err instanceof TypeError).toBe(true);
-            expect(err.message).toBe('The Github repository identifier is missing or not well formatted, we expect the short version org-name/repo-name.');
-        };
-        try {
-            github(token, '');
-        } catch(err)  {
-            expect(err instanceof TypeError).toBe(true);
-            expect(err.message).toBe('The Github repository identifier is missing or not well formatted, we expect the short version org-name/repo-name.');
-        };
-        try {
-            github(token, 'bar');
-        } catch(err)  {
-            expect(err instanceof TypeError).toBe(true);
-            expect(err.message).toBe('The Github repository identifier is missing or not well formatted, we expect the short version org-name/repo-name.');
-        };
+        expect.assertions(7);
+        expect(() => github()).toThrow(TypeError);
+        expect(() => github('')).toThrow(TypeError);
+        expect(() => github('foo')).toThrow(TypeError);
+        expect(() => github(token)).toThrow(TypeError);
+        expect(() => github(token, '')).toThrow(TypeError);
+        expect(() => github(token, 'bar')).toThrow(TypeError);
+
         expect(typeof github(token, repo)).toBe('object');
     });
     it('the createReleasePR method', async () => {
+        expect.assertions(4);
         let ghclient = github(token, repo);
         expect(typeof ghclient.createReleasePR).toBe('function');
-        try {
-            await ghclient.createReleasePR();
-        } catch(err)  {
-            expect(err instanceof TypeError).toBe(true);
-            expect(err.message).toBe('Unable to create a release pull request when the branches are not defined');
-        };
-        try {
-            await ghclient.createReleasePR('release-1.2.3');
-        } catch(err)  {
-            expect(err instanceof TypeError).toBe(true);
-            expect(err.message).toBe('Unable to create a release pull request when the branches are not defined');
-        };
+        await expect(ghclient.createReleasePR()).rejects.toEqual(TypeError('Unable to create a release pull request when the branches are not defined'));
+        await expect(ghclient.createReleasePR('release-1.2.3')).rejects.toEqual(TypeError('Unable to create a release pull request when the branches are not defined'));
         const r = await ghclient.createReleasePR('release-1.2.3', 'master', '1.2.3', '1.2.0');
         expect(r).toStrictEqual({ number: 12 })
     });

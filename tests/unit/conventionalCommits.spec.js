@@ -26,15 +26,14 @@ jest.mock('conventional-changelog-core', () => {
     return {
         __esModule: true,
         ...originalModule,
-        default: jest.fn(core => ({
+        default: jest.fn(() => ({
             on: function (e, callback) {
                 if (e === 'end') {
                     callback();
                 }
         
                 return this;
-            },
-            ...core
+            }
         }))
     };
 });
@@ -89,10 +88,7 @@ describe('src/conventionalCommits.js', () => {
         expect(results.lastVersion).toBe('4.12.13');
     });
     it('fails when the last cannot be parsed', async () => {
-        try {
-            await conventionalCommits.getNextVersion('foo');
-        } catch(err)  {
-            expect(err.message).toBe('Unable to retrieve last version from tags or the last tag is not semver compliant');
-        };
+        expect.assertions(1);
+        await expect(conventionalCommits.getNextVersion('foo')).rejects.toEqual(TypeError('Unable to retrieve last version from tags or the last tag is not semver compliant'));
     });
 });

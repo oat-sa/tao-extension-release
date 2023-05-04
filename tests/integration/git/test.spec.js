@@ -35,14 +35,9 @@
 import path from 'path';
 import fs from 'fs-extra';
 import replace from 'replace-in-file';
-import test from 'tape-promise/tape.js';
 
 import gitFactory from '../../../src/git.js';
 import simpleGit from 'simple-git';
-
-import { fileURLToPath } from 'url';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const localRepoFixturePath = path.resolve(__dirname, '../fixtures/localRepo');
 const workDir = path.resolve(__dirname, '../work');
@@ -60,7 +55,6 @@ const setUp = async function setUp() {
         fs.copySync(localRepoFixturePath, localRepoPath);
         fs.emptyDirSync(remoteRepoPath);
         fs.copySync(localRepoFixturePath, secondLocalRepoPath);
-        console.log('fixture repos created in workDir');
 
         const localGitHelper = simpleGit(localRepoPath);
         const remoteGitHelper = simpleGit(remoteRepoPath);
@@ -151,7 +145,6 @@ const tearDown = function tearDown() {
     // empty temp dir
     try {
         fs.emptyDirSync(workDir);
-        console.log('emptied workDir');
     }
     catch (err) {
         throw new Error('Error removing test repos');
@@ -163,46 +156,47 @@ const getCurrentBranch = async function getCurrentBranch(gitHelper) {
     return currentBranch.trim();
 };
 
-test.onFinish( tearDown );
-test.onFailure( tearDown );
+afterEach(() => {
+    tearDown();
+});
 
 /**
  * Tests
  */
-test('presence of original branches', async t => {
+test('presence of original branches', async () => {
     await setUp();
-    t.plan(7);
+    expect.assertions(7);
     const localRepo = gitFactory(localRepoPath); // module we're testing
     const gitHelper = simpleGit(localRepoPath); // helper lib
     await verifyLocal(gitHelper);
 
-    t.ok(await localRepo.hasBranch('master'), 'localRepo hasBranch master');
-    t.ok(await localRepo.hasBranch('develop'), 'localRepo hasBranch develop');
-    t.notOk(await localRepo.hasBranch('shoobidoo'), 'localRepo does not hasBranch shoobidoo');
+    expect(await localRepo.hasBranch('master')).toBe(true);
+    expect(await localRepo.hasBranch('develop')).toBe(true);
+    expect(await localRepo.hasBranch('shoobidoo')).toBe(false);
 
     const branches = await localRepo.getLocalBranches();
-    t.ok(branches.includes('develop'), 'local develop branch exists');
-    t.ok(branches.includes('master'), 'local master branch exists');
-    t.ok(branches.includes('remotes/origin/develop'), 'remote develop branch exists');
-    t.ok(branches.includes('remotes/origin/master'), 'remote master branch exists');
+    expect(branches.includes('develop')).toBe(true);
+    expect(branches.includes('master')).toBe(true);
+    expect(branches.includes('remotes/origin/develop')).toBe(true);
+    expect(branches.includes('remotes/origin/master')).toBe(true);
 });
 
-test('creating/deleting branch', async t => {
+test('creating/deleting branch', async () => {
     await setUp();
-    t.plan(4);
+    expect.assertions(4);
     const localRepo = gitFactory(localRepoPath); // module we're testing
     const gitHelper = simpleGit(localRepoPath); // helper lib
     await verifyLocal(gitHelper);
 
     const testBranch = 'test1';
-    t.notOk(await localRepo.hasBranch(testBranch), `localRepo does not hasBranch ${testBranch}`);
+    expect(await localRepo.hasBranch(testBranch)).toBe(false);
 
     // create branch & switch to it
     await localRepo.localBranch(testBranch);
-    t.ok(await localRepo.hasBranch(testBranch), `localRepo hasBranch ${testBranch}`);
+    expect(await localRepo.hasBranch(testBranch)).toBe(true);
 
     const currentBranch = await gitHelper.raw(['symbolic-ref', '--short', 'HEAD']);
-    t.equal(currentBranch.trim(), testBranch, `on correct branch ${testBranch}`);
+    expect(currentBranch.trim()).toBe(testBranch);
 
     // push branch to remote
     await gitHelper.push('origin', testBranch);
@@ -210,12 +204,12 @@ test('creating/deleting branch', async t => {
     // clean up
     await localRepo.checkout('master');
     const deleted = await localRepo.deleteBranch(testBranch);
-    t.equal(deleted.branch, testBranch, `deleted branch ${testBranch}`);
+    expect(deleted.branch).toBe(testBranch);
 });
 
-test('creating/deleting tag', async t => {
+test('creating/deleting tag', async () => {
     await setUp();
-    t.plan(8);
+    expect.assertions(8);
     const localRepo = gitFactory(localRepoPath); // module we're testing
     const remoteRepo = gitFactory(remoteRepoPath); // module we're testing
     const gitHelper = simpleGit(localRepoPath); // helper lib
@@ -223,31 +217,31 @@ test('creating/deleting tag', async t => {
     await verifyLocal(gitHelper);
     await verifyRemote(remoteGitHelper);
 
-    t.notOk(await localRepo.hasTag('tag1'), 'localRepo does not hasTag tag1');
-    t.notOk(await remoteRepo.hasTag('tag1'), 'remoteRepo does not hasTag tag1');
+    expect(await localRepo.hasTag('tag1')).toBe(false);
+    expect(await remoteRepo.hasTag('tag1')).toBe(false);
 
     // create tag & push it
     await localRepo.tag('master', 'tag1', 'testing tag1 comment');
 
     // check tags
-    t.ok(await localRepo.hasTag('tag1'), 'localRepo hasTag tag1');
-    t.ok(await remoteRepo.hasTag('tag1'), 'remoteRepo hasTag tag1');
+    expect(await localRepo.hasTag('tag1')).toBe(true);
+    expect(await remoteRepo.hasTag('tag1')).toBe(true);
 
     const localTags = await gitHelper.tags();
-    t.ok(localTags.all.includes('tag1'), 'tag exists on local');
+    expect(localTags.all.includes('tag1')).toBe(true);
     const remoteTags = await remoteGitHelper.tags();
-    t.ok(remoteTags.all.includes('tag1'), 'tag exists on remote');
+    expect(remoteTags.all.includes('tag1')).toBe(true);
 
     // delete remote & local
     await gitHelper.raw(['push', '--delete', 'origin', 'tag1']);
     await gitHelper.raw(['tag', '-d', 'tag1']);
-    t.notOk(await localRepo.hasTag('tag1'), 'tag1 gone on local');
-    t.notOk(await remoteRepo.hasTag('tag1'), 'tag1 gone on remote');
+    expect(await localRepo.hasTag('tag1')).toBe(false);
+    expect(await remoteRepo.hasTag('tag1')).toBe(false);
 });
 
-test('pull from remote', async t => {
+test('pull from remote', async () => {
     await setUp();
-    t.plan(10);
+    expect.assertions(10);
     const localRepo = gitFactory(localRepoPath); // module we're testing
     const gitHelper = simpleGit(localRepoPath); // helper lib
     await verifyLocal(gitHelper);
@@ -255,30 +249,30 @@ test('pull from remote', async t => {
     // pull equal branch
     const branch1 = 'master';
     const pull1 = await localRepo.pull(branch1);
-    t.equal(await getCurrentBranch(gitHelper), branch1, `on ${branch1} branch`);
-    t.equal(pull1.files.length, 0, '0 files changed');
-    t.equal(pull1.summary.insertions, 0, '0 insertions');
-    t.equal(pull1.summary.deletions, 0, '0 deletions');
+    expect(await getCurrentBranch(gitHelper)).toBe(branch1);
+    expect(pull1.files.length).toBe(0);
+    expect(pull1.summary.insertions).toBe(0);
+    expect(pull1.summary.deletions).toBe(0);
 
     // pull locally unknown remote branch
     const branch2 = 'remote-only';
-    t.notOk(await localRepo.hasBranch(branch2), `branch ${branch2} unknown to local`);
+    expect(await localRepo.hasBranch(branch2)).toBe(false);
     await localRepo.pull(branch2);
-    t.equal(await getCurrentBranch(gitHelper), branch2, `on ${branch2} branch`);
+    expect(await getCurrentBranch(gitHelper)).toBe(branch2);
 
     // pull known remote branch with changes
     const branch3 = 'remote-is-ahead';
     const pull3 = await localRepo.pull(branch3);
-    t.equal(await getCurrentBranch(gitHelper), branch3, `on ${branch3} branch`);
+    expect(await getCurrentBranch(gitHelper)).toBe(branch3);
 
-    t.equal(pull3.files.length, 1, '1 file changed');
-    t.equal(pull3.summary.insertions, 1, '1 insertions');
-    t.equal(pull3.summary.deletions, 1, '1 deletions');
+    expect(pull3.files.length).toBe(1);
+    expect(pull3.summary.insertions).toBe(1);
+    expect(pull3.summary.deletions).toBe(1);
 });
 
-test('branch, edit, commit, diff, push', async t => {
+test('branch, edit, commit, diff, push', async () => {
     await setUp();
-    t.plan(10);
+    expect.assertions(10);
     const localRepo = gitFactory(localRepoPath); // module we're testing
     const remoteRepo = gitFactory(remoteRepoPath); // module we're testing
     const gitHelper = simpleGit(localRepoPath); // helper lib
@@ -289,14 +283,14 @@ test('branch, edit, commit, diff, push', async t => {
     // start on develop
     await gitHelper.checkout('develop');
     let currentBranch = await gitHelper.raw(['symbolic-ref', '--short', 'HEAD']);
-    t.equal(currentBranch.trim(), 'develop', 'on develop branch');
+    expect(currentBranch.trim()).toBe('develop');
 
     // create branch & switch to it
     const newBranch = 'testing/TAO-xyz/my-feature';
     await localRepo.localBranch(newBranch);
-    t.ok(await localRepo.hasBranch(newBranch), 'localRepo has new branch');
+    expect(await localRepo.hasBranch(newBranch)).toBe(true);
     currentBranch = await gitHelper.raw(['symbolic-ref', '--short', 'HEAD']);
-    t.equal(currentBranch.trim(), newBranch, 'on the new branch');
+    expect(currentBranch.trim()).toBe(newBranch);
 
     // edit file
     const manifest = path.join(localRepoPath, 'manifest.php');
@@ -305,28 +299,28 @@ test('branch, edit, commit, diff, push', async t => {
         from: '1.2.3',
         to: '1.3.0',
     });
-    t.equal(replacings.length, 1, 'exactly one file was changed');
-    t.equal(replacings[0].file, manifest, 'the manifest was changed');
-    t.equal(replacings[0].hasChanged, true, 'the manifest was changed');
+    expect(replacings.length).toBe(1);
+    expect(replacings[0].file).toBe(manifest);
+    expect(replacings[0].hasChanged).toBe(true);
 
     // diff
-    t.ok(await localRepo.hasLocalChanges(), 'there are local changes');
+    expect(await localRepo.hasLocalChanges()).toBe(true);
 
     // commit and push
     await localRepo.commitAndPush(newBranch, 'version bump 1.3.0');
-    t.ok(await remoteRepo.hasBranch(newBranch), 'remoteRepo has branch');
+    expect(await remoteRepo.hasBranch(newBranch)).toBe(true);
 
     // branch comparisons
     const localDiff = await localRepo.hasDiff(newBranch, 'develop');
-    t.ok(localDiff && localDiff.length, 'the branches have a difference on local');
+    expect(localDiff && localDiff.length).toBeTruthy();
     const remoteDiff = await remoteRepo.hasDiff(newBranch, 'develop');
-    t.ok(remoteDiff && remoteDiff.length, 'the branches have a difference on remote');
+    expect(remoteDiff && remoteDiff.length).toBeTruthy();
 
 });
 
-test('mergeBack from master to develop', async t => {
+test('mergeBack from master to develop', async () => {
     await setUp();
-    t.plan(2);
+    expect.assertions(2);
     const localRepo = gitFactory(localRepoPath); // module we're testing
     const gitHelper = simpleGit(localRepoPath); // helper lib
     await verifyLocal(gitHelper);
@@ -341,29 +335,27 @@ test('mergeBack from master to develop', async t => {
     await gitHelper.add(manifest);
     await gitHelper.commit('To v1.3.0');
     const diff1 = await gitHelper.diff(['develop', 'master']);
-    t.ok(diff1.trim().length > 0, 'develop not equal with master');
+    expect(diff1.trim().length > 0).toBeTruthy();
 
     await localRepo.mergeBack('develop', 'master');
     const diff2 = await gitHelper.diff(['develop', 'master']);
-    t.equal(diff2.trim().length, 0, 'develop equal with master');
+    expect(diff2.trim().length).toBe(0)
 });
 
-
-test('get remote repository name', async t => {
+test('get remote repository name', async () => {
     await setUp();
-    t.plan(1);
+    expect.assertions(1);
     const localRepo = gitFactory(localRepoPath); // module we're testing
     const gitHelper = simpleGit(localRepoPath); // helper lib
     await verifyLocal(gitHelper);
     const localPathRemoteName = await localRepo.getRepositoryName();
     //remote is linked on the local system
-    t.equal(localPathRemoteName.trim(), remoteRepoPath.trim());
-    t.end();
+    expect(localPathRemoteName.trim()).toBe(remoteRepoPath.trim());
 });
 
-test('get ssh remote repository name', async t => {
+test('get ssh remote repository name', async () => {
     await setUp();
-    t.plan(1);
+    expect.assertions(1);
     const localRepo = gitFactory(localRepoPath); // module we're testing
     const gitHelper = simpleGit(localRepoPath); // helper lib
     await verifyLocal(gitHelper);
@@ -371,13 +363,12 @@ test('get ssh remote repository name', async t => {
     //set an ssh-like url to the origin
     await gitHelper.remote(['set-url', 'origin', 'bar@foo.com:oat-sa/tao-extension-a.git']);
     const sshRepoName = await localRepo.getRepositoryName();
-    t.equal(sshRepoName, 'oat-sa/tao-extension-a');
-    t.end();
+    expect(sshRepoName).toBe('oat-sa/tao-extension-a');
 });
 
-test('get https remote repository name', async t => {
+test('get https remote repository name', async () => {
     await setUp();
-    t.plan(1);
+    expect.assertions(1);
     const localRepo = gitFactory(localRepoPath); // module we're testing
     const gitHelper = simpleGit(localRepoPath); // helper lib
     await verifyLocal(gitHelper);
@@ -385,14 +376,12 @@ test('get https remote repository name', async t => {
     //set a https url to the origin
     await gitHelper.remote(['set-url', 'origin', 'https://foo.com/oat-sa/tao-extension-b.git']);
     const httpsRepoName = await localRepo.getRepositoryName();
-    t.equal(httpsRepoName, 'oat-sa/tao-extension-b');
-
-    t.end();
+    expect(httpsRepoName).toBe('oat-sa/tao-extension-b');
 });
 
-test('get smartgit remote repository name', async t => {
+test('get smartgit remote repository name', async () => {
     await setUp();
-    t.plan(1);
+    expect.assertions(1);
     const localRepo = gitFactory(localRepoPath); // module we're testing
     const gitHelper = simpleGit(localRepoPath); // helper lib
     await verifyLocal(gitHelper);
@@ -400,23 +389,22 @@ test('get smartgit remote repository name', async t => {
     //set a smartgit url to the origin
     await gitHelper.remote(['set-url', 'origin', 'https://foo.com/oat-sa/tao-extension-c']);
     const smartgitRepoName = await localRepo.getRepositoryName();
-    t.equal(smartgitRepoName, 'oat-sa/tao-extension-c');
-
-    t.end();
+    expect(smartgitRepoName).toBe('oat-sa/tao-extension-c');
 });
 
 
-test('get remote repository name without a remote', async t => {
+test('get remote repository name without a remote', async () => {
     await setUp();
-    t.plan(1);
+    expect.assertions(1);
     const localRepo = gitFactory(localRepoPath); // module we're testing
     const gitHelper = simpleGit(localRepoPath); // helper lib
     await verifyLocal(gitHelper);
 
     //set a smartgit url to the origin
     await gitHelper.remote(['rm', 'origin']);
-
-    await t.rejects(localRepo.getRepositoryName());
-
-    t.end();
+    try {
+        await localRepo.getRepositoryName();
+    } catch(e) {
+        expect(e).toBeTruthy();
+    } 
 });

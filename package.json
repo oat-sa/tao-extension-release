@@ -7,11 +7,11 @@
   },
   "scripts": {
     "test:dev": "nodemon -e js --watch tests --watch src --delay 1 --exec npm run test",
-    "test:cov": "npm run test:unit -- --coverage",
+    "test:cov": "npm run test -- --coverage",
     "test:cov:html": "open-cli coverage/lcov-report/index.html",
-    "test:integ": "tape \"tests/integration/**/test.js\" | tap-spec || true",
-    "test:unit": "jest --config=./jest.config.js",
-    "test": "npm run test:unit && npm run test:integ",
+    "test:integ": "jest tests/integration --config=./jest.config.js",
+    "test:unit": "jest tests/unit --config=./jest.config.js",
+    "test": "jest --config=./jest.config.js",
     "lint": "eslint index.js \"src/**/*.js\" \"tests/**/test.js\"",
     "lint:report": "npm run lint -- --output-file eslint_report.json --format json"
   },

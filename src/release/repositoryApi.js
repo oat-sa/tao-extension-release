@@ -29,7 +29,6 @@ import gitClientFactory from '../git.js';
  * @param {Object} data
  */
 export default function repositoryApiFactory(params = {}, data) {
-
     return {
 
         gitClient: null,
