@@ -7,7 +7,7 @@
   },
   "scripts": {
     "test:dev": "nodemon -e js --watch tests --watch src --delay 1 --exec npm run test",
-    "test:cov": "npm run test -- --coverage",
+    "test:cov": "npm run test:unit -- --coverage",
     "test:cov:html": "open-cli coverage/lcov-report/index.html",
     "test:integ": "jest tests/integration --config=./jest.config.js",
     "test:unit": "jest tests/unit --config=./jest.config.js",
