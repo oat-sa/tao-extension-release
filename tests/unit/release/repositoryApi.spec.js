@@ -41,15 +41,14 @@ import repositoryApiFactory from '../../../src/release/repositoryApi.js';
 import log from '../../../src/log.js';
 
 const path = '/foo/bar';
+
 beforeAll(() => {
     jest.spyOn(process, 'cwd')
         .mockImplementation(() => path);
 });
-// afterAll
 afterAll(() => {
     jest.restoreAllMocks();
 });
-
 
 test('should define selectTarget method on repositoryApi instance', () => {
     expect.assertions(1);
