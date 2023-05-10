@@ -15,13 +15,16 @@
  *
  * Copyright (c) 2023 Open Assessment Technologies SA;
  */
-import readPkg from 'read-pkg';
-import writePkg from 'write-pkg';
-import npmPackageFactory from '../../src/npmPackage.js';
-const npmPackage = npmPackageFactory();
 
 jest.mock('read-pkg');
 jest.mock('write-pkg');
+jest.mock('cross-spawn');
+
+import readPkg from 'read-pkg';
+import writePkg from 'write-pkg';
+import crossSpawn from 'cross-spawn';
+import npmPackageFactory from '../../src/npmPackage.js';
+const npmPackage = npmPackageFactory();
 
 const goodUrls = [
     'git+https://github.com/owner/my-cool-repo.git',
@@ -65,13 +68,13 @@ describe('src/npmPackage.js', () => {
     });
     it('read a valid package', async() => {
         const mockRepository = jest.spyOn(npmPackage, 'parsePackageJson');
-        mockRepository.mockImplementation(async() => validPackageData);
+        mockRepository.mockImplementationOnce(async() => validPackageData);
         const result = await npmPackage.isValidPackage();
         expect(result).toBe(true);
     });
     it('read an invalid package', async() => {
         const mockParse = jest.spyOn(npmPackage, 'parsePackageJson');
-        mockParse.mockImplementation(async() => invalidPackageData);
+        mockParse.mockImplementationOnce(async() => invalidPackageData);
         const result = await npmPackage.isValidPackage();
         expect(result).toBe(false);
     });
@@ -83,6 +86,18 @@ describe('src/npmPackage.js', () => {
     it('npmCommand should reject on invalid params', () => {
         expect.assertions(1);
         return expect(npmPackage.npmCommand(['my', 'command'])).rejects.toEqual(TypeError('Invalid argument type: object for npmCommand (should be string)'));
+    });
+    it('npmCommand should crossSpawn', async () => {
+        expect.assertions(1);
+        const on = jest.fn((event, callback) => callback(0));
+        crossSpawn.mockImplementationOnce(() => {
+            //Mock the default export
+            return {
+                    on
+            };
+        });
+        await npmPackage.npmCommand('install');
+        expect(on).toBeCalledTimes(1);
     });
     it('should define updateVersion method on release instance', () => {
         expect(typeof npmPackage.updateVersion).toBe('function');
@@ -104,5 +119,37 @@ describe('src/npmPackage.js', () => {
         await npmPackage.updateVersion(folderName, version);
         expect(writePkg).toBeCalled();
         expect(writePkg).toBeCalledWith(folderName, { version });
+    });
+    it('should define parsePackageJson method on release instance', () => {
+        expect(typeof npmPackage.parsePackageJson).toBe('function');
+    });
+    it('should return data from package.json', async () => {
+        const repoName = 'owner/my-cool-repo';
+        readPkg.mockImplementation(() => Promise.resolve(validPackageData));
+        jest.spyOn(npmPackage, 'extractRepoName').mockImplementation(() => repoName);
+
+        const result = await npmPackage.parsePackageJson(folderName);
+        expect(readPkg).toBeCalled();
+        expect(readPkg).toBeCalledWith({ cwd: folderName });
+        expect(result).toStrictEqual({...validPackageData, repoName});
+    });
+    it('should define ci method on release instance', () => {
+        const mockNpmCommand = jest.spyOn(npmPackage, 'npmCommand');
+        mockNpmCommand.mockImplementation(arg => arg);
+        expect(typeof npmPackage.ci).toBe('function');
+        expect(npmPackage.ci()).toBe('ci');
+    });
+    it('should define build method on release instance', () => {
+        const mockNpmCommand = jest.spyOn(npmPackage, 'npmCommand');
+        mockNpmCommand.mockImplementation(arg => arg);
+        expect(typeof npmPackage.build).toBe('function');
+        expect(npmPackage.build()).toBe('run build');
+    });
+    it('should define build method on release instance', () => {
+        const repoName = 'owner/my-cool-repo';
+        const mockNpmCommand = jest.spyOn(npmPackage, 'npmCommand');
+        mockNpmCommand.mockImplementation(arg => arg);
+        expect(typeof npmPackage.publish).toBe('function');
+        expect(npmPackage.publish(repoName)).toBe(`publish --registry ${repoName}`);
     });
 });

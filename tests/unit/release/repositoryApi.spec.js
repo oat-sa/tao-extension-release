@@ -34,30 +34,33 @@ jest.mock('../../../src/git.js', () => {
             }),
         }))
     };
-    
 });
 import repositoryApiFactory from '../../../src/release/repositoryApi.js';
-
 import log from '../../../src/log.js';
 
 const path = '/foo/bar';
 
-beforeAll(() => {
-    jest.spyOn(process, 'cwd')
-        .mockImplementation(() => path);
-});
 afterAll(() => {
     jest.restoreAllMocks();
 });
 
 test('should define selectTarget method on repositoryApi instance', () => {
-    expect.assertions(1);
-    const repositoryApi = repositoryApiFactory();
+    const data = {x: 1};
+    const data2 = {x: 2};
+    const repositoryApi = repositoryApiFactory({}, data);
     expect(typeof repositoryApi.selectTarget).toBe('function');
+    expect(typeof repositoryApi.setData).toBe('function');
+    expect(typeof repositoryApi.getData).toBe('function');
+    expect(repositoryApi.getData()).toStrictEqual(data);
+    repositoryApi.setData(data2);
+    expect(repositoryApi.getData()).toStrictEqual(data2);
+    expect(typeof repositoryApi.gitClient).toBe('object');
+    expect(typeof repositoryApi.npmPackage).toBe('undefined');
 });
 
 test('should return selected target data', async () => {
     expect.assertions(1);
+    jest.spyOn(process, 'cwd').mockImplementation(() => path);
     const repositoryApi = repositoryApiFactory({origin: 'origin'});
     const res = await repositoryApi.selectTarget();
 
@@ -72,6 +75,9 @@ test('should return selected target data', async () => {
 
 test('should log error if package.json is invalid', async () => {
     expect.assertions(1);
+    
+    jest.spyOn(process, 'cwd').mockImplementation(() => path);
+
     const repositoryApi = repositoryApiFactory();
     await repositoryApi.selectTarget();
 

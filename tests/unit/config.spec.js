@@ -17,6 +17,8 @@
  */
 
 import config from '../../src/config.js';
+jest.mock('fs-extra');
+import fs from 'fs-extra';
 
 describe('src/config.js', () => {
     it('the module exports a function', () => {
@@ -25,10 +27,16 @@ describe('src/config.js', () => {
     it('the module function creates an object', () => {
         expect(typeof config()).toBe('object');
     });
-    it('the created object has a load method', () => {
+    it('the created object has a load method', async () => {
         expect(typeof config().load).toBe('function');
+        jest.spyOn(fs, 'readJSON').mockImplementationOnce(() => Promise.resolve(true));
+        await config().load();
+        expect(fs.readJSON).toBeCalledTimes(1);
     });
-    it('the created object has a write method', () => {
+    it('the created object has a write method', async () => {
         expect(typeof config().write).toBe('function');
+        jest.spyOn(fs, 'writeJson').mockImplementationOnce(() => true);
+        await config().write();
+        expect(fs.writeJson).toBeCalledTimes(1);
     });
 });

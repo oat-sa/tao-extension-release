@@ -25,17 +25,23 @@ jest.mock('../../../src/npmPackage.js', () => {
         default: jest.fn(() => ({
             name: packageName,
             isValidPackage: jest.fn(() => true),
-            publish: jest.fn()
+            publish: jest.fn(),
+            updateVersion: jest.fn(() => true)
         }))
     };
 });
 jest.mock('../../../src/log.js', () => ({
-    error: jest.fn(),
-    exit: jest.fn(),
+    error: jest.fn(() => ({
+        exit: jest.fn()
+    })),
+    exit: jest.fn(() => ({
+        exit: jest.fn()
+    })),
     doing: jest.fn(),
     info: jest.fn(),
     done: jest.fn()
 }));
+jest.mock('fs');
 
 import packageApiFactory from '../../../src/release/packageApi.js';
 import npmPackageFactory from '../../../src/npmPackage.js';
@@ -51,14 +57,9 @@ const gitClientInstance = {
     checkout: () => { },
 };
 
-beforeAll(() => {
-    jest.spyOn(process, 'cwd')
-        .mockImplementation(() => taoRoot);
-    jest.spyOn(fs, 'existsSync')
-        .mockImplementation(() => true);
-});
 afterEach(() => {
     jest.clearAllMocks();
+    fs.existsSync.mockClear();
 })
 afterAll(() => {
     jest.restoreAllMocks();
@@ -142,4 +143,121 @@ test('should not prompt in non interactive mode', async () => {
     expect(log.doing).toBeCalledTimes(2);
     expect(log.doing).toHaveBeenLastCalledWith(`Publishing package ${packageName} @ undefined`);
     expect(inquirer.prompt).not.toBeCalled();
+});
+
+test('should define selectTarget method on packageApi instance', () => {
+    expect.assertions(1);
+
+    const packageApi = packageApiFactory();
+    expect(typeof packageApi.selectTarget).toBe('function');
+});
+
+test('should verify existence of package.json in current dir', async () => {
+    expect.assertions(2);
+
+    jest.spyOn(process, 'cwd').mockImplementationOnce(() => taoRoot);
+
+    const packageApi = packageApiFactory();
+    await packageApi.selectTarget();
+
+    expect(fs.existsSync).toBeCalledTimes(1);
+    expect(fs.existsSync).toBeCalledWith(taoRoot + '/package.json');
+});
+
+test('should log error if no package.json in current dir', async () => {
+    expect.assertions(2);
+
+    jest.spyOn(fs, 'existsSync').mockImplementationOnce(() => false);
+    jest.spyOn(process, 'cwd').mockImplementationOnce(() => taoRoot);
+
+    const packageApi = packageApiFactory();
+    await packageApi.selectTarget();
+
+    expect(fs.existsSync).toBeCalledTimes(1);
+    expect(log.error).toBeCalledTimes(1);
+});
+
+test('should verify validity of package.json in current dir', async () => {
+    expect.assertions(1);
+
+    const isValidPackage = jest.fn(() => true);
+    npmPackageFactory.mockImplementationOnce(() => {
+        //Mock the default export
+        return {
+                name: packageName,
+                isValidPackage: isValidPackage,
+                publish: jest.fn()
+        };
+    });
+
+    const packageApi = packageApiFactory();
+    await packageApi.selectTarget();
+
+    expect(isValidPackage).toBeCalledTimes(1);
+});
+
+test('should log error if package.json is invalid', async () => {
+    expect.assertions(2);
+
+    jest.spyOn(fs, 'existsSync').mockImplementationOnce(() => true);
+    const isValidPackage = jest.fn(() => false);
+    npmPackageFactory.mockImplementationOnce(() => {
+        //Mock the default export
+        return {
+                name: packageName,
+                isValidPackage: isValidPackage,
+                publish: jest.fn()
+        };
+    });
+    const packageApi = packageApiFactory();
+    await packageApi.selectTarget();
+
+    expect(isValidPackage).toBeCalledTimes(1);
+    expect(log.error).toBeCalledTimes(1);
+});
+
+test('should return selected package data', async () => {
+    expect.assertions(1);
+
+    jest.spyOn(fs, 'existsSync').mockImplementationOnce(() => true);
+    jest.spyOn(process, 'cwd').mockImplementationOnce(() => taoRoot);
+
+    const packageApi = packageApiFactory();
+    const res = await packageApi.selectTarget();
+
+    expect(res).toStrictEqual({
+        package: {
+            path: taoRoot,
+            name: packageName
+        },
+    });
+});
+
+test('should define updateVersion method on packageApi instance', () => {
+    expect.assertions(1);
+
+    const packageApi = packageApiFactory();
+    expect(typeof packageApi.updateVersion).toBe('function');
+});
+
+test('should call updateVersion method of npmPackage', async () => {
+    expect.assertions(2);
+    
+    const version = '1.1.1';
+    const updateVersion = jest.fn(() => true);
+    npmPackageFactory.mockImplementationOnce(() => {
+        //Mock the default export
+        return {
+                name: packageName,
+                updateVersion: updateVersion,
+                publish: jest.fn()
+        };
+    });
+
+    const packageApi = packageApiFactory({}, { version, interactive: true });
+    packageApi.npmPackage = npmPackageFactory();
+    await packageApi.updateVersion();
+
+    expect(updateVersion).toBeCalledTimes(1);
+    expect(updateVersion).toBeCalledWith(undefined, version);
 });
