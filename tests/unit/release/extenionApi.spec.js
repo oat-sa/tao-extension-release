@@ -416,8 +416,6 @@ describe('src/release/extensionApi.js', () => {
     test('should initialise taoInstance', async () => {
         expect.assertions(2);
 
-        const taoRoot = 'testRoot';
-
         jest.spyOn(inquirer, 'prompt').mockImplementationOnce(() => ({ taoRoot }));
         const extensionApi = extensionApiFactory({ wwwUser, interactive: true });
         extensionApi.gitClient = gitClientInstance;
@@ -429,8 +427,6 @@ describe('src/release/extensionApi.js', () => {
 
     test('should check if under provided path there is a real tao instance', async () => {
         expect.assertions(1);
-
-        const taoRoot = 'testRoot';
 
         jest.spyOn(inquirer, 'prompt').mockImplementationOnce(() => ({ taoRoot }));
         const isRoot = jest.fn(() => ({}));
@@ -455,7 +451,6 @@ describe('src/release/extensionApi.js', () => {
     test('should log exit if provided path is not a tao root', async () => {
         expect.assertions(2);
 
-        const taoRoot = 'testRoot';
         const dir = 'testDir';
 
         jest.spyOn(inquirer, 'prompt').mockImplementationOnce(() => ({ taoRoot }));
@@ -481,8 +476,6 @@ describe('src/release/extensionApi.js', () => {
 
     test('should check if tao instance is installed', async () => {
         expect.assertions(1);
-
-        const taoRoot = 'testRoot';
 
         jest.spyOn(inquirer, 'prompt').mockImplementationOnce(() => ({ taoRoot }));
         const isInstalled = jest.fn(() => true);
