@@ -19,7 +19,8 @@ jest.mock('../../../src/log.js', () => ({
     error: jest.fn(() => ({
         exit: jest.fn()
     })),
-    exit: jest.fn()
+    exit: jest.fn(),
+    info: jest.fn()
 }));
 const name = 'oat-sa/tao-extension-release';
 jest.mock('../../../src/git.js', () => {
