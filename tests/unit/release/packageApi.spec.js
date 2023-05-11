@@ -42,6 +42,7 @@ jest.mock('../../../src/log.js', () => ({
     done: jest.fn()
 }));
 jest.mock('fs');
+jest.mock('inquirer');
 
 import packageApiFactory from '../../../src/release/packageApi.js';
 import npmPackageFactory from '../../../src/npmPackage.js';
@@ -59,10 +60,10 @@ const gitClientInstance = {
 
 afterEach(() => {
     jest.clearAllMocks();
-    fs.existsSync.mockClear();
-})
+});
 afterAll(() => {
     jest.restoreAllMocks();
+    jest.clearAllMocks();
 });
 
 test('should define publish method on packageApi instance', () => {

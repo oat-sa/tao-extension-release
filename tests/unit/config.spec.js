@@ -21,6 +21,13 @@ jest.mock('fs-extra');
 import fs from 'fs-extra';
 
 describe('src/config.js', () => {
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+    afterAll(() => {
+        jest.restoreAllMocks();
+        jest.clearAllMocks();
+    });
     it('the module exports a function', () => {
         expect(typeof config).toBe('function');
     });

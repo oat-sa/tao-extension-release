@@ -18,6 +18,13 @@
 import validate from '../../src/validate.js';
 
 describe('src/validate.js', () => {
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+    afterAll(() => {
+        jest.restoreAllMocks();
+        jest.clearAllMocks();
+    });
     it('the module api', () => {
         expect(typeof validate).toBe('object');
     });

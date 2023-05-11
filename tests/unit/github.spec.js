@@ -83,6 +83,13 @@ jest.mock('../../src/githubApiClient.js', () => {
 });
 
 describe('src/github.js', () => {
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+    afterAll(() => {
+        jest.restoreAllMocks();
+        jest.clearAllMocks();
+    });
     it('the module api', () => {
         expect(typeof github).toBe('function');
         expect(typeof github(token, repo)).toBe('object');

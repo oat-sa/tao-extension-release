@@ -53,6 +53,13 @@ jest.mock('conventional-recommended-bump', () => {
 });
 
 describe('src/conventionalCommits.js', () => {
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+    afterAll(() => {
+        jest.restoreAllMocks();
+        jest.clearAllMocks();
+    });
     it('the conventional commits instance has a buildChangelog method', () => {
         expect(typeof conventionalCommits.buildChangelog).toBe('function');
     });

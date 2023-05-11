@@ -24,6 +24,13 @@ import githubApiClientFactory from '../../src/githubApiClient.js'
 import { GraphQLClient } from 'graphql-request';
 
 describe('src/githubApiClient.js', () => {
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+    afterAll(() => {
+        jest.restoreAllMocks();
+        jest.clearAllMocks();
+    });
     it('should create instance with exposed public methods', () => {
         const githubApiClient = githubApiClientFactory();
         expect(typeof githubApiClient.getPRCommits).toBe('function');

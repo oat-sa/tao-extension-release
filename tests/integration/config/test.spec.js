@@ -11,6 +11,8 @@ const tearDown = () => fs.removeSync(workDir);
 
 afterAll(() => {
     tearDown();
+    jest.restoreAllMocks();
+    jest.clearAllMocks();
 });
 
 test('Load a config that does not exists', async () => {

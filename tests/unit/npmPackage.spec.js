@@ -48,6 +48,13 @@ const invalidPackageData = {
 const folderName = 'folderName';
 const version = '1.1.1';
 describe('src/npmPackage.js', () => {
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+    afterAll(() => {
+        jest.restoreAllMocks();
+        jest.clearAllMocks();
+    });
     it('should define extractRepoName method on release instance', () => {
         expect(typeof npmPackage.extractRepoName).toBe('function');
     });

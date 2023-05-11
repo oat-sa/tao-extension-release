@@ -40,8 +40,12 @@ import log from '../../../src/log.js';
 
 const path = '/foo/bar';
 
+afterEach(() => {
+    jest.clearAllMocks();
+});
 afterAll(() => {
     jest.restoreAllMocks();
+    jest.clearAllMocks();
 });
 
 test('should define selectTarget method on repositoryApi instance', () => {
