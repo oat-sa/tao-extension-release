@@ -30,9 +30,9 @@ jest.mock('../../../src/git.js', () => {
         __esModule: true,
         ...originalModule,
         default: jest.fn((path, origin) => ({
-            getRepositoryName:  jest.fn(() => {
-                return origin === 'origin' ? name : Promise.reject(new Error('Not a git repo'))
-            }),
+            getRepositoryName: jest.fn(() => {
+                return origin === 'origin' ? name : Promise.reject(new Error('Not a git repo'));
+            })
         }))
     };
 });
@@ -50,8 +50,8 @@ afterAll(() => {
 });
 
 test('should define selectTarget method on repositoryApi instance', () => {
-    const data = {x: 1};
-    const data2 = {x: 2};
+    const data = { x: 1 };
+    const data2 = { x: 2 };
     const repositoryApi = repositoryApiFactory({}, data);
     expect(typeof repositoryApi.selectTarget).toBe('function');
     expect(typeof repositoryApi.setData).toBe('function');
@@ -66,21 +66,20 @@ test('should define selectTarget method on repositoryApi instance', () => {
 test('should return selected target data', async () => {
     expect.assertions(1);
     jest.spyOn(process, 'cwd').mockImplementation(() => path);
-    const repositoryApi = repositoryApiFactory({origin: 'origin'});
+    const repositoryApi = repositoryApiFactory({ origin: 'origin' });
     const res = await repositoryApi.selectTarget();
 
     expect(res).toStrictEqual({
         repository: {
             path,
             name
-        },
+        }
     });
-
 });
 
 test('should log error if package.json is invalid', async () => {
     expect.assertions(1);
-    
+
     jest.spyOn(process, 'cwd').mockImplementation(() => path);
 
     const repositoryApi = repositoryApiFactory();

@@ -23,19 +23,19 @@ jest.mock('../../../../src/git.js', () => {
         __esModule: true,
         ...originalModule,
         default: jest.fn(() => ({
-            tag:  jest.fn(arg => arg),
-            localBranch:  jest.fn(arg => arg),
-            push:  jest.fn(arg => arg),
-            hasBranch:  jest.fn(),
+            tag: jest.fn(arg => arg),
+            localBranch: jest.fn(arg => arg),
+            push: jest.fn(arg => arg),
+            hasBranch: jest.fn(),
             hasTag: jest.fn(),
             getLastTag: jest.fn(),
-            hasDiff:  jest.fn(() => true),
+            hasDiff: jest.fn(() => true),
             mergeBack: jest.fn(),
             pull: jest.fn(),
             merge: jest.fn(),
             mergePr: jest.fn(),
             getLocalBranches: jest.fn(() => []),
-            checkoutNonLocal: jest.fn(),
+            checkoutNonLocal: jest.fn()
         }))
     };
 });
@@ -59,17 +59,17 @@ describe('src/release.js removeReleasingBranch', () => {
         jest.restoreAllMocks();
         jest.clearAllMocks();
     });
-    
+
     test('should define removeReleasingBranch method on release instance', () => {
         expect.assertions(1);
-    
+
         const release = releaseFactory(branchPrefix);
         release.setData({ releasingBranch, token, extension: {} });
         expect(typeof release.removeReleasingBranch).toBe('function');
     });
     test('should delete releasing branch', async () => {
         expect.assertions(2);
-    
+
         const deleteBranch = jest.fn();
         git.mockImplementationOnce(() => {
             //Mock the default export
@@ -82,9 +82,8 @@ describe('src/release.js removeReleasingBranch', () => {
         release.setData({ releasingBranch, token, extension: {} });
         await release.initialiseGitClient();
         await release.removeReleasingBranch();
-    
-        expect(deleteBranch).toBeCalledTimes(1);
-        expect(deleteBranch).toBeCalledWith(`${branchPrefix}-${version}`)
-    });
 
+        expect(deleteBranch).toBeCalledTimes(1);
+        expect(deleteBranch).toBeCalledWith(`${branchPrefix}-${version}`);
+    });
 });

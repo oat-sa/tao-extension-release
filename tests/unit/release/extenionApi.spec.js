@@ -40,7 +40,7 @@ jest.mock('../../../src/taoInstance.js', () => {
     return {
         __esModule: true,
         ...originalModule,
-        default: jest.fn((path, origin) => ({
+        default: jest.fn(() => ({
             buildAssets: jest.fn(),
             getExtensions: jest.fn(() => []),
             isInstalled: jest.fn(() => true),
@@ -102,7 +102,7 @@ describe('src/release/extensionApi.js', () => {
         await extensionApi.compileAssets(releasingBranch);
 
         expect(log.doing).toBeCalledTimes(1);
-        expect(log.doing).toBeCalledWith('Bundling')
+        expect(log.doing).toBeCalledWith('Bundling');
     });
 
     test('should log info message', async () => {
@@ -205,9 +205,7 @@ describe('src/release/extensionApi.js', () => {
 
         expect(log.info).toBeCalledTimes(4);
         expect(log.info).toBeCalledWith(`Commit : [bundle assets - ${changes.length} files]`);
-        changes.forEach(change =>
-            expect(log.info).toBeCalledWith(`  - ${change}`)
-        );
+        changes.forEach(change => expect(log.info).toBeCalledWith(`  - ${change}`));
     });
 
     test('should log done message', async () => {
@@ -222,7 +220,6 @@ describe('src/release/extensionApi.js', () => {
 
         expect(log.done).toBeCalledTimes(1);
     });
-
 
     test('should define getMetadata method on extensionApi instance', () => {
         expect.assertions(1);
@@ -296,7 +293,7 @@ describe('src/release/extensionApi.js', () => {
                 getExtensions,
                 isInstalled: jest.fn(() => true),
                 isRoot: jest.fn(() => ({ root: true, dir: taoRoot })),
-                getRepoName: jest.fn(),
+                getRepoName: jest.fn()
             };
         });
 
@@ -320,7 +317,7 @@ describe('src/release/extensionApi.js', () => {
                 getExtensions,
                 isInstalled: jest.fn(() => true),
                 isRoot: jest.fn(() => ({ root: true, dir: taoRoot })),
-                getRepoName: jest.fn(),
+                getRepoName: jest.fn()
             };
         });
         jest.spyOn(inquirer, 'prompt').mockImplementationOnce(({ type, name, message, pageSize, choices }) => {
@@ -353,7 +350,7 @@ describe('src/release/extensionApi.js', () => {
                 getExtensions,
                 isInstalled: jest.fn(() => true),
                 isRoot: jest.fn(() => ({ root: true, dir: taoRoot })),
-                getRepoName: jest.fn(),
+                getRepoName: jest.fn()
             };
         });
 
@@ -377,7 +374,7 @@ describe('src/release/extensionApi.js', () => {
                 getExtensions,
                 isInstalled: jest.fn(() => true),
                 isRoot: jest.fn(() => ({ root: true, dir: taoRoot })),
-                getRepoName: jest.fn(),
+                getRepoName: jest.fn()
             };
         });
 
@@ -402,7 +399,7 @@ describe('src/release/extensionApi.js', () => {
             expect(type).toBe('input');
             expect(name).toBe('taoRoot');
             expect(message).toBe('Path to the TAO instance : ');
-            expect(defaultValue).toBe( path.resolve(''));
+            expect(defaultValue).toBe(path.resolve(''));
 
             return { taoRoot: '' };
         });
@@ -437,7 +434,7 @@ describe('src/release/extensionApi.js', () => {
                 getExtensions: jest.fn(() => []),
                 isInstalled: jest.fn(() => true),
                 isRoot,
-                getRepoName: jest.fn(),
+                getRepoName: jest.fn()
             };
         });
         const extensionApi = extensionApiFactory({ wwwUser, interactive: true });
@@ -454,7 +451,7 @@ describe('src/release/extensionApi.js', () => {
         const dir = 'testDir';
 
         jest.spyOn(inquirer, 'prompt').mockImplementationOnce(() => ({ taoRoot }));
-        const isRoot = jest.fn(() => ({dir}));
+        const isRoot = jest.fn(() => ({ dir }));
         taoInstanceFactory.mockImplementationOnce(() => {
             //Mock the default export
             return {
@@ -462,7 +459,7 @@ describe('src/release/extensionApi.js', () => {
                 getExtensions: jest.fn(() => []),
                 isInstalled: jest.fn(() => true),
                 isRoot,
-                getRepoName: jest.fn(),
+                getRepoName: jest.fn()
             };
         });
         const extensionApi = extensionApiFactory({ wwwUser, interactive: true });
@@ -486,7 +483,7 @@ describe('src/release/extensionApi.js', () => {
                 getExtensions: jest.fn(() => []),
                 isInstalled,
                 isRoot: jest.fn(() => ({ root: true, dir: taoRoot })),
-                getRepoName: jest.fn(),
+                getRepoName: jest.fn()
             };
         });
         const extensionApi = extensionApiFactory({ wwwUser, interactive: true });
@@ -508,7 +505,7 @@ describe('src/release/extensionApi.js', () => {
                 getExtensions: jest.fn(() => []),
                 isInstalled: jest.fn(() => false),
                 isRoot: jest.fn(() => ({ root: true, dir: taoRoot })),
-                getRepoName: jest.fn(),
+                getRepoName: jest.fn()
             };
         });
         await extensionApi.selectTaoInstance();
@@ -529,7 +526,6 @@ describe('src/release/extensionApi.js', () => {
         expect(taoInstanceFactory).toBeCalledWith('/path/to/tao', false, undefined);
         expect(inquirer.prompt).not.toBeCalled();
     });
-
 
     test('should define updateTranslations method on extensionApi instance', () => {
         expect.assertions(1);
@@ -577,7 +573,7 @@ describe('src/release/extensionApi.js', () => {
             expect(message).toBe(`${extension} needs updated translations ? `);
             expect(defaultValue).toBe(false);
 
-            return { runTranslations : false };
+            return { runTranslations: false };
         });
 
         await extensionApi.updateTranslations(releasingBranch);
@@ -614,17 +610,22 @@ describe('src/release/extensionApi.js', () => {
     test('should publish translations', async () => {
         expect.assertions(2);
 
-        jest.spyOn(inquirer, 'prompt').mockImplementationOnce(() => Promise.resolve({ runTranslations : true }));
+        jest.spyOn(inquirer, 'prompt').mockImplementationOnce(() => Promise.resolve({ runTranslations: true }));
 
-        const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: false, pathToTao: '/path/to/tao' }, data);
+        const extensionApi = extensionApiFactory(
+            { branchPrefix, interactive: true, updateTranslations: false, pathToTao: '/path/to/tao' },
+            data
+        );
         await extensionApi.selectTaoInstance();
         extensionApi.gitClient = gitClientInstance;
 
         await extensionApi.updateTranslations(releasingBranch);
 
         expect(gitClientInstance.commitAndPush).toBeCalledTimes(1);
-        expect(gitClientInstance.commitAndPush).toBeCalledWith(`${branchPrefix}-${version}`, 'chore: update translations');
-
+        expect(gitClientInstance.commitAndPush).toBeCalledWith(
+            `${branchPrefix}-${version}`,
+            'chore: update translations'
+        );
     });
 
     test('should log error message if update failed', async () => {
@@ -632,7 +633,7 @@ describe('src/release/extensionApi.js', () => {
 
         const errorMessage = 'testError';
 
-        jest.spyOn(inquirer, 'prompt').mockImplementationOnce(() => Promise.resolve({ runTranslations : true }));
+        jest.spyOn(inquirer, 'prompt').mockImplementationOnce(() => Promise.resolve({ runTranslations: true }));
         const updateTranslations = jest.fn(() => Promise.reject(new Error(errorMessage)));
         taoInstanceFactory.mockImplementationOnce(() => {
             //Mock the default export
@@ -646,7 +647,10 @@ describe('src/release/extensionApi.js', () => {
             };
         });
 
-        const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: false, pathToTao: '/path/to/tao' }, data);
+        const extensionApi = extensionApiFactory(
+            { branchPrefix, interactive: true, updateTranslations: false, pathToTao: '/path/to/tao' },
+            data
+        );
         await extensionApi.selectTaoInstance();
         extensionApi.gitClient = gitClientInstance;
 
@@ -661,9 +665,12 @@ describe('src/release/extensionApi.js', () => {
 
         const changes = ['change1', 'change2'];
 
-        jest.spyOn(inquirer, 'prompt').mockImplementationOnce(() => Promise.resolve({ runTranslations : true }));
+        jest.spyOn(inquirer, 'prompt').mockImplementationOnce(() => Promise.resolve({ runTranslations: true }));
         jest.spyOn(gitClientInstance, 'commitAndPush').mockImplementationOnce(() => Promise.resolve(changes));
-        const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: false, pathToTao: '/path/to/tao' }, data);
+        const extensionApi = extensionApiFactory(
+            { branchPrefix, interactive: true, updateTranslations: false, pathToTao: '/path/to/tao' },
+            data
+        );
         await extensionApi.selectTaoInstance();
         extensionApi.gitClient = gitClientInstance;
 
@@ -671,15 +678,13 @@ describe('src/release/extensionApi.js', () => {
 
         expect(log.info).toBeCalledTimes(3);
         expect(log.info).toBeCalledWith(`Commit : [update translations - ${changes.length} files]`);
-        changes.forEach(change =>
-            expect(log.info).toBeCalledWith(`  - ${change}`)
-        );
+        changes.forEach(change => expect(log.info).toBeCalledWith(`  - ${change}`));
     });
 
     test('should skip translations if "no" answered', async () => {
         expect.assertions(3);
 
-        jest.spyOn(inquirer, 'prompt').mockImplementationOnce(() => Promise.resolve({ runTranslations : false }));
+        jest.spyOn(inquirer, 'prompt').mockImplementationOnce(() => Promise.resolve({ runTranslations: false }));
         const updateTranslations = jest.fn(() => Promise.resolve([]));
         taoInstanceFactory.mockImplementationOnce(() => {
             //Mock the default export
@@ -693,7 +698,10 @@ describe('src/release/extensionApi.js', () => {
             };
         });
 
-        const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: false, pathToTao: '/path/to/tao'  }, data);
+        const extensionApi = extensionApiFactory(
+            { branchPrefix, interactive: true, updateTranslations: false, pathToTao: '/path/to/tao' },
+            data
+        );
         await extensionApi.selectTaoInstance();
         extensionApi.gitClient = gitClientInstance;
 
@@ -707,7 +715,7 @@ describe('src/release/extensionApi.js', () => {
     test('should log done message', async () => {
         expect.assertions(1);
 
-        jest.spyOn(inquirer, 'prompt').mockImplementationOnce(() => Promise.resolve({ runTranslations : false }));
+        jest.spyOn(inquirer, 'prompt').mockImplementationOnce(() => Promise.resolve({ runTranslations: false }));
         const updateTranslations = jest.fn(() => Promise.resolve([]));
         taoInstanceFactory.mockImplementationOnce(() => {
             //Mock the default export
@@ -721,7 +729,10 @@ describe('src/release/extensionApi.js', () => {
             };
         });
 
-        const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: false, pathToTao: '/path/to/tao'  }, data);
+        const extensionApi = extensionApiFactory(
+            { branchPrefix, interactive: true, updateTranslations: false, pathToTao: '/path/to/tao' },
+            data
+        );
         await extensionApi.selectTaoInstance();
         extensionApi.gitClient = gitClientInstance;
         await extensionApi.updateTranslations(releasingBranch);
@@ -745,7 +756,10 @@ describe('src/release/extensionApi.js', () => {
             };
         });
 
-        const extensionApi = extensionApiFactory({ branchPrefix, interactive: true, updateTranslations: true, pathToTao: '/path/to/tao' }, data);
+        const extensionApi = extensionApiFactory(
+            { branchPrefix, interactive: true, updateTranslations: true, pathToTao: '/path/to/tao' },
+            data
+        );
         await extensionApi.selectTaoInstance();
         extensionApi.gitClient = gitClientInstance;
         await extensionApi.updateTranslations(releasingBranch);

@@ -16,11 +16,11 @@
  * Copyright (c) 2023 Open Assessment Technologies SA;
  */
 jest.mock('graphql-request', () => ({
-        GraphQLClient: jest.fn(() => ({
-            request: jest.fn(query => query)
-        }))
-    }));
-import githubApiClientFactory from '../../src/githubApiClient.js'
+    GraphQLClient: jest.fn(() => ({
+        request: jest.fn(query => query)
+    }))
+}));
+import githubApiClientFactory from '../../src/githubApiClient.js';
 import { GraphQLClient } from 'graphql-request';
 
 describe('src/githubApiClient.js', () => {
@@ -40,14 +40,11 @@ describe('src/githubApiClient.js', () => {
         const token = 'testToken';
         githubApiClientFactory(token);
         expect(GraphQLClient).toBeCalled();
-        expect(GraphQLClient).toBeCalledWith(
-            'https://api.github.com/graphql',
-            {
-                headers: {
-                    Authorization: `token ${token}`,
-                },
-            },
-        );
+        expect(GraphQLClient).toBeCalledWith('https://api.github.com/graphql', {
+            headers: {
+                Authorization: `token ${token}`
+            }
+        });
     });
     it('should request commits', async () => {
         const prNumber = '1234';
@@ -77,12 +74,7 @@ describe('src/githubApiClient.js', () => {
             }
             `;
 
-        const request = await githubApiClient.getPRCommits(
-            prNumber,
-            repositoryName,
-            repositoryOwner,
-            nextPageCursor,
-        );
+        const request = await githubApiClient.getPRCommits(prNumber, repositoryName, repositoryOwner, nextPageCursor);
         expect(request).toBe(query);
     });
     it('should use empty nextCursor by default', async () => {
@@ -113,12 +105,7 @@ describe('src/githubApiClient.js', () => {
             }
             `;
 
-        const request = await githubApiClient.getPRCommits(
-            prNumber,
-            repositoryName,
-            repositoryOwner,
-            nextPageCursor,
-        );
+        const request = await githubApiClient.getPRCommits(prNumber, repositoryName, repositoryOwner, nextPageCursor);
         expect(request).toBe(query);
     });
     it('should search pull requests', async () => {

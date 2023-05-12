@@ -55,7 +55,7 @@ const taoRoot = 'testRoot';
 const releaseBranch = 'testReleaseBranch';
 
 const gitClientInstance = {
-    checkout: () => { },
+    checkout: () => {}
 };
 
 afterEach(() => {
@@ -131,7 +131,7 @@ test('should call npmPackage.publish', async () => {
 test('should not prompt in non interactive mode', async () => {
     expect.assertions(3);
 
-    const packageApi = packageApiFactory({ releaseBranch, interactive : false });
+    const packageApi = packageApiFactory({ releaseBranch, interactive: false });
     packageApi.gitClient = gitClientInstance;
 
     jest.spyOn(gitClientInstance, 'checkout').mockImplementationOnce(() => Promise.resolve());
@@ -185,9 +185,9 @@ test('should verify validity of package.json in current dir', async () => {
     npmPackageFactory.mockImplementationOnce(() => {
         //Mock the default export
         return {
-                name: packageName,
-                isValidPackage: isValidPackage,
-                publish: jest.fn()
+            name: packageName,
+            isValidPackage: isValidPackage,
+            publish: jest.fn()
         };
     });
 
@@ -205,9 +205,9 @@ test('should log error if package.json is invalid', async () => {
     npmPackageFactory.mockImplementationOnce(() => {
         //Mock the default export
         return {
-                name: packageName,
-                isValidPackage: isValidPackage,
-                publish: jest.fn()
+            name: packageName,
+            isValidPackage: isValidPackage,
+            publish: jest.fn()
         };
     });
     const packageApi = packageApiFactory();
@@ -230,7 +230,7 @@ test('should return selected package data', async () => {
         package: {
             path: taoRoot,
             name: packageName
-        },
+        }
     });
 });
 
@@ -243,15 +243,15 @@ test('should define updateVersion method on packageApi instance', () => {
 
 test('should call updateVersion method of npmPackage', async () => {
     expect.assertions(2);
-    
+
     const version = '1.1.1';
     const updateVersion = jest.fn(() => true);
     npmPackageFactory.mockImplementationOnce(() => {
         //Mock the default export
         return {
-                name: packageName,
-                updateVersion: updateVersion,
-                publish: jest.fn()
+            name: packageName,
+            updateVersion: updateVersion,
+            publish: jest.fn()
         };
     });
 

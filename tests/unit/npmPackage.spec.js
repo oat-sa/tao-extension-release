@@ -26,14 +26,8 @@ import crossSpawn from 'cross-spawn';
 import npmPackageFactory from '../../src/npmPackage.js';
 const npmPackage = npmPackageFactory();
 
-const goodUrls = [
-    'git+https://github.com/owner/my-cool-repo.git',
-    'github.com/owner/my-cool-repo.git'
-];
-const badUrls = [
-    'git+https://github.com/owner/my-cool-repo',
-    'https://svn.com/owner/my-cool-repo.svn',
-];
+const goodUrls = ['git+https://github.com/owner/my-cool-repo.git', 'github.com/owner/my-cool-repo.git'];
+const badUrls = ['git+https://github.com/owner/my-cool-repo', 'https://svn.com/owner/my-cool-repo.svn'];
 const validPackageData = {
     name: 'my-package',
     version: '1.2.3',
@@ -55,60 +49,75 @@ describe('src/npmPackage.js', () => {
         jest.restoreAllMocks();
         jest.clearAllMocks();
     });
+
     it('should define extractRepoName method on release instance', () => {
         expect(typeof npmPackage.extractRepoName).toBe('function');
     });
-    it.each(goodUrls)('the repoName can be extracted', (url) => {
+
+    it.each(goodUrls)('the repoName can be extracted', url => {
         const mockRepository = jest.spyOn(npmPackage, 'repository', 'get');
         mockRepository.mockImplementation(() => ({ url }));
         const result = npmPackage.extractRepoName();
         expect(result).toBe('owner/my-cool-repo');
     });
-    it.each(badUrls)('the repoName cannot be extracted', (url) => {
+
+    it.each(badUrls)('the repoName cannot be extracted', url => {
         const mockRepository = jest.spyOn(npmPackage, 'repository', 'get');
         mockRepository.mockImplementation(() => ({ url }));
         const result = npmPackage.extractRepoName();
         expect(result).toBe(null);
     });
+
     it('should define isValidPackage method on release instance', () => {
         expect(typeof npmPackage.isValidPackage).toBe('function');
     });
-    it('read a valid package', async() => {
+
+    it('read a valid package', async () => {
         const mockRepository = jest.spyOn(npmPackage, 'parsePackageJson');
-        mockRepository.mockImplementationOnce(async() => validPackageData);
+        mockRepository.mockImplementationOnce(async () => validPackageData);
         const result = await npmPackage.isValidPackage();
         expect(result).toBe(true);
     });
-    it('read an invalid package', async() => {
+
+    it('read an invalid package', async () => {
         const mockParse = jest.spyOn(npmPackage, 'parsePackageJson');
-        mockParse.mockImplementationOnce(async() => invalidPackageData);
+        mockParse.mockImplementationOnce(async () => invalidPackageData);
         const result = await npmPackage.isValidPackage();
         expect(result).toBe(false);
     });
+
     it('should define npmCommand method on release instance', () => {
         expect.assertions(2);
         expect(typeof npmPackage.npmCommand).toBe('function');
-        expect(npmPackage.npmCommand()).rejects.toEqual(TypeError('Invalid argument type: undefined for npmCommand (should be string)'));
+        expect(npmPackage.npmCommand()).rejects.toEqual(
+            TypeError('Invalid argument type: undefined for npmCommand (should be string)')
+        );
     });
+
     it('npmCommand should reject on invalid params', () => {
         expect.assertions(1);
-        return expect(npmPackage.npmCommand(['my', 'command'])).rejects.toEqual(TypeError('Invalid argument type: object for npmCommand (should be string)'));
+        return expect(npmPackage.npmCommand(['my', 'command'])).rejects.toEqual(
+            TypeError('Invalid argument type: object for npmCommand (should be string)')
+        );
     });
+
     it('npmCommand should crossSpawn', async () => {
         expect.assertions(1);
         const on = jest.fn((event, callback) => callback(0));
         crossSpawn.mockImplementationOnce(() => {
             //Mock the default export
             return {
-                    on
+                on
             };
         });
         await npmPackage.npmCommand('install');
         expect(on).toBeCalledTimes(1);
     });
+
     it('should define updateVersion method on release instance', () => {
         expect(typeof npmPackage.updateVersion).toBe('function');
     });
+
     it('should read package.json', async () => {
         readPkg.mockImplementation(() => Promise.resolve({}));
         writePkg.mockImplementation(() => Promise.resolve({}));
@@ -118,6 +127,7 @@ describe('src/npmPackage.js', () => {
         expect(readPkg).toBeCalled();
         expect(readPkg).toBeCalledWith({ cwd: folderName });
     });
+
     it('should write package.json', async () => {
         readPkg.mockImplementation(() => Promise.resolve({}));
         writePkg.mockImplementation(() => Promise.resolve({}));
@@ -127,9 +137,11 @@ describe('src/npmPackage.js', () => {
         expect(writePkg).toBeCalled();
         expect(writePkg).toBeCalledWith(folderName, { version });
     });
+
     it('should define parsePackageJson method on release instance', () => {
         expect(typeof npmPackage.parsePackageJson).toBe('function');
     });
+
     it('should return data from package.json', async () => {
         const repoName = 'owner/my-cool-repo';
         readPkg.mockImplementation(() => Promise.resolve(validPackageData));
@@ -138,20 +150,23 @@ describe('src/npmPackage.js', () => {
         const result = await npmPackage.parsePackageJson(folderName);
         expect(readPkg).toBeCalled();
         expect(readPkg).toBeCalledWith({ cwd: folderName });
-        expect(result).toStrictEqual({...validPackageData, repoName});
+        expect(result).toStrictEqual({ ...validPackageData, repoName });
     });
+
     it('should define ci method on release instance', () => {
         const mockNpmCommand = jest.spyOn(npmPackage, 'npmCommand');
         mockNpmCommand.mockImplementation(arg => arg);
         expect(typeof npmPackage.ci).toBe('function');
         expect(npmPackage.ci()).toBe('ci');
     });
+
     it('should define build method on release instance', () => {
         const mockNpmCommand = jest.spyOn(npmPackage, 'npmCommand');
         mockNpmCommand.mockImplementation(arg => arg);
         expect(typeof npmPackage.build).toBe('function');
         expect(npmPackage.build()).toBe('run build');
     });
+
     it('should define build method on release instance', () => {
         const repoName = 'owner/my-cool-repo';
         const mockNpmCommand = jest.spyOn(npmPackage, 'npmCommand');

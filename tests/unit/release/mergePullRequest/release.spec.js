@@ -39,7 +39,7 @@ jest.mock('../../../../src/taoInstance.js', () => {
     return {
         __esModule: true,
         ...originalModule,
-        default: jest.fn((path, origin) => ({
+        default: jest.fn(() => ({
             buildAssets: jest.fn(),
             getExtensions: jest.fn(() => []),
             isInstalled: jest.fn(() => true),
@@ -98,7 +98,6 @@ const version = '1.1.1';
 const branchPrefix = 'release';
 const repoName = 'extension-test';
 const releaseBranch = 'testReleaseBranch';
-const prNumber = '123';
 const token = 'abc123';
 const releasingBranch = 'release-1.1.1';
 const baseBranch = 'testBaseBranch';

@@ -36,7 +36,7 @@ test('Load an existing config', async() => {
     fs.writeJsonSync(configFilePath, expected);
     expect(fs.existsSync(configFilePath)).toBe(true);
     
-    const data = await config(workDir, configFile).load()
+    const data = await config(workDir, configFile).load();
     expect(data).toStrictEqual(expected);
     tearDown();
 });

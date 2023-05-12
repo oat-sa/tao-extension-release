@@ -68,7 +68,6 @@ jest.mock('../../../../src/git.js', () => {
 import log from '../../../../src/log.js';
 import github from '../../../../src/github.js';
 import inquirer from 'inquirer';
-import git from '../../../../src/git.js';
 import releaseFactory from '../../../../src/release.js';
 
 const version = '1.1.1';

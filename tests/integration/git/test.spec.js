@@ -339,7 +339,7 @@ test('mergeBack from master to develop', async () => {
 
     await localRepo.mergeBack('develop', 'master');
     const diff2 = await gitHelper.diff(['develop', 'master']);
-    expect(diff2.trim().length).toBe(0)
+    expect(diff2.trim().length).toBe(0);
 });
 
 test('get remote repository name', async () => {
