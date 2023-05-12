@@ -29,40 +29,8 @@ jest.mock('../../../../src/log.js', () => ({
 }));
 
 jest.mock('inquirer', () => ({
-    prompt: jest.fn(() => ({ }))
+    prompt: jest.fn(() => ({}))
 }));
-
-const taoRoot = 'testRoot';
-jest.mock('../../../../src/taoInstance.js', () => {
-    const originalModule = jest.requireActual('../../../../src/taoInstance.js');
-    //Mock the default export
-    return {
-        __esModule: true,
-        ...originalModule,
-        default: jest.fn((path, origin) => ({
-            buildAssets: jest.fn(),
-            getExtensions: jest.fn(() => []),
-            isInstalled: jest.fn(() => true),
-            isRoot: jest.fn(() => ({ root: true, dir: taoRoot })),
-            getRepoName: jest.fn(),
-            updateTranslations: jest.fn()
-        }))
-    };
-});
-
-jest.mock('../../../../src/github.js', () => {
-    const originalModule = jest.requireActual('../../../../src/github.js');
-    //Mock the default export
-    return {
-        __esModule: true,
-        ...originalModule,
-        default: jest.fn(() => ({
-            createReleasePR: jest.fn(),
-            release: jest.fn(),
-            extractReleaseNotesFromReleasePR: jest.fn()
-        }))
-    };
-});
 
 jest.mock('../../../../src/git.js', () => {
     const originalModule = jest.requireActual('../../../../src/git.js');
@@ -71,77 +39,31 @@ jest.mock('../../../../src/git.js', () => {
         __esModule: true,
         ...originalModule,
         default: jest.fn(() => ({
-            tag:  jest.fn(arg => arg),
-            localBranch:  jest.fn(arg => arg),
-            push:  jest.fn(arg => arg),
-            hasBranch:  jest.fn(),
+            tag: jest.fn(arg => arg),
+            localBranch: jest.fn(arg => arg),
+            push: jest.fn(arg => arg),
+            hasBranch: jest.fn(),
             hasTag: jest.fn(),
             getLastTag: jest.fn(),
-            hasDiff:  jest.fn(() => true),
+            hasDiff: jest.fn(() => true),
             mergeBack: jest.fn()
         }))
     };
 });
 
-jest.mock('../../../../src/conventionalCommits.js', () => {
-    const originalModule = jest.requireActual('../../../../src/conventionalCommits.js');
-    //Mock the default export
-    return {
-        __esModule: true,
-        ...originalModule,
-        getNextVersion: jest.fn()
-    };
-});
-
-jest.mock('../../../../src/config.js', () => {
-    const originalModule = jest.requireActual('../../../../src/config.js');
-    //Mock the default export
-    return {
-        __esModule: true,
-        ...originalModule,
-        default: jest.fn(() => ({
-            load:  jest.fn(() => {}),
-            write:  jest.fn()
-        }))
-    };
-});
-
-jest.mock('open');
-
 import log from '../../../../src/log.js';
-import github from '../../../../src/github.js';
 import inquirer from 'inquirer';
-import taoInstanceFactory from '../../../../src/taoInstance.js';
 import git from '../../../../src/git.js';
-import conventionalCommits from '../../../../src/conventionalCommits.js';
-import configFactory from '../../../../src/config.js';
-import open from 'open';
 import releaseFactory from '../../../../src/release.js';
 
-const extension = 'testExtension';
-const version = '1.1.1';
-const branchPrefix = 'release';
-const repoName = 'extension-test';
-const tag = 'v1.1.1';
 const releaseBranch = 'testReleaseBranch';
-const prNumber = '123';
-const pr = { notes: 'some pr note', number: prNumber };
 const token = 'abc123';
-const releaseComment = 'testComment';
 const releasingBranch = 'release-1.1.1';
-const lastVersion = '1.1.0';
-const origin = 'origin';
 const baseBranch = 'testBaseBranch';
-
-const data = {
-    version,
-    extension: { name: extension }
-};
 
 describe('src/release.js mergeBack', () => {
     beforeEach(() => {
         jest.spyOn(process, 'stdin', 'get').mockReturnValue({ isTTY: true });
-        process.stdin.isTTY
     });
     afterEach(() => {
         jest.clearAllMocks();
@@ -150,23 +72,23 @@ describe('src/release.js mergeBack', () => {
         jest.restoreAllMocks();
         jest.clearAllMocks();
     });
-    
+
     const conflictedSummary = {
         stack: [],
         message: 'CONFLICTS: manifest.php:content'
     };
-    
+
     test('should define mergeBack method on release instance', () => {
         expect.assertions(1);
-    
+
         const release = releaseFactory({ baseBranch, releaseBranch });
         release.setData({ releasingBranch, token, extension: {} });
         expect(typeof release.mergeBack).toBe('function');
     });
-    
+
     test('should merge release branch into base branch', async () => {
         expect.assertions(2);
-    
+
         const mergeBack = jest.fn(() => true);
         git.mockImplementationOnce(() => {
             //Mock the default export
@@ -179,26 +101,28 @@ describe('src/release.js mergeBack', () => {
         release.setData({ releasingBranch, token, extension: {} });
         await release.initialiseGitClient();
         await release.mergeBack();
-    
+
         expect(mergeBack).toBeCalledTimes(1);
         expect(mergeBack).toBeCalledWith(baseBranch, releaseBranch);
     });
-    
+
     test('should log done message', async () => {
         expect.assertions(1);
-    
+
         const release = releaseFactory({ baseBranch, releaseBranch });
         release.setData({ releasingBranch, token, extension: {} });
         await release.initialiseGitClient();
         await release.mergeBack();
-    
+
         expect(log.done).toBeCalledTimes(1);
     });
-    
+
     test('should prompt if there are merge conflicts', async () => {
         expect.assertions(2);
-    
-        const mergeBack = jest.fn(() => {throw conflictedSummary;});
+
+        const mergeBack = jest.fn(() => {
+            throw conflictedSummary;
+        });
         git.mockImplementationOnce(() => {
             //Mock the default export
             return {
@@ -213,55 +137,68 @@ describe('src/release.js mergeBack', () => {
 
         await release.initialiseGitClient();
         await release.mergeBack();
-    
+
         expect(mergeBack).toBeCalledTimes(1);
         expect(release.promptToResolveConflicts).toBeCalledTimes(1);
     });
-    
-    test.skip('should push and log done if prompt accepted', async () => {
+
+    test('should push and log done if prompt accepted', async () => {
         expect.assertions(4);
-    
+
+        const mergeBack = jest.fn(() => {
+            throw conflictedSummary;
+        });
+        const push = jest.fn();
+        const hasLocalChanges = jest.fn(() => false);
+        git.mockImplementationOnce(() => {
+            //Mock the default export
+            return {
+                mergeBack,
+                push,
+                hasLocalChanges
+            };
+        });
+        const release = releaseFactory({ baseBranch, releaseBranch });
+        release.setData({ releasingBranch, token, extension: {} });
+        jest.spyOn(release, 'promptToResolveConflicts').mockImplementationOnce(() => true);
+
         await release.initialiseGitClient();
-    
-        sandbox.stub(gitClientInstance, 'mergeBack').throws(conflictedSummary);
-        sandbox.stub(gitClientInstance, 'push');
-        sandbox.stub(gitClientInstance, 'hasLocalChanges').returns(false);
-        sandbox.stub(release, 'promptToResolveConflicts').returns(true);
-        sandbox.stub(log, 'done');
-        sandbox.resetHistory();
-    
         await release.mergeBack();
-    
-        t.equal(gitClientInstance.mergeBack.callCount, 1, 'git.mergeBack was called');
-        t.equal(release.promptToResolveConflicts.callCount, 1, 'promptToResolveConflicts was called');
-        t.equal(gitClientInstance.push.callCount, 1, 'git.push was called');
-        t.equal(log.done.callCount, 1, 'Done has been logged');
-    
-        sandbox.restore();
-        t.end();
+
+        expect(mergeBack).toBeCalledTimes(1);
+        expect(release.promptToResolveConflicts).toBeCalledTimes(1);
+        expect(push).toBeCalledTimes(1);
+        expect(log.done).toBeCalledTimes(1);
     });
-    
-    test.skip('should log exit if prompt rejected', async () => {
+
+    test('should log exit if prompt rejected', async () => {
         expect.assertions(5);
-    
+
+        const mergeBack = jest.fn(() => {
+            throw conflictedSummary;
+        });
+        const push = jest.fn();
+        const hasLocalChanges = jest.fn(() => false);
+        git.mockImplementationOnce(() => {
+            //Mock the default export
+            return {
+                mergeBack,
+                push,
+                hasLocalChanges
+            };
+        });
+
+        const release = releaseFactory({ baseBranch, releaseBranch });
+        release.setData({ releasingBranch, token, extension: {} });
+        jest.spyOn(release, 'promptToResolveConflicts').mockImplementationOnce(() => false);
+
         await release.initialiseGitClient();
-    
-        sandbox.stub(gitClientInstance, 'mergeBack').throws(conflictedSummary);
-        sandbox.stub(gitClientInstance, 'push');
-        sandbox.stub(release, 'promptToResolveConflicts').returns(false);
-        sandbox.stub(log, 'done');
-        sandbox.stub(log, 'exit');
-        sandbox.resetHistory();
-    
         await release.mergeBack();
-    
-        t.equal(gitClientInstance.mergeBack.callCount, 1, 'git.mergeBack was called');
-        t.equal(release.promptToResolveConflicts.callCount, 1, 'promptToResolveConflicts was called');
-        t.equal(gitClientInstance.push.callCount, 0, 'git.push was not called');
-        t.equal(log.done.callCount, 0, 'Done has not been logged');
-        t.equal(log.exit.callCount, 1, 'Exit has been logged');
-    
-        sandbox.restore();
-        t.end();
+
+        expect(mergeBack).toBeCalledTimes(1);
+        expect(release.promptToResolveConflicts).toBeCalledTimes(1);
+        expect(push).not.toBeCalled();
+        expect(log.done).not.toBeCalled();
+        expect(log.exit).toBeCalledTimes(1);
     });
 });

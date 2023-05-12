@@ -27,6 +27,11 @@ jest.mock('../../../../src/log.js', () => ({
     done: jest.fn(),
     warn: jest.fn()
 }));
+const taoRoot = 'testRoot';
+const extension = 'testExtension';
+jest.mock('inquirer', () => ({
+    prompt: jest.fn(() => ({ extension, taoRoot, pr: true }))
+}));
 
 jest.mock('../../../../src/git.js', () => {
     const originalModule = jest.requireActual('../../../../src/git.js');
@@ -42,7 +47,13 @@ jest.mock('../../../../src/git.js', () => {
             hasTag: jest.fn(),
             getLastTag: jest.fn(),
             hasDiff:  jest.fn(() => true),
-            mergeBack: jest.fn()
+            mergeBack: jest.fn(),
+            pull: jest.fn(),
+            merge: jest.fn(),
+            mergePr: jest.fn(),
+            getLocalBranches: jest.fn(() => []),
+            checkoutNonLocal: jest.fn(),
+            hasLocalChanges: jest.fn()
         }))
     };
 });
@@ -51,81 +62,77 @@ import log from '../../../../src/log.js';
 import git from '../../../../src/git.js';
 import releaseFactory from '../../../../src/release.js';
 
-const version = '1.1.1';
-const branchPrefix = 'release';
-const tag = 'v1.1.1';
 const token = 'abc123';
 const releasingBranch = 'release-1.1.1';
-const origin = 'origin';
 
-beforeEach(() => {
-    jest.spyOn(process, 'stdin', 'get').mockReturnValue({ isTTY: true });
-});
-afterEach(() => {
-    jest.clearAllMocks();
-});
-afterAll(() => {
-    jest.restoreAllMocks();
-    jest.clearAllMocks();
-});
-
-describe('src/release.js doesTagExists', () => {
-
-    test('should define doesTagExists method on release instance', () => {
+describe('src/release.js verifyLocalChanges', () => {
+    beforeEach(() => {
+        jest.spyOn(process, 'stdin', 'get').mockReturnValue({ isTTY: true });
+    });
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+    afterAll(() => {
+        jest.restoreAllMocks();
+        jest.clearAllMocks();
+    });
+    
+    test('should define verifyLocalChanges method on release instance', () => {
         expect.assertions(1);
     
         const release = releaseFactory();
-        expect(typeof release.doesTagExists).toBe('function');
+        release.setData({ releasingBranch, token, extension: { name: extension } });
+        expect(typeof release.verifyLocalChanges).toBe('function');
     });
-    
-    test('should check if tag exists', async () => {
-        expect.assertions(2);
 
-        const hasTag = jest.fn();
+    test('should check if there is any local changes', async () => {
+        expect.assertions(1);
+    
+        const hasLocalChanges = jest.fn();
         git.mockImplementationOnce(() => {
             //Mock the default export
             return {
-                hasTag
+                hasLocalChanges,
             };
         });
-    
-        const release = releaseFactory({ branchPrefix, origin });
-        release.setData({ releasingBranch, version, tag, token, extension: {} });
+
+        const release = releaseFactory();
+        release.setData({ releasingBranch, token, extension: { name: extension } });
         await release.initialiseGitClient();
-        await release.doesTagExists();
+        await release.verifyLocalChanges();
     
-        expect(hasTag).toBeCalledTimes(1);
-        expect(hasTag).toBeCalledWith(`v${version}`);
+        expect(hasLocalChanges).toBeCalledTimes(1);
     });
     
-    test('should log exit if tag exists', async () => {
+    test('should log exit message if there is local changes', async () => {
         expect.assertions(2);
     
-        const hasTag = jest.fn(() => true);
+        const hasLocalChanges = jest.fn(() => true);
         git.mockImplementationOnce(() => {
             //Mock the default export
             return {
-                hasTag
+                hasLocalChanges,
             };
         });
-    
-        const release = releaseFactory({ branchPrefix, origin });
-        release.setData({ releasingBranch, version, tag, token, extension: {} });
+
+        const release = releaseFactory();
+        release.setData({ releasingBranch, token, extension: { name: extension } });
         await release.initialiseGitClient();
-        await release.doesTagExists();
+        await release.verifyLocalChanges();
     
         expect(log.exit).toBeCalledTimes(1);
-        expect(log.exit).toBeCalledWith(`The tag v${version} already exists`);
+        expect(log.exit).toBeCalledWith(`The extension ${extension} has local changes, please clean or stash them before releasing`);
     });
     
     test('should log done message', async () => {
-        expect.assertions(1);
+        expect.assertions(2);
     
-        const release = releaseFactory({ branchPrefix, origin });
-        release.setData({ releasingBranch, version, tag, token, extension: {} });
+        const release = releaseFactory();
+        release.setData({ releasingBranch, token, extension: { name: extension } });
         await release.initialiseGitClient();
-        await release.doesTagExists();
+        await release.verifyLocalChanges();
     
         expect(log.done).toBeCalledTimes(1);
+        expect(log.done).toBeCalledWith(`${extension} is clean`);
     });
 });

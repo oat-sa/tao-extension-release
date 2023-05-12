@@ -32,38 +32,6 @@ jest.mock('inquirer', () => ({
     prompt: jest.fn(() => ({ }))
 }));
 
-const taoRoot = 'testRoot';
-jest.mock('../../../../src/taoInstance.js', () => {
-    const originalModule = jest.requireActual('../../../../src/taoInstance.js');
-    //Mock the default export
-    return {
-        __esModule: true,
-        ...originalModule,
-        default: jest.fn((path, origin) => ({
-            buildAssets: jest.fn(),
-            getExtensions: jest.fn(() => []),
-            isInstalled: jest.fn(() => true),
-            isRoot: jest.fn(() => ({ root: true, dir: taoRoot })),
-            getRepoName: jest.fn(),
-            updateTranslations: jest.fn()
-        }))
-    };
-});
-
-jest.mock('../../../../src/github.js', () => {
-    const originalModule = jest.requireActual('../../../../src/github.js');
-    //Mock the default export
-    return {
-        __esModule: true,
-        ...originalModule,
-        default: jest.fn(() => ({
-            createReleasePR: jest.fn(),
-            release: jest.fn(),
-            extractReleaseNotesFromReleasePR: jest.fn()
-        }))
-    };
-});
-
 jest.mock('../../../../src/git.js', () => {
     const originalModule = jest.requireActual('../../../../src/git.js');
     //Mock the default export
@@ -83,64 +51,18 @@ jest.mock('../../../../src/git.js', () => {
     };
 });
 
-jest.mock('../../../../src/conventionalCommits.js', () => {
-    const originalModule = jest.requireActual('../../../../src/conventionalCommits.js');
-    //Mock the default export
-    return {
-        __esModule: true,
-        ...originalModule,
-        getNextVersion: jest.fn()
-    };
-});
-
-jest.mock('../../../../src/config.js', () => {
-    const originalModule = jest.requireActual('../../../../src/config.js');
-    //Mock the default export
-    return {
-        __esModule: true,
-        ...originalModule,
-        default: jest.fn(() => ({
-            load:  jest.fn(() => {}),
-            write:  jest.fn()
-        }))
-    };
-});
-
-jest.mock('open');
-
 import log from '../../../../src/log.js';
-import github from '../../../../src/github.js';
-import inquirer from 'inquirer';
-import taoInstanceFactory from '../../../../src/taoInstance.js';
 import git from '../../../../src/git.js';
-import conventionalCommits from '../../../../src/conventionalCommits.js';
-import configFactory from '../../../../src/config.js';
-import open from 'open';
 import releaseFactory from '../../../../src/release.js';
 
-const extension = 'testExtension';
 const version = '1.1.1';
-const branchPrefix = 'release';
-const repoName = 'extension-test';
 const tag = 'v1.1.1';
 const releaseBranch = 'testReleaseBranch';
-const prNumber = '123';
-const pr = { notes: 'some pr note', number: prNumber };
 const token = 'abc123';
-const releaseComment = 'testComment';
 const releasingBranch = 'release-1.1.1';
-const lastVersion = '1.1.0';
-const origin = 'origin';
-const baseBranch = 'testBaseBranch';
-
-const data = {
-    version,
-    extension: { name: extension }
-};
 
 beforeEach(() => {
     jest.spyOn(process, 'stdin', 'get').mockReturnValue({ isTTY: true });
-    process.stdin.isTTY
 });
 afterEach(() => {
     jest.clearAllMocks();
