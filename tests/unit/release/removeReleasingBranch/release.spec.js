@@ -15,6 +15,18 @@
  *
  * Copyright (c) 2023 Open Assessment Technologies SA;
  */
+jest.mock('../../../../src/log.js', () => ({
+    error: jest.fn(() => ({
+        exit: jest.fn()
+    })),
+    exit: jest.fn(() => ({
+        exit: jest.fn()
+    })),
+    doing: jest.fn(),
+    info: jest.fn(),
+    done: jest.fn(),
+    warn: jest.fn()
+}));
 
 jest.mock('../../../../src/git.js', () => {
     const originalModule = jest.requireActual('../../../../src/git.js');
