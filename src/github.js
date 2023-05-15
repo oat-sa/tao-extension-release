@@ -22,8 +22,9 @@
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
 
-const githubApiClientFactory = require('./githubApiClient.js');
-const validate = require('./validate.js');
+import githubApiClientFactory from './githubApiClient.js';
+import validate from './validate.js';
+import octonode from 'octonode';
 
 /**
  * Creates a github client helper
@@ -31,7 +32,7 @@ const validate = require('./validate.js');
  * @param {String} repository - the github repository name
  * @returns {githubClient} the client
  */
-module.exports = function githubFactory(token, repository) {
+export default function githubFactory(token, repository) {
 
     //check parameters
     validate
@@ -44,7 +45,7 @@ module.exports = function githubFactory(token, repository) {
             - octonode package is used for creating pull request and release.
        Once github v4 api add support for missing functionality, the application should be fully migrated to the v4 api
     */
-    const client = require('octonode').client(token);
+    const client = octonode.client(token);
     const ghrepo = client.repo(repository);
     const githubApiClient = githubApiClientFactory(token);
 
@@ -340,4 +341,4 @@ module.exports = function githubFactory(token, repository) {
                 .reduce((acc, note) => note ? `${acc} - ${note}\n` : acc, '');
         }
     };
-};
+}

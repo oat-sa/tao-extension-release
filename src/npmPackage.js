@@ -22,10 +22,10 @@
  * @author Martin Nicholson <martin@taotesting.com>
  */
 
-const readPkg = require('read-pkg');
-const crossSpawn = require('cross-spawn');
-const log = require('./log.js');
-const writePkg = require('write-pkg');
+import readPkg from 'read-pkg';
+import crossSpawn from 'cross-spawn';
+import log from './log.js';
+import writePkg from 'write-pkg';
 
 /**
  * Get the npmPackage
@@ -34,7 +34,7 @@ const writePkg = require('write-pkg');
  * @param {Boolean} [quiet = true] - if we redirect stdout and stderr to the console
  * @return {NpmPackage}
  */
-module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
+export default function npmPackageFactory(rootDir = '', quiet = true) {
 
     let _name;
     let _version;
@@ -163,4 +163,4 @@ module.exports = function npmPackageFactory(rootDir = '', quiet = true) {
             return this.npmCommand('i');
         }
     };
-};
+}
