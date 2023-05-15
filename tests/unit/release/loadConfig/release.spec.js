@@ -52,14 +52,18 @@ import inquirer from 'inquirer';
 import open from 'open';
 import releaseFactory from '../../../../src/release.js';
 
+const OLD_ENV = process.env;
 beforeAll(() => {
     jest.useFakeTimers();
 });
 beforeEach(() => {
+    jest.resetModules();
+    process.env = {};
     jest.spyOn(process, 'stdin', 'get').mockReturnValue({ isTTY: true });
 });
 afterEach(() => {
     jest.clearAllMocks();
+    process.env = OLD_ENV;
 });
 afterAll(() => {
     jest.restoreAllMocks();
