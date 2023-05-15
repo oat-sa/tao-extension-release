@@ -23,9 +23,9 @@
  *
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
-const chalk = require('chalk');
+import chalk from 'chalk';
 
-module.exports = {
+export default {
     title(msg) {
         console.log(' ');
         console.log('✨ ' + chalk.bold.underline(msg) + ' ✨');

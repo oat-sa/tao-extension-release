@@ -22,17 +22,17 @@
  * @author Martin Nicholson <martin@taotesting.com>
  */
 
-const fs = require('fs');
-const inquirer = require('inquirer');
+import fs from 'fs';
+import inquirer from 'inquirer';
 
-const npmPackageFactory = require('../npmPackage.js');
-const log = require('../log.js');
+import npmPackageFactory from '../npmPackage.js';
+import log from '../log.js';
 
 /**
 * @param {Object} params
 * @param {String} [params.releaseBranch] - branch to release to
 */
-module.exports = function packageApiFactory(params = {}, data) {
+export default function packageApiFactory(params = {}, data) {
 
     const { interactive } = params;
 
@@ -131,4 +131,4 @@ module.exports = function packageApiFactory(params = {}, data) {
             await this.npmPackage.updateVersion(undefined, data.version);
         }
     };
-};
+}
