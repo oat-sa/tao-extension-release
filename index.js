@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2017-2019 Open Assessment Technologies SA;
+ * Copyright (c) 2017-2023 Open Assessment Technologies SA;
  */
 
 /**
@@ -25,8 +25,13 @@
  */
 import updateNotifier from 'update-notifier';
 
+import { fileURLToPath } from 'url';
+import path from 'path';
 import fs from 'fs';
-const pkg = JSON.parse(fs.readFileSync('./package.json'));
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const pkg = JSON.parse(fs.readFileSync(`${__dirname}/package.json`));
 
 updateNotifier({ pkg }).notify();
 
