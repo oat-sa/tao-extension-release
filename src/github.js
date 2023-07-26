@@ -85,6 +85,7 @@ export default function githubFactory(token, repository) {
                     labels: label,
                     cb: 'cbs'
                 }, (err, data) => {
+                    console.log(err);
                     console.log('===========Sfailed');
                     if (err) {
                         return reject(err);
