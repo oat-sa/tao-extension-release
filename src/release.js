@@ -244,7 +244,10 @@ export default function taoExtensionReleaseFactory(params = {}) {
                     id: pullRequest.id
                 };
                 let labels = ['releases'];
-                await githubClient.addLabel(pullRequest.head.repo.name,pullRequest.number,labels,pullRequest)
+                setTimeout(() => {
+                    githubClient.addLabel(pullRequest.head.repo.name,pullRequest.number,labels,pullRequest)
+                }, 5000);
+                
                 log.info(`${data.pr.url} created`);
                 log.done();
             } else {
