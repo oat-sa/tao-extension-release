@@ -84,7 +84,6 @@ export default function githubFactory(token, repository) {
                 ghpr.addLabels({
                     labels: label
                 }, (err, data) => {
-                    console.log('===========Sfailed');
                     if (err) {
                         return reject(err);
                     }

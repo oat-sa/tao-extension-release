@@ -248,7 +248,7 @@ export default function taoExtensionReleaseFactory(params = {}) {
                 log.done();
                 let labels = ["releases"];
                 
-                await githubClient.addLabel(`oat-sa/${pullRequest.head.repo.name}`,pullRequest.number,labels,pullRequest)
+                await githubClient.addLabel(`${pullRequest.head.repo.owner.login}/${pullRequest.head.repo.name}`,pullRequest.number,labels,pullRequest)
             } else {
                 log.exit('Unable to create the release pull request');
             }
