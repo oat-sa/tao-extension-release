@@ -223,6 +223,29 @@ export default function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
+         * Add Label for releasing branch
+         */
+        async addlabel() {
+            log.doing('Add label');
+            const pullRequest = await githubClient.addLabel(
+                'releases',
+                'cb'
+            );
+            if (pullRequest && pullRequest.state === 'open') {
+                data.pr = {
+                    url: pullRequest.html_url,
+                    apiUrl: pullRequest.url,
+                    number: pullRequest.number,
+                    id: pullRequest.id
+                };
+                log.info(`${data.pr.url} created`);
+                log.done();
+            } else {
+                log.exit('Unable to create the release pull request');
+            }
+        },
+
+        /**
          * Create release pull request from releasing branch
          */
         async createPullRequest() {

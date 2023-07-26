@@ -69,7 +69,28 @@ export default function githubFactory(token, repository) {
                 });
             });
         },
+        /**
+         * Create the release pull request
+         * @param {String} releasingBranch - the temp branch that contains the commits to release
+         * @param {String} releaseBranch - the base branch
+         * @param {String} version - the version of the release
+         * @param {String} fromVersion - the last version
+         * @returns {Promise<Object>} resolves with the pull request data
+         */
 
+        addLabel(label, releaseBranch) {
+            return new Promise((resolve, reject) => {
+                ghrepo.addLabels({
+                    title: label,
+                    base: releaseBranch
+                }, (err, data) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    return resolve(data);
+                });
+            });
+        },
         /**
          * Create the release pull request
          * @param {String} releasingBranch - the temp branch that contains the commits to release

@@ -69,6 +69,7 @@ async function npmRelease() {
         await release.createReleasingBranch();
         await release.updateVersion();
         await release.createPullRequest();
+        await release.addLabel();
         await release.extractReleaseNotes();
         await release.mergePullRequest();
         await release.createReleaseTag();
