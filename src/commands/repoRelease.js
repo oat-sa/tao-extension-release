@@ -68,7 +68,6 @@ async function repoRelease() {
         await release.confirmRelease();
         await release.createReleasingBranch();
         await release.createPullRequest();
-        await release.addLabel();
         await release.extractReleaseNotes();
         await release.mergePullRequest();
         await release.createReleaseTag();

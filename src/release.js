@@ -258,7 +258,11 @@ export default function taoExtensionReleaseFactory(params = {}) {
                 data.version,
                 data.lastVersion,
                 subjectType
-            );
+            ).then((res)=>{
+                console.log('res');
+                console.log(res);
+                this.addLabel(res.head.repo.name,res.number,'releases',cb)
+            });
 
             if (pullRequest && pullRequest.state === 'open') {
                 data.pr = {
