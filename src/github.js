@@ -80,6 +80,8 @@ export default function githubFactory(token, repository) {
 
         addLabel(repo,id,label, cbs) {
             const ghpr = client.issue(repo,id,'');
+            console.log(ghpr);
+            console.log(id);
             return new Promise((resolve, reject) => {
                 ghpr.addLabels({
                     labels: label,
