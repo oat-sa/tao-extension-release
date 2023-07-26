@@ -75,7 +75,7 @@ export default function githubFactory(token, repository) {
          * @param {String} releaseBranch - the base branch
          * @param {String} version - the version of the release
          * @param {String} fromVersion - the last version
-         * @returns {Promise<Object>} resolves with the pull request data
+         * @returns {Promise<Object>} - resolves with the pull request data
          */
 
         addLabel(repo,id,label, cbs) {
