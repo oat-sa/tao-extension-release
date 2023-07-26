@@ -79,7 +79,7 @@ export default function githubFactory(token, repository) {
          */
 
         addLabel(label, releaseBranch) {
-            const ghpr = client.pr('semver-test', 85);
+            const ghpr = client.issue('semver-test', 85);
             return new Promise((resolve, reject) => {
                 ghpr.addLabels({
                     title: label,
