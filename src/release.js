@@ -255,9 +255,7 @@ export default function taoExtensionReleaseFactory(params = {}) {
                 data.version,
                 data.lastVersion,
                 subjectType
-            ).then((res)=>{
-                this.addLabel(res.head.repo.name,res.number,'releases',res)
-            });
+            );
 
             if (pullRequest && pullRequest.state === 'open') {
                 data.pr = {
@@ -266,7 +264,7 @@ export default function taoExtensionReleaseFactory(params = {}) {
                     number: pullRequest.number,
                     id: pullRequest.id
                 };
-
+                await this.addLabel(pullRequest.head.repo.name,pullRequest.number,'releases',pullRequest)
                 log.info(`${data.pr.url} created`);
                 log.done();
             } else {
