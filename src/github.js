@@ -78,12 +78,12 @@ export default function githubFactory(token, repository) {
          * @returns {Promise<Object>} resolves with the pull request data
          */
 
-        addLabel(repo,id,label, releaseBranch) {
+        addLabel(repo,id,label, cb) {
             const ghpr = client.issue(repo,id);
             return new Promise((resolve, reject) => {
                 ghpr.addLabels({
                     label: label,
-                    cb: releaseBranch
+                    cb: cb
                 }, (err, data) => {
                     if (err) {
                         return reject(err);

@@ -225,13 +225,10 @@ export default function taoExtensionReleaseFactory(params = {}) {
         /**
          * Add Label for releasing branch
          */
-        async addLabel() {
+        async addLabel(repo,id,label, cb) {
             log.doing('Add label');
 
-            const pullRequest = await githubClient.addLabel(
-                'releases',
-                'cb'
-            );
+            const pullRequest = await githubClient.addLabel(repo,id,label, cb);
             if (pullRequest && pullRequest.state === 'open') {
                 data.pr = {
                     url: pullRequest.html_url,
@@ -259,9 +256,7 @@ export default function taoExtensionReleaseFactory(params = {}) {
                 data.lastVersion,
                 subjectType
             ).then((res)=>{
-                console.log('res');
-                console.log(res);
-                this.addLabel(res.head.repo.name,res.number,'releases',cb)
+                this.addLabel(res.head.repo.name,res.number,'releases',res)
             });
 
             if (pullRequest && pullRequest.state === 'open') {
