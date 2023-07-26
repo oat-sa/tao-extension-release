@@ -225,8 +225,9 @@ export default function taoExtensionReleaseFactory(params = {}) {
         /**
          * Add Label for releasing branch
          */
-        async addlabel() {
+        async addLabel() {
             log.doing('Add label');
+
             const pullRequest = await githubClient.addLabel(
                 'releases',
                 'cb'

@@ -76,8 +76,6 @@ async function releaseExtension() {
         await release.build();
         await release.updateVersion();
         await release.createPullRequest();
-        console.log('extension Release');
-        await release.addLabel();
         await release.extractReleaseNotes();
         await release.mergePullRequest();
         await release.createReleaseTag();
