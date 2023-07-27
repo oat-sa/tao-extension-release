@@ -101,7 +101,7 @@ export default function githubFactory(token, repository) {
          */
 
         createLabel(repo,label) {
-            console.log('=======create label github========')
+            console.log('=======create label github========');
             const ghpr = client.repo(repo);
             return new Promise((resolve, reject) => {
                 ghpr.createLabel({
