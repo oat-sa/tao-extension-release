@@ -222,7 +222,7 @@ export default function taoExtensionReleaseFactory(params = {}) {
             log.done();
         },
         /**
-         * Create a releae label 
+         * Create a release label 
          */
         async createLabel() {
             log.doing('Create label if not exists');
@@ -258,8 +258,8 @@ export default function taoExtensionReleaseFactory(params = {}) {
                 log.info(`${data.pr.url} created`);
                 log.done();
                 const labels = ["releases"];
-                await githubClient.addLabel(`${pullRequest.head.repo.owner.login}/${pullRequest.head.repo.name}`,pullRequest.number,labels)
-                log.info('label attached')
+                await githubClient.addLabel(`${pullRequest.head.repo.owner.login}/${pullRequest.head.repo.name}`,pullRequest.number,labels);
+                log.info('label attached');
             } else {
                 log.exit('Unable to create the release pull request');
             }
