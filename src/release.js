@@ -221,6 +221,17 @@ export default function taoExtensionReleaseFactory(params = {}) {
 
             log.done();
         },
+        /**
+         * Create a releae label 
+         */
+        async createLabel() {
+            log.doing(`Add and push tag ${data.tag}`);
+            console.log('=======release js file========')
+            const labels = ["releases"];
+            await githubClient.createLabel(`${pullRequest.head.repo.owner.login}/${pullRequest.head.repo.name}`, labels);
+
+            log.done();
+        },
 
         /**
          * Create release pull request from releasing branch
