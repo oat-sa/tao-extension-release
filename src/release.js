@@ -257,7 +257,7 @@ export default function taoExtensionReleaseFactory(params = {}) {
 
                 log.info(`${data.pr.url} created`);
                 log.done();
-                const labels = ["releases_old"];
+                const labels = ["releases_old1"];
                 await githubClient.addLabel(`${pullRequest.head.repo.owner.login}/${pullRequest.head.repo.name}`,pullRequest.number,labels);
                 log.info('label attached');
             } else {
