@@ -221,17 +221,6 @@ export default function taoExtensionReleaseFactory(params = {}) {
 
             log.done();
         },
-        /**
-         * Create a release label 
-         */
-        async createLabel() {
-            log.doing('Create label if not exists');
-            const labels = ["releases_new"];
-            console.log(data.repository.name)
-            await githubClient.createLabel(data.repository.name, labels);
-
-            log.done();
-        },
 
         /**
          * Create release pull request from releasing branch
@@ -257,7 +246,7 @@ export default function taoExtensionReleaseFactory(params = {}) {
 
                 log.info(`${data.pr.url} created`);
                 log.done();
-                const labels = ["releases_old1"];
+                const labels = ["releases_old2"];
                 await githubClient.addLabel(`${pullRequest.head.repo.owner.login}/${pullRequest.head.repo.name}`,pullRequest.number,labels);
                 log.info('label attached');
             } else {
