@@ -227,6 +227,7 @@ export default function taoExtensionReleaseFactory(params = {}) {
         async createLabel() {
             log.doing('Create label if not exists');
             const labels = ["releases_new"];
+            console.log(data.repository.name)
             await githubClient.createLabel(data.repository.name, labels);
 
             log.done();
