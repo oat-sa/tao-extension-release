@@ -78,8 +78,8 @@ export default function githubFactory(token, repository) {
          * @returns {Promise<Object>} - resolves with the pull request data
          */
 
-        addLabel(repo,id,label, cbs) {
-            const ghpr = client.issue(repo,id,'');
+        addLabel(repo,number,label) {
+            const ghpr = client.issue(repo,number);
             return new Promise((resolve, reject) => {
                 ghpr.addLabels({
                     labels: label
@@ -91,6 +91,7 @@ export default function githubFactory(token, repository) {
                 });
             });
         },
+       
         /**
          * Create the release pull request
          * @param {String} releasingBranch - the temp branch that contains the commits to release
