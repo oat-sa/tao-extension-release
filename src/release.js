@@ -227,6 +227,8 @@ export default function taoExtensionReleaseFactory(params = {}) {
         async createLabel() {
             log.doing('Create label if not exists');
             console.log('=======release js file========');
+            console.log(data)
+            const repoDetails = await githubClient.getData();
             const labels = ["releases"];
             await githubClient.createLabel(`${pullRequest.head.repo.owner.login}/${pullRequest.head.repo.name}`, labels);
 
