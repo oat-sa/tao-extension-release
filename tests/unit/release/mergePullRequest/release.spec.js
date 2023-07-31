@@ -57,7 +57,15 @@ jest.mock('../../../../src/github.js', () => {
         __esModule: true,
         ...originalModule,
         default: jest.fn(() => ({
-            createReleasePR: jest.fn(() => ({ state: 'open' })),
+            createReleasePR: jest.fn(() => ({ 
+                state: 'open',
+                html_url: 'apiUrl',
+                url: 'apiUrl',
+                number: 42,
+                id: 'pr_id',
+                head: {repo:{full_name: "fullName"}}
+             })),
+            addLabel: jest.fn(() => {}),
             release: jest.fn(),
             extractReleaseNotesFromReleasePR: jest.fn()
         }))

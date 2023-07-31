@@ -233,24 +233,21 @@ export default function taoExtensionReleaseFactory(params = {}) {
                 releaseBranch,
                 data.version,
                 data.lastVersion,
-                subjectType
+                subjectType,
             );
-
             if (pullRequest && pullRequest.state === 'open') {
                 data.pr = {
                     url: pullRequest.html_url,
                     apiUrl: pullRequest.url,
                     number: pullRequest.number,
-                    id: pullRequest.id
-                };
-
+                    id: pullRequest.id,
+                    fullName : pullRequest.head.repo.full_name,
+                };                
+                const labels = ["releases"];
+                await githubClient.addLabel(data.pr.fullName,data.pr.prNumber,labels);
+                // await githubClient.addLabel(`oat-sa/tao-extension-release-new`,3,'releases');
                 log.info(`${data.pr.url} created`);
                 log.done();
-                // const labels = ["releases"];
-                //await githubClient.addLabel(`${pullRequest.head.repo.owner.login}/${pullRequest.head.repo.name}`,pullRequest.number,labels);
-                await githubClient.addLabel(`oat-sa/tao-extension-release-new`,3,'releases');
-                // log.info('label attached');
-                // log.done();
             } else {
                 log.exit('Unable to create the release pull request');
             }
