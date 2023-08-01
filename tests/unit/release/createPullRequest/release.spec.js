@@ -106,7 +106,7 @@ describe('src/release.js createPullRequest', () => {
         jest.spyOn(release, 'getMetadata').mockImplementationOnce(() => ({ repoName }));
         const createReleasePR = jest.fn(() => ({
             state: 'open',
-            html_url: 'Url',
+            html_url: url,
             url: 'apiUrl',
             number: 42,
             id: 'pr_id',
@@ -138,22 +138,21 @@ describe('src/release.js createPullRequest', () => {
         const id = 'pr_id';
         const fullName = 'repoName';
         const expectedPR = {
-            html_url: html_url,
-            url: html_url,
-            number,
-            id,
-            head: {
-                repo: {
-                    full_name: fullName
-                }
-            },
+            url: 'apiUrl',
+            apiUrl: 'apiUrl',
+            number: 42,
+            id: 'pr_id',
+            full_name: 'fullName'            
         };
         const release = releaseFactory({ branchPrefix, releaseBranch });
         jest.spyOn(release, 'getMetadata').mockImplementationOnce(() => ({ repoName }));
         const createReleasePR = jest.fn(() => ({
             state: 'open',
-            html_url,
-            ...expectedPR
+            html_url: html_url,
+            url: html_url,
+            number,
+            id,
+            head: {repo:{full_name: "fullName"}}
         }));
         const addLabel = jest.fn();
         github.mockImplementationOnce(() => {
