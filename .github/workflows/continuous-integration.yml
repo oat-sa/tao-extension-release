@@ -27,7 +27,7 @@ jobs:
               if: always()
               uses: slavcodev/coverage-monitor-action@1.1.0
               with:
-                  github_token: ${{ secrets.CI_GITHUB_TOKEN }}
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
                   clover_file: coverage/clover.xml
                   threshold_alert: 50
                   threshold_warning: 75
@@ -39,5 +39,5 @@ jobs:
               if: always()
               uses: ataylorme/eslint-annotate-action@1.2.0
               with:
-                  repo-token: '${{ secrets.CI_GITHUB_TOKEN }}'
+                  repo-token: '${{ secrets.GITHUB_TOKEN }}'
                   report-json: 'eslint_report.json'
