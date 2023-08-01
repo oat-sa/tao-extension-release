@@ -19,7 +19,7 @@ jobs:
             - name: Install packages
               run: npm ci
               env:
-                  NODE_AUTH_TOKEN: ${{secrets.BUILD_NPM_TOKEN}}
+                  NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
             - name: Running tests
               run: |
                   npm run test:cov
