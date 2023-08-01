@@ -63,7 +63,7 @@ jest.mock('../../../../src/github.js', () => {
                 url: 'apiUrl',
                 number: 42,
                 id: 'pr_id',
-                head: { repo: { full_name: "fullName" } }
+                head: { repo: { full_name: 'fullName' } }
             })),
             addLabel: jest.fn(() => { }),
             release: jest.fn(),

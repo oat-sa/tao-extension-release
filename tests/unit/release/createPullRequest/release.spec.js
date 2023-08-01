@@ -110,7 +110,7 @@ describe('src/release.js createPullRequest', () => {
             url: 'apiUrl',
             number: 42,
             id: 'pr_id',
-            head: { repo: { full_name: "fullName" } }
+            head: { repo: { full_name: 'fullName' } }
         }));
         const addLabel = jest.fn();
         github.mockImplementationOnce(() => {
@@ -136,7 +136,7 @@ describe('src/release.js createPullRequest', () => {
         const html_url = 'apiUrl';
         const number = 42;
         const id = 'pr_id';
-        const fullName = 'repoName';
+        //const fullName = 'repoName';
         const expectedPR = {
             url: 'apiUrl',
             apiUrl: 'apiUrl',
@@ -152,7 +152,7 @@ describe('src/release.js createPullRequest', () => {
             url: html_url,
             number,
             id,
-            head: { repo: { full_name: "fullName" } }
+            head: { repo: { full_name: 'fullName' } }
         }));
         const addLabel = jest.fn();
         github.mockImplementationOnce(() => {
@@ -180,7 +180,7 @@ describe('src/release.js createPullRequest', () => {
             url: 'apiUrl',
             number: 42,
             id: 'pr_id',
-            head: { repo: { full_name: "fullName" } }
+            head: { repo: { full_name: 'fullName' } }
         }));
         const addLabel = jest.fn();
         github.mockImplementationOnce(() => {
