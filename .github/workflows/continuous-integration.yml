@@ -25,7 +25,7 @@ jobs:
                   npm run test:cov
             - name: Report coverage
               if: always()
-              uses: slavcodev/coverage-monitor-action@1.1.0
+              uses: slavcodev/coverage-monitor-action@v1
               with:
                   github_token: ${{ secrets.GITHUB_TOKEN }}
                   clover_file: coverage/clover.xml
