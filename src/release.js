@@ -244,7 +244,7 @@ export default function taoExtensionReleaseFactory(params = {}) {
                     full_name : pullRequest.head.repo.full_name,
                 };                
                 const labels = ["releases222"];
-                await githubClient.addLabel(data.pr.full_name,data.pr.prNumber,labels);
+                await githubClient.addLabel(data.pr.full_name,data.pr.number,labels);
                 // await githubClient.addLabel(`oat-sa/tao-extension-release-new`,3,'releases');
                 log.info(`${data.pr.url} created`);
                 log.done();
