@@ -116,8 +116,7 @@ describe('src/release.js createPullRequest', () => {
         github.mockImplementationOnce(() => {
             //Mock the default export
             return {
-                createReleasePR,
-                addLabel
+                createReleasePR, addLabel
             };
         });
 

@@ -77,7 +77,6 @@ export default function githubFactory(token, repository) {
          * @param {String} fromVersion - the last version
          * @returns {Promise<Object>} - resolves with the pull request data
          */
-
         addLabel(repo, number, label) {
             const ghpr = client.issue(repo, number);
             return new Promise((resolve, reject) => {
