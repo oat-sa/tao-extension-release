@@ -170,7 +170,7 @@ npm reinstall node-sass --force
 ```
 
 ## Release notes
-
+Don't merge this branch
 See the [history](HISTORY.md)
 
 ## License
