@@ -57,7 +57,15 @@ jest.mock('../../../../src/github.js', () => {
         __esModule: true,
         ...originalModule,
         default: jest.fn(() => ({
-            createReleasePR: jest.fn(() => ({ state: 'open' })),
+            createReleasePR: jest.fn(() => ({
+                state: 'open',
+                html_url: 'apiUrl',
+                url: 'apiUrl',
+                number: 42,
+                id: 'pr_id',
+                head: { repo: { full_name: "fullName" } }
+            })),
+            addLabel: jest.fn(() => { }),
             release: jest.fn(),
             extractReleaseNotesFromReleasePR: jest.fn()
         }))
@@ -71,13 +79,13 @@ jest.mock('../../../../src/git.js', () => {
         __esModule: true,
         ...originalModule,
         default: jest.fn(() => ({
-            tag:  jest.fn(arg => arg),
-            localBranch:  jest.fn(arg => arg),
-            push:  jest.fn(arg => arg),
-            hasBranch:  jest.fn(),
+            tag: jest.fn(arg => arg),
+            localBranch: jest.fn(arg => arg),
+            push: jest.fn(arg => arg),
+            hasBranch: jest.fn(),
             hasTag: jest.fn(),
             getLastTag: jest.fn(),
-            hasDiff:  jest.fn(() => true),
+            hasDiff: jest.fn(() => true),
             mergeBack: jest.fn(),
             pull: jest.fn(),
             merge: jest.fn(),
@@ -118,15 +126,15 @@ describe('src/release.js mergePullRequest', () => {
         jest.clearAllMocks();
         jest.useRealTimers();
     });
-    
+
     test('should define mergePullRequest method on release instance', () => {
         expect.assertions(1);
-    
+
         const release = releaseFactory({ baseBranch, releaseBranch });
         release.setData({ releasingBranch, token, extension: {} });
         expect(typeof release.mergePullRequest).toBe('function');
     });
-    
+
     test('should open pull request in browser', async () => {
         expect.assertions(1);
 
