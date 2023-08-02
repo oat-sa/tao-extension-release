@@ -123,7 +123,6 @@ describe('src/release.js createPullRequest', () => {
         release.setData({ releasingBranch, version, lastVersion, tag, token, pr: null, extension: {} });
         await release.initialiseGithubClient();
         await release.createPullRequest();
-        // await release.addLabel();
 
         expect(log.info).toBeCalledTimes(1);
         expect(log.info).toBeCalledWith(`${url} created`);
@@ -135,7 +134,6 @@ describe('src/release.js createPullRequest', () => {
         const html_url = 'apiUrl';
         const number = 42;
         const id = 'pr_id';
-        //const fullName = 'repoName';
         const expectedPR = {
             url: 'apiUrl',
             apiUrl: 'apiUrl',
@@ -157,7 +155,8 @@ describe('src/release.js createPullRequest', () => {
         github.mockImplementationOnce(() => {
             //Mock the default export
             return {
-                createReleasePR, addLabel
+                createReleasePR,
+                addLabel
             };
         });
 

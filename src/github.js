@@ -71,11 +71,10 @@ export default function githubFactory(token, repository) {
         },
         /**
          * Create the release pull request
-         * @param {String} releasingBranch - the temp branch that contains the commits to release
-         * @param {String} releaseBranch - the base branch
-         * @param {String} version - the version of the release
-         * @param {String} fromVersion - the last version
-         * @returns {Promise<Object>} - resolves with the pull request data
+         * @param {String} repo - owner and name of the repository
+         * @param {String} number - issue number
+         * @param {String[]} label - label name
+         * @returns {Promise<Object>} - resolves with the add label data
          */
         addLabel(repo, number, label) {
             const ghpr = client.issue(repo, number);
