@@ -25,19 +25,20 @@ jobs:
                   npm run test:cov
             - name: Report coverage
               if: always()
-              uses: slavcodev/coverage-monitor-action@1.1.0
+              uses: slavcodev/coverage-monitor-action@v1
               with:
                   github_token: ${{ secrets.GITHUB_TOKEN }}
-                  clover_file: coverage/clover.xml
+                  coverage_path: coverage/clover.xml
                   threshold_alert: 50
                   threshold_warning: 75
                   comment_mode: update
             - name: Save Code Linting Report JSON
               if: always()
               run: npm run lint:report
+              continue-on-error: true
             - name: Annotate Code Linting Results
               if: always()
-              uses: ataylorme/eslint-annotate-action@1.0.4
+              uses: ataylorme/eslint-annotate-action@v2
               with:
                   repo-token: '${{ secrets.GITHUB_TOKEN }}'
                   report-json: 'eslint_report.json'

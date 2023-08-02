@@ -30,7 +30,7 @@ import configFactory from './config.js';
 import github from './github.js';
 import gitClientFactory from './git.js';
 import log from './log.js';
-import conventionalCommits  from './conventionalCommits.js';
+import conventionalCommits from './conventionalCommits.js';
 import semverValid from 'semver/functions/valid.js';
 
 import extension from './release/extensionApi.js';
@@ -233,17 +233,18 @@ export default function taoExtensionReleaseFactory(params = {}) {
                 releaseBranch,
                 data.version,
                 data.lastVersion,
-                subjectType
+                subjectType,
             );
-
             if (pullRequest && pullRequest.state === 'open') {
                 data.pr = {
                     url: pullRequest.html_url,
                     apiUrl: pullRequest.url,
                     number: pullRequest.number,
-                    id: pullRequest.id
+                    id: pullRequest.id,
+                    full_name: pullRequest.head.repo.full_name,
                 };
-
+                const labels = ['releases'];
+                await githubClient.addLabel(data.pr.full_name, data.pr.number, labels);
                 log.info(`${data.pr.url} created`);
                 log.done();
             } else {
@@ -614,7 +615,7 @@ export default function taoExtensionReleaseFactory(params = {}) {
             } = await conventionalCommits.getNextVersion(lastTag);
 
             if (releaseVersion) {
-                if(!semverGt(releaseVersion, lastVersion)) {
+                if (!semverGt(releaseVersion, lastVersion)) {
                     log.exit(`The provided version is lesser than the latest version ${lastVersion}.`);
                 }
                 log.info(`Release version provided: ${releaseVersion}`);
@@ -622,10 +623,10 @@ export default function taoExtensionReleaseFactory(params = {}) {
 
                 if (interactive) {
                     if (recommendation.stats && recommendation.stats.commits === 0) {
-                        const { releaseAgain  } = await inquirer.prompt({
+                        const { releaseAgain } = await inquirer.prompt({
                             type: 'confirm',
                             name: 'releaseAgain',
-                            default : false,
+                            default: false,
                             message: 'There\'s no new commits, do you really want to release a new version?'
                         });
 
@@ -634,7 +635,7 @@ export default function taoExtensionReleaseFactory(params = {}) {
                         }
                     }
                     else if (recommendation.stats && recommendation.stats.unset > 0) {
-                        const { acceptDefaultVersion  } = await inquirer.prompt({
+                        const { acceptDefaultVersion } = await inquirer.prompt({
                             type: 'confirm',
                             name: 'acceptDefaultVersion',
                             message: recommendation.stats.unset === recommendation.stats.commits ?
