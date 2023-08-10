@@ -36,6 +36,7 @@ jest.mock('../../../../src/github.js', () => {
         ...originalModule,
         default: jest.fn(() => ({
             createReleasePR: jest.fn(),
+            addLabel: jest.fn(() => { }),
             release: jest.fn(),
             extractReleaseNotesFromReleasePR: jest.fn()
         }))
@@ -67,7 +68,7 @@ afterAll(() => {
 });
 
 describe('src/release.js createPullRequest', () => {
-    
+
     test('should define createPullRequest method on release instance', () => {
         expect.assertions(1);
 
@@ -100,17 +101,26 @@ describe('src/release.js createPullRequest', () => {
         expect.assertions(2);
 
         const url = 'testUrl';
-
         const release = releaseFactory({ branchPrefix, releaseBranch });
         jest.spyOn(release, 'getMetadata').mockImplementationOnce(() => ({ repoName }));
         const createReleasePR = jest.fn(() => ({
             state: 'open',
             html_url: url,
+            url: 'apiUrl',
+            number: 42,
+            id: 'pr_id',
+            head: { 
+                repo: { 
+                    full_name: 'fullName' 
+                } 
+            }
         }));
+        const addLabel = jest.fn();
         github.mockImplementationOnce(() => {
             //Mock the default export
             return {
-                createReleasePR
+                createReleasePR,
+                addLabel
             };
         });
 
@@ -125,29 +135,36 @@ describe('src/release.js createPullRequest', () => {
     test('should set data.pr', async () => {
         expect.assertions(1);
 
-        const html_url = 'testUrl';
-        const apiUrl = 'apiUrl';
+        const html_url = 'apiUrl';
         const number = 42;
         const id = 'pr_id';
         const expectedPR = {
-            url: html_url,
-            apiUrl,
-            number,
-            id
+            url: 'apiUrl',
+            apiUrl: 'apiUrl',
+            number: 42,
+            id: 'pr_id',
+            full_name: 'fullName'
         };
         const release = releaseFactory({ branchPrefix, releaseBranch });
         jest.spyOn(release, 'getMetadata').mockImplementationOnce(() => ({ repoName }));
         const createReleasePR = jest.fn(() => ({
             state: 'open',
-            html_url,
-            url: apiUrl,
+            html_url: html_url,
+            url: html_url,
             number,
-            id
+            id,
+            head: { 
+                repo: { 
+                    full_name: 'fullName' 
+                } 
+            }
         }));
+        const addLabel = jest.fn();
         github.mockImplementationOnce(() => {
             //Mock the default export
             return {
-                createReleasePR
+                createReleasePR,
+                addLabel
             };
         });
 
@@ -165,11 +182,22 @@ describe('src/release.js createPullRequest', () => {
         jest.spyOn(release, 'getMetadata').mockImplementationOnce(() => ({ repoName }));
         const createReleasePR = jest.fn(() => ({
             state: 'open',
+            html_url: 'apiUrl',
+            url: 'apiUrl',
+            number: 42,
+            id: 'pr_id',
+            head: { 
+                repo: { 
+                    full_name: 'fullName' 
+                } 
+            }
         }));
+        const addLabel = jest.fn();
         github.mockImplementationOnce(() => {
             //Mock the default export
             return {
-                createReleasePR
+                createReleasePR,
+                addLabel
             };
         });
 
