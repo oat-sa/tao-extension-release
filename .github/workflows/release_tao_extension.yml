@@ -1,9 +1,10 @@
 name: Release Tao extension
 
 on:
-  push:
-   branches:
-     - develop
+  pull_request:
+    branches:
+      - develop
+    types: [closed]
 
 jobs:
   auto-release:
