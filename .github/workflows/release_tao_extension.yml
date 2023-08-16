@@ -1,7 +1,6 @@
 name: Release Tao extension
 
 on:
-  workflow_dispatch:
   push:
    branches:
      - develop
