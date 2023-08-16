@@ -28,7 +28,7 @@ jobs:
       - name: install and run release tool
         env: 
           GITHUB_TOKEN: ${{ secrets.SEMVER_GH_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.BUILD_NPM_TOKEN }}
         run: |
           npm config set //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
           npm i -g
