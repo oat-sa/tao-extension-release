@@ -80,10 +80,10 @@ describe('src/release.js verifyBranches', () => {
         jest.restoreAllMocks();
         jest.clearAllMocks();
     });
-    
+
     test('should define verifyBranches method on release instance', () => {
         expect.assertions(1);
-    
+
         const release = releaseFactory({ branchPrefix, baseBranch, releaseBranch });
         release.setData({ releasingBranch, token, extension: {} });
         expect(typeof release.verifyBranches).toBe('function');
@@ -91,25 +91,43 @@ describe('src/release.js verifyBranches', () => {
 
     test('should prompt to pull branches', async () => {
         expect.assertions(4);
-        
+
+        const pull = jest.fn();
+        git.mockImplementationOnce(() => {
+            //Mock the default export
+            return {
+                getReleaseBranchName: jest.fn(() => 'testReleaseBranch'),
+                pull,
+            };
+        });
+
         jest.spyOn(inquirer, 'prompt').mockImplementationOnce(({ type, name, message }) => {
             expect(type).toBe('confirm');
             expect(name).toBe('pull');
             expect(message).toBe(`Can I checkout and pull ${baseBranch} and ${releaseBranch}  ?`);
             return { pull: true };
         });
-    
+
         const release = releaseFactory({ branchPrefix, baseBranch, releaseBranch });
         release.setData({ releasingBranch, token, extension: {} });
         jest.spyOn(release, 'getMetadata').mockImplementationOnce(() => ({ repoName }));
         await release.initialiseGitClient();
         await release.verifyBranches();
-    
+
         expect(inquirer.prompt).toBeCalledTimes(1);
     });
-    
+
     test('should log exit if pull not confirmed', async () => {
         expect.assertions(1);
+
+        const pull = jest.fn();
+        git.mockImplementationOnce(() => {
+            //Mock the default export
+            return {
+                getReleaseBranchName: jest.fn(() => 'testReleaseBranch'),
+                pull,
+            };
+        });
 
         jest.spyOn(inquirer, 'prompt').mockImplementationOnce(() => ({ pull: false }));
 
@@ -118,17 +136,18 @@ describe('src/release.js verifyBranches', () => {
         jest.spyOn(release, 'getMetadata').mockImplementationOnce(() => ({ repoName }));
         await release.initialiseGitClient();
         await release.verifyBranches();
-    
+
         expect(log.exit).toBeCalledTimes(1);
     });
-    
+
     test('should pull release branch', async () => {
         expect.assertions(2);
-    
+
         const pull = jest.fn();
         git.mockImplementationOnce(() => {
             //Mock the default export
             return {
+                getReleaseBranchName: jest.fn(() => 'testReleaseBranch'),
                 pull,
             };
         });
@@ -137,11 +156,11 @@ describe('src/release.js verifyBranches', () => {
         release.setData({ releasingBranch, token, extension: {} });
         await release.initialiseGitClient();
         await release.verifyBranches();
-    
+
         expect(pull).toBeCalledTimes(2);
         expect(pull).toBeCalledWith(releaseBranch);
     });
-    
+
     test('should pull base branch', async () => {
         expect.assertions(2);
 
@@ -149,6 +168,7 @@ describe('src/release.js verifyBranches', () => {
         git.mockImplementationOnce(() => {
             //Mock the default export
             return {
+                getReleaseBranchName: jest.fn(() => 'testReleaseBranch'),
                 pull,
             };
         });
@@ -157,7 +177,7 @@ describe('src/release.js verifyBranches', () => {
         release.setData({ releasingBranch, token, extension: {} });
         await release.initialiseGitClient();
         await release.verifyBranches();
-    
+
         expect(pull).toBeCalledTimes(2);
         expect(pull).toBeCalledWith(baseBranch);
     });
