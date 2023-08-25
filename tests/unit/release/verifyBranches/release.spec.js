@@ -92,13 +92,13 @@ describe('src/release.js verifyBranches', () => {
     test('should prompt to pull branches', async () => {
         expect.assertions(4);
 
-        const getReleaseBranchNameMock = jest.fn(() => 'testReleaseBranch');
-        const pull = jest.fn();
+        const getReleaseBranchNameMock = jest.fn(() => releaseBranch);
+        const pullMock = jest.fn();
         git.mockImplementationOnce(() => {
             //Mock the default export
             return {
                 getReleaseBranchName: getReleaseBranchNameMock,
-                pull,
+                pull: pullMock,
             };
         });
 
@@ -121,13 +121,13 @@ describe('src/release.js verifyBranches', () => {
     test('should log exit if pull not confirmed', async () => {
         expect.assertions(1);
 
-        const getReleaseBranchNameMock = jest.fn(() => 'testReleaseBranch');
-        const pull = jest.fn();
+        const getReleaseBranchNameMock = jest.fn(() => releaseBranch);
+        const pullMock = jest.fn();
         git.mockImplementationOnce(() => {
             //Mock the default export
             return {
                 getReleaseBranchName: getReleaseBranchNameMock,
-                pull,
+                pull: pullMock,
             };
         });
 
@@ -145,13 +145,13 @@ describe('src/release.js verifyBranches', () => {
     test('should pull release branch', async () => {
         expect.assertions(2);
 
-        const getReleaseBranchNameMock = jest.fn(() => 'testReleaseBranch');
-        const pull = jest.fn();
+        const getReleaseBranchNameMock = jest.fn(() => releaseBranch);
+        const pullMock = jest.fn();
         git.mockImplementationOnce(() => {
             //Mock the default export
             return {
                 getReleaseBranchName: getReleaseBranchNameMock,
-                pull,
+                pull: pullMock,
             };
         });
 
@@ -160,20 +160,20 @@ describe('src/release.js verifyBranches', () => {
         await release.initialiseGitClient();
         await release.verifyBranches();
 
-        expect(pull).toBeCalledTimes(2);
-        expect(pull).toBeCalledWith(releaseBranch);
+        expect(pullMock).toBeCalledTimes(2);
+        expect(pullMock).toBeCalledWith(releaseBranch);
     });
 
     test('should pull base branch', async () => {
         expect.assertions(2);
 
-        const getReleaseBranchNameMock = jest.fn(() => 'testReleaseBranch');
-        const pull = jest.fn();
+        const getReleaseBranchNameMock = jest.fn(() => releaseBranch);
+        const pullMock = jest.fn();
         git.mockImplementationOnce(() => {
             //Mock the default export
             return {
                 getReleaseBranchName: getReleaseBranchNameMock,
-                pull,
+                pull: pullMock,
             };
         });
 
@@ -182,8 +182,8 @@ describe('src/release.js verifyBranches', () => {
         await release.initialiseGitClient();
         await release.verifyBranches();
 
-        expect(pull).toBeCalledTimes(2);
-        expect(pull).toBeCalledWith(baseBranch);
+        expect(pullMock).toBeCalledTimes(2);
+        expect(pullMock).toBeCalledWith(baseBranch);
     });
 
 });
