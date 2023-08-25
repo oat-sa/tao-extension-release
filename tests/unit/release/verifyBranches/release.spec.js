@@ -92,11 +92,12 @@ describe('src/release.js verifyBranches', () => {
     test('should prompt to pull branches', async () => {
         expect.assertions(4);
 
+        const getReleaseBranchNameMock = jest.fn(() => 'testReleaseBranch');
         const pull = jest.fn();
         git.mockImplementationOnce(() => {
             //Mock the default export
             return {
-                getReleaseBranchName: jest.fn(() => 'testReleaseBranch'),
+                getReleaseBranchName: getReleaseBranchNameMock,
                 pull,
             };
         });
@@ -120,11 +121,12 @@ describe('src/release.js verifyBranches', () => {
     test('should log exit if pull not confirmed', async () => {
         expect.assertions(1);
 
+        const getReleaseBranchNameMock = jest.fn(() => 'testReleaseBranch');
         const pull = jest.fn();
         git.mockImplementationOnce(() => {
             //Mock the default export
             return {
-                getReleaseBranchName: jest.fn(() => 'testReleaseBranch'),
+                getReleaseBranchName: getReleaseBranchNameMock,
                 pull,
             };
         });
@@ -143,11 +145,12 @@ describe('src/release.js verifyBranches', () => {
     test('should pull release branch', async () => {
         expect.assertions(2);
 
+        const getReleaseBranchNameMock = jest.fn(() => 'testReleaseBranch');
         const pull = jest.fn();
         git.mockImplementationOnce(() => {
             //Mock the default export
             return {
-                getReleaseBranchName: jest.fn(() => 'testReleaseBranch'),
+                getReleaseBranchName: getReleaseBranchNameMock,
                 pull,
             };
         });
@@ -164,11 +167,12 @@ describe('src/release.js verifyBranches', () => {
     test('should pull base branch', async () => {
         expect.assertions(2);
 
+        const getReleaseBranchNameMock = jest.fn(() => 'testReleaseBranch');
         const pull = jest.fn();
         git.mockImplementationOnce(() => {
             //Mock the default export
             return {
-                getReleaseBranchName: jest.fn(() => 'testReleaseBranch'),
+                getReleaseBranchName: getReleaseBranchNameMock,
                 pull,
             };
         });
