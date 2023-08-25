@@ -16,12 +16,12 @@
  * Copyright (c) 2019-2021 Open Assessment Technologies SA;
  */
 
-const log = require('../log.js');
+import log from '../log.js';
+import commander from 'commander';
+import cliOptions from './cliOptions.js';
+import taoExtensionReleaseFactory from '../release.js';
 
-const commander = require('commander');
 const program = new commander.Command();
-
-const cliOptions = require('./cliOptions.js');
 
 program
     .name('taoRelease extensionRelease')
@@ -51,7 +51,7 @@ if (program.debug) {
     log.info(program.opts());
 }
 
-const release = require('../release.js')({ ...program.opts(), subjectType: 'extension' });
+const release = taoExtensionReleaseFactory({ ...program.opts(), subjectType: 'extension' });
 
 async function releaseExtension() {
     try {
@@ -59,6 +59,8 @@ async function releaseExtension() {
 
         await release.loadConfig();
         await release.selectTarget();
+        await release.initialiseGithubClient();
+        await release.verifyCredentials();
         await release.writeConfig();
         await release.initialiseGitClient();
         await release.verifyLocalChanges();
@@ -73,7 +75,6 @@ async function releaseExtension() {
         await release.createReleasingBranch();
         await release.build();
         await release.updateVersion();
-        await release.initialiseGithubClient();
         await release.createPullRequest();
         await release.extractReleaseNotes();
         await release.mergePullRequest();

@@ -20,9 +20,9 @@
  * This module let's you manage local configuration
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
-const fs = require('fs-extra');
-const path = require('path');
-const os = require('os');
+import fs from 'fs-extra';
+import path from 'path';
+import os from 'os';
 
 /**
  * Get the config object
@@ -30,7 +30,7 @@ const os = require('os');
  * @param {String} [fileName = .tao-extension-release] - the config file
  * @returns {config} the config manager
  */
-module.exports = function configFactory(dir = os.homedir(), fileName = '.tao-extension-release'){
+export default function configFactory(dir = os.homedir(), fileName = '.tao-extension-release'){
     const configFile = path.normalize(`${dir}/${fileName}`);
 
     /**
@@ -59,4 +59,4 @@ module.exports = function configFactory(dir = os.homedir(), fileName = '.tao-ext
             return fs.writeJson(configFile, data, { spaces : 2 });
         }
     };
-};
+}

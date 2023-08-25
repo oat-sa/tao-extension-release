@@ -22,23 +22,26 @@
  * @author Anton Tsymuk <anton@taotesting.com>
  */
 
-const inquirer = require('inquirer');
-const open = require('open');
-const semverGt = require('semver/functions/gt');
+import inquirer from 'inquirer';
+import open from 'open';
+import semverGt from 'semver/functions/gt.js';
 
-const config = require('./config.js')();
-const github = require('./github.js');
-const gitClientFactory = require('./git.js');
-const log = require('./log.js');
-const conventionalCommits = require('./conventionalCommits.js');
-const semverValid = require('semver/functions/valid');
+import configFactory from './config.js';
+import github from './github.js';
+import gitClientFactory from './git.js';
+import log from './log.js';
+import conventionalCommits from './conventionalCommits.js';
+import semverValid from 'semver/functions/valid.js';
 
+import extension from './release/extensionApi.js';
+import packageApi from './release/packageApi.js';
+import repository from './release/repositoryApi.js';
 const adaptees = {
-    extension : require('./release/extensionApi.js'),
-    package: require('./release/packageApi.js'),
-    repository: require('./release/repositoryApi.js')
+    extension,
+    package: packageApi,
+    repository
 };
-
+const config = configFactory();
 /**
  * Get the taoExtensionRelease
  *
@@ -58,7 +61,7 @@ const adaptees = {
  * @param {String} [params.subjectType='extension'] - extension or package
  * @return {Object} - instance of taoExtensionRelease
  */
-module.exports = function taoExtensionReleaseFactory(params = {}) {
+export default function taoExtensionReleaseFactory(params = {}) {
     const {
         baseBranch,
         branchPrefix,
@@ -238,17 +241,18 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 params.releaseBranch,
                 data.version,
                 data.lastVersion,
-                subjectType
+                subjectType,
             );
-
             if (pullRequest && pullRequest.state === 'open') {
                 data.pr = {
                     url: pullRequest.html_url,
                     apiUrl: pullRequest.url,
                     number: pullRequest.number,
-                    id: pullRequest.id
+                    id: pullRequest.id,
+                    full_name: pullRequest.head.repo.full_name,
                 };
-
+                const labels = ['releases'];
+                await githubClient.addLabel(data.pr.full_name, data.pr.number, labels);
                 log.info(`${data.pr.url} created`);
                 log.done();
             } else {
@@ -345,6 +349,17 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                 githubClient = github(data.token, metadata.repoName);
             } else {
                 log.exit('Unable to find the github repository name');
+            }
+        },
+
+        /**
+         * Check if the github token credentials are valid
+         */
+        async verifyCredentials() {
+            log.doing('Checking the GitHub token before we go anywhere');
+
+            if (await githubClient.verifyRepository()) {
+                log.done();
             }
         },
 
@@ -613,7 +628,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             } = await conventionalCommits.getNextVersion(lastTag);
 
             if (releaseVersion) {
-                if(!semverGt(releaseVersion, lastVersion)) {
+                if (!semverGt(releaseVersion, lastVersion)) {
                     log.exit(`The provided version is lesser than the latest version ${lastVersion}.`);
                 }
                 log.info(`Release version provided: ${releaseVersion}`);
@@ -621,10 +636,10 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
 
                 if (interactive) {
                     if (recommendation.stats && recommendation.stats.commits === 0) {
-                        const { releaseAgain  } = await inquirer.prompt({
+                        const { releaseAgain } = await inquirer.prompt({
                             type: 'confirm',
                             name: 'releaseAgain',
-                            default : false,
+                            default: false,
                             message: 'There\'s no new commits, do you really want to release a new version?'
                         });
 
@@ -633,7 +648,7 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
                         }
                     }
                     else if (recommendation.stats && recommendation.stats.unset > 0) {
-                        const { acceptDefaultVersion  } = await inquirer.prompt({
+                        const { acceptDefaultVersion } = await inquirer.prompt({
                             type: 'confirm',
                             name: 'acceptDefaultVersion',
                             message: recommendation.stats.unset === recommendation.stats.commits ?
@@ -685,4 +700,4 @@ module.exports = function taoExtensionReleaseFactory(params = {}) {
             await gitClient.commitAndPush(data.releasingBranch, 'chore: bump version');
         }
     };
-};
+}

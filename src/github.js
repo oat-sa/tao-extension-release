@@ -22,8 +22,9 @@
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
 
-const githubApiClientFactory = require('./githubApiClient.js');
-const validate = require('./validate.js');
+import githubApiClientFactory from './githubApiClient.js';
+import validate from './validate.js';
+import octonode from 'octonode';
 
 /**
  * Creates a github client helper
@@ -31,7 +32,7 @@ const validate = require('./validate.js');
  * @param {String} repository - the github repository name
  * @returns {githubClient} the client
  */
-module.exports = function githubFactory(token, repository) {
+export default function githubFactory(token, repository) {
 
     //check parameters
     validate
@@ -44,7 +45,7 @@ module.exports = function githubFactory(token, repository) {
             - octonode package is used for creating pull request and release.
        Once github v4 api add support for missing functionality, the application should be fully migrated to the v4 api
     */
-    const client = require('octonode').client(token);
+    const client = octonode.client(token);
     const ghrepo = client.repo(repository);
     const githubApiClient = githubApiClientFactory(token);
 
@@ -52,6 +53,42 @@ module.exports = function githubFactory(token, repository) {
      * @typedef {Object} githubClient
      */
     return {
+
+        /**
+         * Verify the credentials for said repository by checking it's info
+         * @returns {Promise<Object>} resolves with the repository data, if the credentials are valid
+         */
+        verifyRepository() {
+            return new Promise((resolve, reject) => {
+                ghrepo.info((err, data) => {
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    return resolve(data);
+                });
+            });
+        },
+        /**
+         * Create the release pull request
+         * @param {String} repo - owner and name of the repository
+         * @param {Number} number - issue number
+         * @param {String[]} label - label name
+         * @returns {Promise<Object>} - resolves with the add label data, if the label is added
+         */
+        addLabel(repo, number, label) {
+            const ghpr = client.issue(repo, number);
+            return new Promise((resolve, reject) => {
+                ghpr.addLabels({
+                    labels: label
+                }, (err, data) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    return resolve(data);
+                });
+            });
+        },
 
         /**
          * Create the release pull request
@@ -324,4 +361,4 @@ module.exports = function githubFactory(token, repository) {
                 .reduce((acc, note) => note ? `${acc} - ${note}\n` : acc, '');
         }
     };
-};
+}

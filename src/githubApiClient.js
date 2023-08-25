@@ -22,14 +22,14 @@
  * @author Anton Tsymuk <anton@taotesting.com>
  */
 
-const { GraphQLClient } = require('graphql-request');
+import { GraphQLClient } from 'graphql-request';
 
 /**
  * Creates a github api client
  * @param {String} token - the github token, with permissions to manage the repo
  * @returns {Object} the client
  */
-module.exports = function githubApiClientFactory(token) {
+export default function githubApiClientFactory(token) {
     const graphQLClient = new GraphQLClient(
         'https://api.github.com/graphql',
         {
@@ -111,4 +111,4 @@ module.exports = function githubApiClientFactory(token) {
             return graphQLClient.request(query);
         }
     };
-};
+}

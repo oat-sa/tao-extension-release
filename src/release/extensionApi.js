@@ -22,10 +22,10 @@
  * @author Martin Nicholson <martin@taotesting.com>
  */
 
-const path = require('path');
-const inquirer = require('inquirer');
-const taoInstanceFactory = require('../taoInstance.js');
-const log = require('../log.js');
+import path from 'path';
+import inquirer from 'inquirer';
+import taoInstanceFactory from '../taoInstance.js';
+import log from '../log.js';
 
 /**
  * @param {Object} params
@@ -37,7 +37,7 @@ const log = require('../log.js');
  * @param {boolean} [params.interactive=true] - run in interactive mode
  * @param {Object} data - copy of global data object
  */
-module.exports = function extensionApiFactory(params = {}, data = { extension: {} }) {
+export default function extensionApiFactory(params = {}, data = { extension: {} }) {
 
     const { interactive, updateTranslations } = params;
 
@@ -227,4 +227,4 @@ module.exports = function extensionApiFactory(params = {}, data = { extension: {
             // Not implemented
         }
     };
-};
+}

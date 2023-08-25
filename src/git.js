@@ -22,9 +22,9 @@
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
 
-const git = require('simple-git/promise');
-const gitUrlParse = require('git-url-parse');
-const os  = require('os');
+import git from 'simple-git';
+import gitUrlParse from 'git-url-parse';
+import os  from 'os';
 
 /**
  * Creates a git client
@@ -33,7 +33,7 @@ const os  = require('os');
  * @param {String} origin - remote name
  * @returns {githubClient} the client
  */
-module.exports = function gitFactory(repository = '', origin = 'origin') {
+export default function gitFactory(repository = '', origin = 'origin') {
 
 
     /**
@@ -50,8 +50,13 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
             return git(repository)
                 .remote(['get-url', origin])
                 .then( url => {
-                    const parsed = gitUrlParse(url.trim());
-                    return parsed.protocol === 'file' ? parsed.pathname : parsed.full_name;
+                    // gitUrlParse fails in unit tests for local path
+                    try {
+                        const parsed = gitUrlParse(url.trim());
+                        return parsed.protocol === 'file' ? parsed.pathname : parsed.full_name;
+                    } catch(e) {
+                        return url;
+                    }
                 });
         },
 
@@ -331,4 +336,4 @@ module.exports = function gitFactory(repository = '', origin = 'origin') {
                 .then(() => changes);
         },
     };
-};
+}

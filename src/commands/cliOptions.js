@@ -21,7 +21,7 @@
  * The option values must each be an array with the format ['--option-name <value>', 'description', 'default']
  * @see https://www.npmjs.com/package/commander#options
  */
-module.exports = {
+export default {
     debug: ['-d, --debug', 'output extra debugging'],
     // options with defaults
     baseBranch: ['--base-branch <branch>', 'the source branch for the release', 'develop'],
