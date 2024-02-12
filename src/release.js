@@ -236,27 +236,31 @@ export default function taoExtensionReleaseFactory(params = {}) {
         async createPullRequest() {
             log.doing('Create the pull request');
 
-            const pullRequest = await githubClient.createReleasePR(
-                data.releasingBranch,
-                params.releaseBranch,
-                data.version,
-                data.lastVersion,
-                subjectType,
-            );
-            if (pullRequest && pullRequest.state === 'open') {
-                data.pr = {
-                    url: pullRequest.html_url,
-                    apiUrl: pullRequest.url,
-                    number: pullRequest.number,
-                    id: pullRequest.id,
-                    full_name: pullRequest.head.repo.full_name,
-                };
-                const labels = ['releases'];
-                await githubClient.addLabel(data.pr.full_name, data.pr.number, labels);
-                log.info(`${data.pr.url} created`);
-                log.done();
-            } else {
-                log.exit('Unable to create the release pull request');
+                const pullRequest = await githubClient.createReleasePR(
+                    data.releasingBranch,
+                    params.releaseBranch,
+                    data.version,
+                    data.lastVersion,
+                    subjectType,
+                );
+                if (pullRequest && pullRequest.state === 'open') {
+                    data.pr = {
+                        url: pullRequest.html_url,
+                        apiUrl: pullRequest.url,
+                        number: pullRequest.number,
+                        id: pullRequest.id,
+                        full_name: pullRequest.head.repo.full_name,
+                    };
+                    const labels = ['releases'];
+                    await githubClient.addLabel(data.pr.full_name, data.pr.number, labels);
+                    log.info(`${data.pr.url} created`);
+                    log.done();
+                } else {
+                    log.exit('Unable to create the release pull request');
+                }
+            } catch (err) {
+                log.error(`There are issues preventing the creation of the pull request: ${err}`);
+                log.exit('Please resolve the issues and try again later.');
             }
         },
 
