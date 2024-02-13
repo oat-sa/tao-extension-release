@@ -260,8 +260,12 @@ export default function taoExtensionReleaseFactory(params = {}) {
                     log.exit('Unable to create the release pull request');
                 }
             } catch (err) {
-                log.error(`There are issues preventing the creation of the pull request: ${err}`);
-                log.exit('Please resolve the issues and try again later.');
+                log.error(
+                    `There are errors on the pull request creation, things like: `
+                    + `the repository name and/or local changes that could prevent the PR `
+                    + `from going through: ${data.package}`
+                );
+                log.exit('Please remove the release branch remotely/locally and try again.');
             }
         },
 
