@@ -172,6 +172,10 @@ export default function taoExtensionReleaseFactory(params = {}) {
             return await adaptee.publish();
         },
 
+        async publishLernaMonorepo() {
+            return await adaptee.publishLernaMonorepo();
+        },
+
         /**
          * Check out the predefined releasing branch
          */
@@ -207,6 +211,28 @@ export default function taoExtensionReleaseFactory(params = {}) {
             }
         },
 
+        async confirmLernaMonorepoRelease() {
+            let confirmMessage = `Let's release version ${data[subjectType].name}@${data.version} 🚀`;
+            for (const packageInfo of data.monorepoPackages) {
+                confirmMessage += `\n  ${packageInfo.packageName} ${packageInfo.lastVersion} => ${packageInfo.version}`;
+            }
+            if (interactive) {
+                const { go } = await inquirer.prompt({
+                    type: 'confirm',
+                    name: 'go',
+                    message: `${confirmMessage}?`
+                });
+
+                if (!go) {
+                    //clean changes in package.json & package-lock.json made by 'lerna version'
+                    await gitClient.checkoutPath('**/package.json', '**/package-lock.json');
+                    log.exit();
+                }
+            } else {
+                log.info(confirmMessage);
+            }
+        },
+
         /**
          * Create release on github
          */
@@ -223,7 +249,13 @@ export default function taoExtensionReleaseFactory(params = {}) {
                     message: 'Any comment on the release ?'
                 }));
             }
-            const fullReleaseComment = `${comment}\n\n**Release notes :**\n${data.pr.notes}`;
+            let fullReleaseComment = `${comment}\n\n**Release notes :**\n${data.pr.notes}`;
+
+            if (data.monorepoPackages) {
+                fullReleaseComment += '\n```\n';
+                fullReleaseComment += data.monorepoPackages.map(i => `"${i.packageName}": ${i.version}\n`);
+                fullReleaseComment += '```';
+            }
 
             await githubClient.release(data.tag, fullReleaseComment);
 
@@ -677,6 +709,52 @@ export default function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
+         * TODO
+         */
+        async extractLernaMonorepoVersion () {
+            //packageName, packagePath, lastVersion, dependencies, version[to calculate and add]
+            let packagesInfo = await adaptee.lernaGetPackagesList();
+
+            //calculate next version for each package (own changes)
+            for (const packageInfo of packagesInfo) {
+                const { version, recommendation } = await conventionalCommits.getNextVersion(packageInfo.lastVersion, packageInfo.packagePath);
+                if (recommendation.stats && recommendation.stats.commits === 0) {
+                    packageInfo.noChanges = true;
+                }
+                packageInfo.recommendation = recommendation;
+                packageInfo.version = version;
+            }
+
+            //calculate next version for each package (no own changes, only dependency update = 'patch' bump)
+            for (const packageInfo of packagesInfo) {
+                if (packageInfo.noChanges && packageInfo.dependencies.some(i =>
+                    !packagesInfo.find(k => k.packageName === i).noChanges)
+                ) {
+                    packageInfo.recommendation = { reason: 'dependency update' };
+                    packageInfo.version = conventionalCommits.incrementVersion(packageInfo.lastVersion, 'patch');
+                    delete packageInfo.noChanges;
+                }
+            }
+
+            //log result
+            log.info('Monorepo package versions:');
+            for (const packageInfo of packagesInfo) {
+                log.info(`  Package: ${packageInfo.packageName}`);
+                log.info(`    Last version found: ${packageInfo.lastVersion}`);
+                if (packageInfo.noChanges) {
+                    log.info('    No changes');
+                } else {
+                    log.info(`    Recommended version from commits: ${packageInfo.version}`);
+                    log.info(`    Reason: ${packageInfo.recommendation.reason}`);
+                }
+            }
+
+            //set final data for future use (include only packages which need to be updated)
+            data.monorepoPackages = packagesInfo.filter(packageInfo => !packageInfo.noChanges);
+        },
+
+
+        /**
          * Verify if local branch has no un-commtied changes
          */
         async verifyLocalChanges() {
@@ -696,6 +774,12 @@ export default function taoExtensionReleaseFactory(params = {}) {
           */
         async updateVersion() {
             await adaptee.updateVersion();
+
+            await gitClient.commitAndPush(data.releasingBranch, 'chore: bump version');
+        },
+
+        async updateLernaMonorepoVersions() {
+            await adaptee.lernaUpdateVersions(data.monorepoPackages);
 
             await gitClient.commitAndPush(data.releasingBranch, 'chore: bump version');
         }

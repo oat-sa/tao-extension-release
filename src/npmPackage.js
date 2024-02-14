@@ -26,6 +26,9 @@ import readPkg from 'read-pkg';
 import crossSpawn from 'cross-spawn';
 import log from './log.js';
 import writePkg from 'write-pkg';
+import path from 'path';
+import fs from 'fs-extra';
+import writeJsonFile from 'write-json-file';
 
 /**
  * Get the npmPackage
@@ -120,6 +123,51 @@ export default function npmPackageFactory(rootDir = '', quiet = true) {
             });
         },
 
+        npxCommand(command, spawnOptions = {}) {
+            return new Promise( (resolve, reject) => {
+                if (typeof command !== 'string') {
+                    return reject(new TypeError(`Invalid argument type: ${typeof command} for npxCommand (should be string)`));
+                }
+                const opts = getOptions();
+                log.info(`npx ${command}`, opts);
+
+                let result;
+                const spawned = crossSpawn('npx', command.split(' '), { cwd: rootDir, stdio: 'pipe', ...spawnOptions });
+                spawned.stdout?.on('data', (data) => {
+                    result = data;
+                });
+                spawned.on('close', (code) => {
+                    code === 0 ? resolve(result) : reject(new Error('Error running npx command'));
+                });
+            });
+        },
+
+        async lernaGetPackagesList() {
+            const packageListStr = await this.npxCommand('lerna list --json');
+
+            const packageListJson = JSON.parse(packageListStr);
+            const packagesInfo = packageListJson.map(packageInfo => ({
+                packagePath: path.relative(rootDir, packageInfo.location),
+                packageName: packageInfo.name,
+                lastVersion: packageInfo.version
+            }));
+
+            const packageGraphStr = await this.npxCommand('lerna list --graph');
+
+            const packageGraphJson = JSON.parse(packageGraphStr);
+            for (const packageInfo of packagesInfo) {
+                packageInfo.dependencies = (packageGraphJson[packageInfo.packageName] || []).filter(i =>
+                    packagesInfo.some(k => k.packageName === i)
+                );
+            }
+
+            return packagesInfo;
+        },
+
+        lernaPublish() {
+            return this.npxCommand('lerna publish --yes from-package');
+        },
+
         /**
          * Run `npm ci` command
          * @returns {Promise}
@@ -161,6 +209,40 @@ export default function npmPackageFactory(rootDir = '', quiet = true) {
             await writePkg(folderName, { ...packageJson, version });
 
             return this.npmCommand('i');
-        }
+        },
+
+        async readPackageLock(packagePath) {
+            return fs.readJSON(path.join(packagePath, 'package-lock.json'));
+        },
+
+        async writePackageLock(packagePath, packageLockJson) {
+            return writeJsonFile(path.join(packagePath, 'package-lock.json'), packageLockJson, { detectIndent: true });
+        },
+
+        async lernaUpdateVersions(packagesInfo, rootVersion) {
+            // eslint-disable-next-line no-unused-vars
+            const { readme, _id, ...packageJson } = await readPkg({ cwd: rootDir });
+            packageJson.version = rootVersion;
+            await writePkg(rootDir, packageJson);
+
+            for (const packageInfo of packagesInfo) {
+                // eslint-disable-next-line no-unused-vars
+                const { readme, _id, ...packageJson } = await readPkg({ cwd: packageInfo.packagePath });
+                packageJson.version = packageInfo.version;
+                for (const depPackageInfo of packagesInfo) {
+                    for (const depListKey of ['dependencies', 'devDependencies']) {
+                        if (packageJson[depListKey] && packageJson[depListKey][depPackageInfo.packageName]) {
+                            packageJson[depListKey][depPackageInfo.packageName] = `^${depPackageInfo.version}`;
+                        }
+                    }
+                }
+                await writePkg(packageInfo.packagePath, packageJson);
+
+                const packageLockJson = await this.readPackageLock(packageInfo.packagePath);
+                packageLockJson.version = packageInfo.version;
+                await this.writePackageLock(packageInfo.packagePath, packageLockJson);
+            }
+            return this.npmCommand('i');
+        },
     };
 }

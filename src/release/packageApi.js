@@ -129,6 +129,18 @@ export default function packageApiFactory(params = {}, data) {
          */
         async updateVersion() {
             await this.npmPackage.updateVersion(undefined, data.version);
+        },
+
+        async lernaGetPackagesList() {
+            return await this.npmPackage.lernaGetPackagesList();
+        },
+
+        async lernaUpdateVersions(packagesInfo) {
+            await this.npmPackage.lernaUpdateVersions(packagesInfo, data.version);
+        },
+
+        async lernaPublish() {
+            await this.npmPackage.lernaPublish();
         }
     };
 }

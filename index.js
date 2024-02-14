@@ -48,6 +48,9 @@ program
     .command('npmRelease', 'release and publish an npm package', {
         executableFile: './src/commands/npmRelease'
     })
+    .command('npmReleaseMonorepo', 'release and publish npm packages from lerna monorepo', {
+        executableFile: './src/commands/npmReleaseMonorepo'
+    })
     .command('repoRelease', 'release any repository', {
         executableFile: './src/commands/repoRelease'
     })

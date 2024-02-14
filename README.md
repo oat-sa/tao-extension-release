@@ -50,6 +50,18 @@ This command does:
 
 At then end, you will be prompted to trigger the execution of `npm publish`. The Github release is already finished at this stage. If the publish step fails, you can try again manually, or ask someone with the necessary privileges to perform the publishing.
 
+
+### NPM packages in monorepo
+
+If the repository is a lerna-managed monorepo, and contains npm packages, please use the command `npmReleaseMonorepo`. This command _must_ be run in the root directory of the monorepo.
+
+```sh
+cd path/to/my/package/repo
+taoRelease npmReleaseMonorepo
+```
+
+TODO
+
 ### Tag based repositories
 
 For any other repository that doesn't need any special build but only tagging and merging, like PHP libraries, please use the command `repoRelease`. This command _must_ be run in the root directory of the repository.

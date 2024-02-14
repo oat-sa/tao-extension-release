@@ -56,9 +56,10 @@ export default {
      * Get next recommended version
      *
      * @param {String} lastTag
+     * @param {String?} pathInMonorepo
      * @returns {Promise}
      */
-    async getNextVersion(lastTag) {
+    async getNextVersion(lastTag, pathInMonorepo = null) {
         const lastVersionObject = semverCoerce(lastTag);
         if (!lastVersionObject) {
             throw new Error('Unable to retrieve last version from tags or the last tag is not semver compliant');
@@ -69,7 +70,8 @@ export default {
                 {
                     preset: {
                         name: '@oat-sa/tao'
-                    }
+                    },
+                    path: pathInMonorepo
                 },
                 {},
                 (err, recommendation) => {
@@ -84,5 +86,13 @@ export default {
                     resolve({ lastVersion, version, recommendation });
                 });
         });
+    },
+
+    incrementVersion(lastVersion, releaseType) {
+        const lastVersionObject = semverCoerce(lastVersion);
+        if (!lastVersionObject) {
+            throw new Error(`Can not increment version: ${lastVersion} is not semver compliant`);
+        }
+        return semverInc(lastVersionObject, releaseType);
     }
 };
