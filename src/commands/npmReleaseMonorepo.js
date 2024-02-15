@@ -45,6 +45,8 @@ if (program.debug) {
     log.info(program.opts());
 }
 
+log.setExitCode(1);  //if we exit early, we assume it's an error
+
 const release = taoExtensionReleaseFactory({ ...program.opts(), subjectType: 'package' });
 
 async function npmRelease() {
@@ -81,6 +83,7 @@ async function npmRelease() {
         await release.removeReleasingBranch();
         await release.publishLernaMonorepo();
 
+        log.setExitCode(0);
         log.done('Good job!').exit();
     } catch (error) {
         log.error(error).exit();

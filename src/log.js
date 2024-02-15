@@ -63,6 +63,10 @@ export default {
     },
     exit(msg) {
         console.log(msg || 'Good bye');
-        process.exit();
+        process.exit(this.exitCode);
+    },
+    setExitCode(exitCode) {
+        this.exitCode = exitCode;
+        return this;
     }
 };
