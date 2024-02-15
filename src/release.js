@@ -173,7 +173,7 @@ export default function taoExtensionReleaseFactory(params = {}) {
         },
 
         async publishLernaMonorepo() {
-            return await adaptee.publishLernaMonorepo();
+            return await adaptee.lernaPublish();
         },
 
         /**
@@ -213,7 +213,7 @@ export default function taoExtensionReleaseFactory(params = {}) {
 
         async confirmLernaMonorepoRelease() {
             let confirmMessage = `Let's release version ${data[subjectType].name}@${data.version} 🚀`;
-            for (const packageInfo of data.monorepoPackages) {
+            for (const packageInfo of data.monorepoPackages.filter(i => !i.noChanges)) {
                 confirmMessage += `\n  ${packageInfo.packageName} ${packageInfo.lastVersion} => ${packageInfo.version}`;
             }
             if (interactive) {
@@ -224,8 +224,6 @@ export default function taoExtensionReleaseFactory(params = {}) {
                 });
 
                 if (!go) {
-                    //clean changes in package.json & package-lock.json made by 'lerna version'
-                    await gitClient.checkoutPath('**/package.json', '**/package-lock.json');
                     log.exit();
                 }
             } else {
@@ -253,8 +251,15 @@ export default function taoExtensionReleaseFactory(params = {}) {
 
             if (data.monorepoPackages) {
                 fullReleaseComment += '\n```\n';
-                fullReleaseComment += data.monorepoPackages.map(i => `"${i.packageName}": ${i.version}\n`);
-                fullReleaseComment += '```';
+                fullReleaseComment += 'published:\n';
+                fullReleaseComment += data.monorepoPackages.filter(i => !i.noChanges)
+                    .map(i => `"${i.packageName}": ${i.version}`)
+                    .join('\n');
+                fullReleaseComment += '\nno changes:\n';
+                fullReleaseComment += data.monorepoPackages.filter(i => i.noChanges)
+                    .map(i => `"${i.packageName}": ${i.lastVersion}`)
+                    .join('\n');
+                fullReleaseComment += '\n```';
             }
 
             await githubClient.release(data.tag, fullReleaseComment);
@@ -749,8 +754,7 @@ export default function taoExtensionReleaseFactory(params = {}) {
                 }
             }
 
-            //set final data for future use (include only packages which need to be updated)
-            data.monorepoPackages = packagesInfo.filter(packageInfo => !packageInfo.noChanges);
+            data.monorepoPackages = packagesInfo;
         },
 
 
@@ -779,7 +783,7 @@ export default function taoExtensionReleaseFactory(params = {}) {
         },
 
         async updateLernaMonorepoVersions() {
-            await adaptee.lernaUpdateVersions(data.monorepoPackages);
+            await adaptee.lernaUpdateVersions(data.monorepoPackages.filter( i => !i.noChanges));
 
             await gitClient.commitAndPush(data.releasingBranch, 'chore: bump version');
         }

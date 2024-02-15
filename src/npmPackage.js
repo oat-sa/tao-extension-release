@@ -128,11 +128,11 @@ export default function npmPackageFactory(rootDir = '', quiet = true) {
                 if (typeof command !== 'string') {
                     return reject(new TypeError(`Invalid argument type: ${typeof command} for npxCommand (should be string)`));
                 }
-                const opts = getOptions();
+                const opts = { ...getOptions(), ...spawnOptions };
                 log.info(`npx ${command}`, opts);
 
                 let result;
-                const spawned = crossSpawn('npx', command.split(' '), { cwd: rootDir, stdio: 'pipe', ...spawnOptions });
+                const spawned = crossSpawn('npx', command.split(' '), opts);
                 spawned.stdout?.on('data', (data) => {
                     result = data;
                 });
@@ -143,7 +143,7 @@ export default function npmPackageFactory(rootDir = '', quiet = true) {
         },
 
         async lernaGetPackagesList() {
-            const packageListStr = await this.npxCommand('lerna list --json');
+            const packageListStr = await this.npxCommand('lerna list --json', { stdio: 'pipe' });
 
             const packageListJson = JSON.parse(packageListStr);
             const packagesInfo = packageListJson.map(packageInfo => ({
@@ -152,7 +152,7 @@ export default function npmPackageFactory(rootDir = '', quiet = true) {
                 lastVersion: packageInfo.version
             }));
 
-            const packageGraphStr = await this.npxCommand('lerna list --graph');
+            const packageGraphStr = await this.npxCommand('lerna list --graph', { stdio: 'pipe' });
 
             const packageGraphJson = JSON.parse(packageGraphStr);
             for (const packageInfo of packagesInfo) {
@@ -165,7 +165,7 @@ export default function npmPackageFactory(rootDir = '', quiet = true) {
         },
 
         lernaPublish() {
-            return this.npxCommand('lerna publish --yes from-package');
+            return this.npxCommand('lerna publish from-package --yes');
         },
 
         /**
@@ -240,6 +240,9 @@ export default function npmPackageFactory(rootDir = '', quiet = true) {
 
                 const packageLockJson = await this.readPackageLock(packageInfo.packagePath);
                 packageLockJson.version = packageInfo.version;
+                if ((packageLockJson.packages || [])['']?.name === packageInfo.packageName) {
+                    packageLockJson.packages[''].version = packageInfo.version;
+                }
                 await this.writePackageLock(packageInfo.packagePath, packageLockJson);
             }
             return this.npmCommand('i');
