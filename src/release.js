@@ -236,27 +236,40 @@ export default function taoExtensionReleaseFactory(params = {}) {
         async createPullRequest() {
             log.doing('Create the pull request');
 
-            const pullRequest = await githubClient.createReleasePR(
-                data.releasingBranch,
-                params.releaseBranch,
-                data.version,
-                data.lastVersion,
-                subjectType,
-            );
-            if (pullRequest && pullRequest.state === 'open') {
-                data.pr = {
-                    url: pullRequest.html_url,
-                    apiUrl: pullRequest.url,
-                    number: pullRequest.number,
-                    id: pullRequest.id,
-                    full_name: pullRequest.head.repo.full_name,
-                };
-                const labels = ['releases'];
-                await githubClient.addLabel(data.pr.full_name, data.pr.number, labels);
-                log.info(`${data.pr.url} created`);
-                log.done();
-            } else {
-                log.exit('Unable to create the release pull request');
+            try {
+                const pullRequest = await githubClient.createReleasePR(
+                    data.releasingBranch,
+                    params.releaseBranch,
+                    data.version,
+                    data.lastVersion,
+                    subjectType,
+                );
+                if (pullRequest && pullRequest.state === 'open') {
+                    data.pr = {
+                        url: pullRequest.html_url,
+                        apiUrl: pullRequest.url,
+                        number: pullRequest.number,
+                        id: pullRequest.id,
+                        full_name: pullRequest.head.repo.full_name,
+                    };
+                    const labels = ['releases'];
+                    await githubClient.addLabel(data.pr.full_name, data.pr.number, labels);
+                    log.info(`${data.pr.url} created`);
+                    log.done();
+                } else {
+                    log.exit('Unable to create the release pull request');
+                }
+            } catch (err) {
+                log.error(
+                    'There are errors on the pull request creation, things like: '
+                    + 'the repository name and/or local changes that could prevent the PR '
+                    + `from going through, context: ${data.package}, error: ${err}`
+                );
+                log.exit(
+                    'Please remove the release branch remotely/locally and try again. Also '
+                    + 'please check this page on confluence that will help you with hints about '
+                    + 'releasing it manually: https://oat-sa.atlassian.net/wiki/spaces/OAT/pages/2292646061/Troubleshoot+of+failing+releases'
+                );
             }
         },
 
