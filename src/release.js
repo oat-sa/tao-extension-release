@@ -265,7 +265,11 @@ export default function taoExtensionReleaseFactory(params = {}) {
                     + 'the repository name and/or local changes that could prevent the PR '
                     + `from going through, context: ${data.package}, error: ${err}`
                 );
-                log.exit('Please remove the release branch remotely/locally and try again.');
+                log.exit(
+                    'Please remove the release branch remotely/locally and try again. Also '
+                    + 'please check this page on confluence that will help you with hints about '
+                    + 'releasing it manually: https://oat-sa.atlassian.net/wiki/spaces/OAT/pages/2292646061/Troubleshoot+of+failing+releases'
+                );
             }
         },
 
