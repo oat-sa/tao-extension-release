@@ -668,7 +668,7 @@ export default function taoExtensionReleaseFactory(params = {}) {
 
             let recommendation;
             let version;
-            if (params.conventionalBumpType) {
+            if (params.conventionalBumpType && params.conventionalBumpType !== conventionalBumpTypes.none) {
                 version = conventionalCommits.incrementVersion(lastVersion, params.conventionalBumpType);
                 recommendation = { reason: `fixed bump to "${params.conventionalBumpType}"` };
             } else {
@@ -747,16 +747,16 @@ export default function taoExtensionReleaseFactory(params = {}) {
 
             //calculate next version for each package (own changes)
             for (const packageInfo of packagesInfo) {
-                if (params.conventionalBumpType) {
-                    //same fixed bump for all packages
-                    const version = conventionalCommits.incrementVersion(packageInfo.lastVersion, params.conventionalBumpType);
-                    packageInfo.recommendation = { reason: `fixed bump to "${params.conventionalBumpType}"` };
-                    packageInfo.version = version;
-                } else if (params.conventionalBumpType === conventionalBumpTypes.none) {
+                if (params.conventionalBumpType === conventionalBumpTypes.none) {
                     //update versions manually once PR is opened
                     packageInfo.noChanges = true;
                     packageInfo.recommendation = { reason: 'no bump' };
                     packageInfo.version = packageInfo.lastVersion;
+                } else if (params.conventionalBumpType) {
+                    //same fixed bump for all packages
+                    const version = conventionalCommits.incrementVersion(packageInfo.lastVersion, params.conventionalBumpType);
+                    packageInfo.recommendation = { reason: `fixed bump to "${params.conventionalBumpType}"` };
+                    packageInfo.version = version;
                 } else {
                     //from conventional commits which change files in this package
                     const { version, recommendation } = await conventionalCommits.getNextVersion(packageInfo.lastVersion, packageInfo.packagePath);
