@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2020-2021 Open Assessment Technologies SA;
+ * Copyright (c) 2024 Open Assessment Technologies SA;
  */
 
 import log from '../log.js';
@@ -36,6 +36,9 @@ program
     .option(...cliOptions.releaseBranch)
     .option(...cliOptions.noInteractive)
     .option(...cliOptions.noWrite)
+    .option(...cliOptions.releaseTag)
+    .option(...cliOptions.conventionalBumpType)
+    .option(...cliOptions.noPublish)
 
     // options which fall back to user prompts if undefined
     .option(...cliOptions.releaseComment)
@@ -53,9 +56,6 @@ async function npmRelease() {
     try {
         log.title('Release npm packages in monorepo');
 
-        //somewhere confirm that it's a lerna monorepo, lerna is installed [npx lerna]
-        //check that command is called from repo root
-        //
         await release.loadConfig();
         await release.selectTarget();
         await release.initialiseGithubClient();
@@ -66,14 +66,14 @@ async function npmRelease() {
         await release.signTags();
         await release.verifyBranches();
         await release.extractVersion();
-        await release.extractLernaMonorepoVersion();
+        await release.extractMonorepoVersions();
         await release.pruneRemoteOrigin();
         await release.doesTagExists();
         await release.doesReleasingBranchExists();
         await release.isReleaseRequired();
-        await release.confirmLernaMonorepoRelease();
+        await release.confirmRelease();
         await release.createReleasingBranch();
-        await release.updateLernaMonorepoVersions();
+        await release.updateVersion();
         await release.createPullRequest();
         await release.extractReleaseNotes();
         await release.mergePullRequest();
@@ -81,7 +81,7 @@ async function npmRelease() {
         await release.createGithubRelease();
         await release.mergeBack();
         await release.removeReleasingBranch();
-        await release.publishLernaMonorepo();
+        await release.publish();
 
         log.setExitCode(0);
         log.done('Good job!').exit();

@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2020 Open Assessment Technologies SA;
+ * Copyright (c) 2020-2024 Open Assessment Technologies SA;
  */
 
 /**
@@ -48,6 +48,30 @@ export default function npmPackageFactory(rootDir = '', quiet = true) {
         cwd,
         stdio: quiet ? 'ignore' : 'inherit'
     });
+
+    /**
+     * Run any npm/npx command and wrap result in a Promise
+     * @param {String} command
+     * @returns {Promise} - resolves if command ran without errors, with data returned by command if any
+     */
+    const runCommand = (npmNpx, command, spawnOptions = {}) => {
+        return new Promise((resolve, reject) => {
+            if (typeof command !== 'string') {
+                return reject(new TypeError(`Invalid argument type: ${typeof command} for ${npmNpx} (should be string)`));
+            }
+            const opts = { ...getOptions(), ...spawnOptions };
+            log.info(`${npmNpx} ${command}`, opts);
+
+            let result;
+            const spawned = crossSpawn(npmNpx, command.split(' '), opts);
+            spawned.stdout?.on('data', (data) => {
+                result = data; //requires `{ stdio: pipe }` option
+            });
+            spawned.on('close', (code) => {
+                code === 0 ? resolve(result) : reject(new Error(`Error running ${npmNpx} command`));
+            });
+        });
+    };
 
     return {
 
@@ -104,68 +128,43 @@ export default function npmPackageFactory(rootDir = '', quiet = true) {
         },
 
         /**
+         * For monorepo,
+         * read package-lock.json of a package
+         * @param {String} packagePath - path relative to repository root
+         * @returns {Promise<Object>} json
+         */
+        async readPackageLock(packagePath) {
+            return fs.readJSON(path.join(packagePath, 'package-lock.json'));
+        },
+
+        /**
+         * For monorepo,
+         * write package-lock.json of a package
+         * @param {String} packagePath - path relative to repository root
+         * @param {Object} packageLockJson - json object to write into package-lock.json
+         * @returns {Promise}
+         */
+        async writePackageLock(packagePath, packageLockJson) {
+            return writeJsonFile(path.join(packagePath, 'package-lock.json'), packageLockJson, { detectIndent: true });
+        },
+
+        /**
          * Run any npm command and wrap result in a Promise
          * @param {String} command
          * @returns {Promise} - resolves if command ran without errors
          */
         npmCommand(command) {
-            return new Promise( (resolve, reject) => {
-                if (typeof command !== 'string') {
-                    return reject(new TypeError(`Invalid argument type: ${typeof command} for npmCommand (should be string)`));
-                }
-                const opts = getOptions();
-                log.info(`npm ${command}`, opts);
-
-                const spawned = crossSpawn('npm', command.split(' '), opts);
-                spawned.on('close', code => {
-                    code === 0 ? resolve() : reject(new Error('Error running npm command'));
-                });
-            });
+            return runCommand('npm', command);
         },
 
+
+        /**
+         * Run any npx command and wrap result in a Promise
+         * @param {String} command
+         * @returns {Promise<*>} - resolves if command ran without errors, with data returned by command if any
+         */
         npxCommand(command, spawnOptions = {}) {
-            return new Promise( (resolve, reject) => {
-                if (typeof command !== 'string') {
-                    return reject(new TypeError(`Invalid argument type: ${typeof command} for npxCommand (should be string)`));
-                }
-                const opts = { ...getOptions(), ...spawnOptions };
-                log.info(`npx ${command}`, opts);
-
-                let result;
-                const spawned = crossSpawn('npx', command.split(' '), opts);
-                spawned.stdout?.on('data', (data) => {
-                    result = data;
-                });
-                spawned.on('close', (code) => {
-                    code === 0 ? resolve(result) : reject(new Error('Error running npx command'));
-                });
-            });
-        },
-
-        async lernaGetPackagesList() {
-            const packageListStr = await this.npxCommand('lerna list --json', { stdio: 'pipe' });
-
-            const packageListJson = JSON.parse(packageListStr);
-            const packagesInfo = packageListJson.map(packageInfo => ({
-                packagePath: path.relative(rootDir, packageInfo.location),
-                packageName: packageInfo.name,
-                lastVersion: packageInfo.version
-            }));
-
-            const packageGraphStr = await this.npxCommand('lerna list --graph', { stdio: 'pipe' });
-
-            const packageGraphJson = JSON.parse(packageGraphStr);
-            for (const packageInfo of packagesInfo) {
-                packageInfo.dependencies = (packageGraphJson[packageInfo.packageName] || []).filter(i =>
-                    packagesInfo.some(k => k.packageName === i)
-                );
-            }
-
-            return packagesInfo;
-        },
-
-        lernaPublish() {
-            return this.npxCommand('lerna publish from-package --yes');
+            return runCommand('npx', command, spawnOptions);
         },
 
         /**
@@ -211,20 +210,31 @@ export default function npmPackageFactory(rootDir = '', quiet = true) {
             return this.npmCommand('i');
         },
 
-        async readPackageLock(packagePath) {
-            return fs.readJSON(path.join(packagePath, 'package-lock.json'));
-        },
-
-        async writePackageLock(packagePath, packageLockJson) {
-            return writeJsonFile(path.join(packagePath, 'package-lock.json'), packageLockJson, { detectIndent: true });
-        },
-
+        /**
+          * For monorepo,
+          * update version in package.json and package-lock.json,
+          * in the root and in the packages.
+          * @param {Object[]} packagesInfo - `[{ packageName: string, packagePath: string, version: string }]`
+          * @param {String} rootVersion - new root package.json version
+          * @return {Promise}
+          */
         async lernaUpdateVersions(packagesInfo, rootVersion) {
+            //root version
             // eslint-disable-next-line no-unused-vars
             const { readme, _id, ...packageJson } = await readPkg({ cwd: rootDir });
             packageJson.version = rootVersion;
             await writePkg(rootDir, packageJson);
 
+            //monorepo package versions
+            //note: alternatively:
+            //  1) from the same commit as last release tag, create local tags in format `${packageInfo.packageName}@${packageInfo.lastVersion}`
+            //      For example `@oat-sa-private/ui-core@5.19.0`.
+            //  2) `npx lerna version --no-git-tag-version --yes --conventional-commits --changelog-preset @oat-sa/conventional-changelog-tao --no-changelog`
+            //      It will calulate conventional-commit bump for each package,
+            //      and update all needed things in package.json/package-lock.json files.
+            //      `@oat-sa/conventional-changelog-tao` preset should be installed in the repo root, or otherwise can reference module from tao-extension-release:
+            //      `path.join(path.dirname(fileURLToPath(import.meta.url)),'../node_modules/@oat-sa/conventional-changelog-tao/index.js')`
+            //  3) delete local tags
             for (const packageInfo of packagesInfo) {
                 // eslint-disable-next-line no-unused-vars
                 const { readme, _id, ...packageJson } = await readPkg({ cwd: packageInfo.packagePath });
@@ -245,7 +255,44 @@ export default function npmPackageFactory(rootDir = '', quiet = true) {
                 }
                 await this.writePackageLock(packageInfo.packagePath, packageLockJson);
             }
+
             return this.npmCommand('i');
         },
+
+        /**
+          * For monorepo,
+          * get information about its packages
+          * @return {Promise<Object[]} - `[{ packageName: string, packagePath: string, lastVersion: string, dependencies: string[] }]`
+          */
+        async lernaGetPackagesList() {
+            const packageListStr = await this.npxCommand('lerna list --json', { stdio: 'pipe' });
+
+            const packageListJson = JSON.parse(packageListStr);
+            const packagesInfo = packageListJson.map(packageInfo => ({
+                packagePath: path.relative(rootDir, packageInfo.location),
+                packageName: packageInfo.name,
+                lastVersion: packageInfo.version
+            }));
+
+            const packageGraphStr = await this.npxCommand('lerna list --graph', { stdio: 'pipe' });
+
+            const packageGraphJson = JSON.parse(packageGraphStr);
+            for (const packageInfo of packagesInfo) {
+                packageInfo.dependencies = (packageGraphJson[packageInfo.packageName] || []).filter(i =>
+                    packagesInfo.some(k => k.packageName === i)
+                );
+            }
+
+            return packagesInfo;
+        },
+
+        /**
+         * For monorepo,
+         * publish packages
+         * @returns {Promise}
+         */
+        lernaPublish() {
+            return this.npxCommand('lerna publish from-package --yes');
+        }
     };
 }

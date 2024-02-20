@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2020-2021 Open Assessment Technologies SA;
+ * Copyright (c) 2020-2024 Open Assessment Technologies SA;
  */
 
 /**
@@ -131,15 +131,28 @@ export default function packageApiFactory(params = {}, data) {
             await this.npmPackage.updateVersion(undefined, data.version);
         },
 
-        async lernaGetPackagesList() {
+        /**
+         * For lerna monorepo, get list of packages
+         * @returns {Promise<Object[]>} - `[{ packageName: string, packagePath: string, lastVersion: string, dependencies: string[] }]`
+         */
+        async monorepoGetPackagesList() {
             return await this.npmPackage.lernaGetPackagesList();
         },
 
-        async lernaUpdateVersions(packagesInfo) {
+        /**
+         * For monorepo, update version in the root and in the packages
+         * @param {Object[]} packagesInfo - `[{packageName: string, packagePath: string, version: string}]`
+         * @returns {Promise<void>}
+         */
+        async monorepoUpdateVersions(packagesInfo) {
             await this.npmPackage.lernaUpdateVersions(packagesInfo, data.version);
         },
 
-        async lernaPublish() {
+        /**
+         * For lerna monorepo, publish packages to npm
+         * @returns {Promise<void>}
+         */
+        async monorepoPublish() {
             await this.npmPackage.lernaPublish();
         }
     };

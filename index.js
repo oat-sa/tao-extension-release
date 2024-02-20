@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2017-2023 Open Assessment Technologies SA;
+ * Copyright (c) 2017-2024 Open Assessment Technologies SA;
  */
 
 /**
@@ -48,7 +48,7 @@ program
     .command('npmRelease', 'release and publish an npm package', {
         executableFile: './src/commands/npmRelease'
     })
-    .command('npmReleaseMonorepo', 'release and publish npm packages from lerna monorepo', {
+    .command('npmReleaseMonorepo', 'release and publish npm packages from monorepo', {
         executableFile: './src/commands/npmReleaseMonorepo'
     })
     .command('repoRelease', 'release any repository', {

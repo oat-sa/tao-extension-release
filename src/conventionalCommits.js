@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2020 Open Assessment Technologies SA;
+ * Copyright (c) 2020-2024 Open Assessment Technologies SA;
  */
 
 /**
@@ -29,6 +29,17 @@ import conventionalPresetConfig from '@oat-sa/conventional-changelog-tao';
 import conventionalRecommendedBump from 'conventional-recommended-bump';
 import semverInc from 'semver/functions/inc.js';
 import semverCoerce from 'semver/functions/coerce.js';
+
+
+/**
+ * `semver` release types, can be used to specify version increment
+ */
+export const conventionalBumpTypes = Object.freeze({
+    none: 'none', //do nothing
+    patch: 'patch', //1.2.3 -> 1.2.4
+    minor: 'minor', //1.2.3 -> 1.3.0
+    major: 'major' //1.2.3 -> 2.0.0
+});
 
 export default {
     /**
@@ -52,17 +63,32 @@ export default {
                 .on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
         });
     },
+
     /**
-     * Get next recommended version
-     *
+     * Extract version from semver-like release tag
+     * (v1.2.3 -> 1.2.3)
      * @param {String} lastTag
-     * @param {String?} pathInMonorepo
-     * @returns {Promise}
+     * @returns {String}
      */
-    async getNextVersion(lastTag, pathInMonorepo = null) {
+    async getVersionFromTag(lastTag) {
         const lastVersionObject = semverCoerce(lastTag);
         if (!lastVersionObject) {
             throw new Error('Unable to retrieve last version from tags or the last tag is not semver compliant');
+        }
+        return lastVersionObject.version;
+    },
+
+    /**
+     * Get next recommended version
+     *
+     * @param {String} lastVersion
+     * @param {String?} pathInMonorepo
+     * @returns {Promise}
+     */
+    async getNextVersion(lastVersion, pathInMonorepo = null) {
+        const lastVersionObject = semverCoerce(lastVersion);
+        if (!lastVersionObject) {
+            throw new Error('Last version is not semver compliant');
         }
 
         return new Promise((resolve, reject) => {
@@ -79,15 +105,21 @@ export default {
                         return reject(err);
                     }
 
-                    const lastVersion = lastVersionObject.version;
-
                     //carefull inc mutate lastVersionObject
                     const version = semverInc(lastVersionObject, recommendation.releaseType);
-                    resolve({ lastVersion, version, recommendation });
+                    resolve({ version, recommendation });
                 });
         });
     },
 
+
+    /**
+     * Get next version, incremented by specified release-type
+     *
+     * @param {String} lastVersion
+     * @param {String} releaseType
+     * @returns {String}
+     */
     incrementVersion(lastVersion, releaseType) {
         const lastVersionObject = semverCoerce(lastVersion);
         if (!lastVersionObject) {

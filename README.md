@@ -53,14 +53,22 @@ At then end, you will be prompted to trigger the execution of `npm publish`. The
 
 ### NPM packages in monorepo
 
-If the repository is a lerna-managed monorepo, and contains npm packages, please use the command `npmReleaseMonorepo`. This command _must_ be run in the root directory of the monorepo.
+If the repository is a _lerna_-managed monorepo, and contains npm packages, please use the command `npmReleaseMonorepo`. This command _must_ be run in the root directory of the monorepo. Monorepo must be have `lerna` installed at the root, because release tool will use its CLI to get infromation about packages.
 
 ```sh
 cd path/to/my/package/repo
 taoRelease npmReleaseMonorepo
 ```
 
-TODO
+This command does:
+
+- compute the next version from commits
+    - for root, and for each package. Based on commits that touch files in this package.
+- update the package.json and package-lock.json
+   - for root, and for each package
+- create a tag and a release
+- publish the packages to npm
+    - the Github release is already finished at this stage. If the publish step fails, you can try again manually, or ask someone with the necessary privileges to perform the publishing.
 
 ### Tag based repositories
 
@@ -103,6 +111,14 @@ Commandline arguments to give you more control over the parameters of the releas
 | `--extension-to-release <extension>` | extension name (e.g. taoFoobar)                                                                    | (none - prompted) |
 | `--update-translations`              | run translation update without prompting. Translations update is only available in interative mode. |                   |
 | `--www-user <user>`                  | the system user used to launch PHP commands                                                        | `www-data`        |
+
+### npmReleaseMonorepo extra options
+
+| option                     | description                                                                                        | default           |
+| -------------------------- | -------------------------------------------------------------------------------------------------- | ----------------- |
+| `--release-tag`            | tag to be used for the release, if it's different from root package.json version                   |                   |
+| `--conventional-bump-type` | one of: `none`,`patch`, `minor`, `major`. If not specified, will be calculated from conventional commits on each package. If `none`, will not change package versions. |                   |
+| `--no-publish`         | do not publish packages to npm. Publishing is done as the last step. For no-interactive node.      |                   |
 
 ## Development
 
