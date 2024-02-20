@@ -73,7 +73,7 @@ export default {
     async getVersionFromTag(lastTag) {
         const lastVersionObject = semverCoerce(lastTag);
         if (!lastVersionObject) {
-            throw new Error('Unable to retrieve last version from tags or the last tag is not semver compliant');
+            throw new Error(`Unable to retrieve last version from tags or the last tag "${lastTag}" is not semver compliant`);
         }
         return lastVersionObject.version;
     },
@@ -88,7 +88,7 @@ export default {
     async getNextVersion(lastVersion, pathInMonorepo = null) {
         const lastVersionObject = semverCoerce(lastVersion);
         if (!lastVersionObject) {
-            throw new Error('Last version is not semver compliant');
+            throw new Error(`Last version "${lastVersion}" is not semver compliant`);
         }
 
         return new Promise((resolve, reject) => {

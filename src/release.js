@@ -61,7 +61,7 @@ const config = configFactory();
  * @param {String} [params.subjectType='extension'] - extension or package
  * @param {String} [params.releaseTag] - the tag to create for the release
  * @param {String} [params.conventionalBumpType] - none|patch|minor|major
- * @param {String} [params.noPublish] - do not publish packages to npm
+ * @param {String} [params.publish=true] - publish packages to npm
  * @return {Object} - instance of taoExtensionRelease
  */
 export default function taoExtensionReleaseFactory(params = {}) {
@@ -172,7 +172,7 @@ export default function taoExtensionReleaseFactory(params = {}) {
          * @returns {Promise}
          */
         async publish() {
-            if (!params.noPublish) {
+            if (params.publish) {
                 if (data.monorepoPackages) {
                     return await adaptee.monorepoPublish();
                 } else {
@@ -650,6 +650,10 @@ export default function taoExtensionReleaseFactory(params = {}) {
          * Extract the version from conventionalCommits or parameters
          */
         async extractVersion() {
+            if (params.conventionalBumpType && !Object.values(conventionalBumpTypes).includes(params.conventionalBumpType)) {
+                throw new TypeError(`Invalid value of conventional-bump-type. Should be one of: "${Object.values(conventionalBumpTypes).join(', ')}", or not specified`);
+            }
+
             const lastTag = await gitClient.getLastTag();
 
             let lastVersion;
@@ -659,13 +663,19 @@ export default function taoExtensionReleaseFactory(params = {}) {
                 lastVersion = metadata.version;
             }
             if (!lastVersion) {
-                lastVersion = conventionalCommits.getVersionFromTag(lastTag);
+                lastVersion = await conventionalCommits.getVersionFromTag(lastTag);
             }
 
-            let {
-                recommendation,
-                version,
-            } = await conventionalCommits.getNextVersion(lastVersion);
+            let recommendation;
+            let version;
+            if (params.conventionalBumpType) {
+                version = conventionalCommits.incrementVersion(lastVersion, params.conventionalBumpType);
+                recommendation = { reason: `fixed bump to "${params.conventionalBumpType}"` };
+            } else {
+                const convNext = await conventionalCommits.getNextVersion(lastVersion);
+                version = convNext.version;
+                recommendation = convNext.recommendation;
+            }
 
             if (releaseVersion) {
                 if (!semverGt(releaseVersion, lastVersion)) {
@@ -722,10 +732,6 @@ export default function taoExtensionReleaseFactory(params = {}) {
          * @returns {Promise}
          */
         async extractMonorepoVersions() {
-            if (params.conventionalBumpType && !Object.values(conventionalBumpTypes).includes(params.conventionalBumpType)) {
-                throw new TypeError(`Invalid value of conventional-bump-type. Should be one of: "${Object.values(conventionalBumpTypes).join(', ')}", or not specified`);
-            }
-
             /**
              * @typedef {Object} PackageInfo
              * @property {Object} packageName
@@ -744,12 +750,12 @@ export default function taoExtensionReleaseFactory(params = {}) {
                 if (params.conventionalBumpType) {
                     //same fixed bump for all packages
                     const version = conventionalCommits.incrementVersion(packageInfo.lastVersion, params.conventionalBumpType);
-                    packageInfo.recommendation = { reason: `fixed bump to "${params.conventionalBumpType}", from conventional-bump-type` };
+                    packageInfo.recommendation = { reason: `fixed bump to "${params.conventionalBumpType}"` };
                     packageInfo.version = version;
                 } else if (params.conventionalBumpType === conventionalBumpTypes.none) {
                     //update versions manually once PR is opened
                     packageInfo.noChanges = true;
-                    packageInfo.recommendation = { reason: 'no bump, from conventional-bump-type' };
+                    packageInfo.recommendation = { reason: 'no bump' };
                     packageInfo.version = packageInfo.lastVersion;
                 } else {
                     //from conventional commits which change files in this package
