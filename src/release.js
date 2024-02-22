@@ -242,19 +242,13 @@ export default function taoExtensionReleaseFactory(params = {}) {
             let fullReleaseComment = `${comment}\n\n**Release notes :**\n${data.pr.notes}`;
 
             if (data.monorepoPackages && params.conventionalBumpType !== conventionalBumpTypes.none) {
-                const publishedPackagesInfo = data.monorepoPackages.filter(i => !i.noChanges)
-                    .map(i => `"${i.packageName}": ${i.version}`)
-                    .join('\n');
-                const unchangedPackagesInfo = data.monorepoPackages.filter(i => i.noChanges)
-                    .map(i => `"${i.packageName}": ${i.lastVersion}`)
-                    .join('\n');
-
                 fullReleaseComment += [
                     '\n```',
-                    publishedPackagesInfo ? `published:\n${publishedPackagesInfo}` : '',
-                    unchangedPackagesInfo ? `no changes:\n${unchangedPackagesInfo}` : '',
+                    data.monorepoPackages
+                        .map(i => `"${i.packageName}": ${i.lastVersion}`)
+                        .join('\n'),
                     '```'
-                ].filter(i => i).join('\n');
+                ].join('\n');
             }
 
             await githubClient.release(data.tag, fullReleaseComment);
@@ -654,16 +648,16 @@ export default function taoExtensionReleaseFactory(params = {}) {
                 throw new TypeError(`Invalid value of conventional-bump-type. Should be one of: "${Object.values(conventionalBumpTypes).join(', ')}", or not specified`);
             }
 
-            const lastTag = await gitClient.getLastTag();
-
+            let lastTag;
             let lastVersion;
             if (params.releaseTag) {
-                // if npm, tags don't have to be semver-compliant. `lastVersion` can be read from root package.json
+                // if npm, tags don't have to be semver-compliant. `lastVersion` can be read from root package.json (of base branch)
                 const metadata = await this.getMetadata();
                 lastVersion = metadata.version;
             }
             if (!lastVersion) {
-                lastVersion = await conventionalCommits.getVersionFromTag(lastTag);
+                lastTag = await gitClient.getLastTag();
+                lastVersion = conventionalCommits.getVersionFromTag(lastTag);
             }
 
             let recommendation;

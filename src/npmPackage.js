@@ -57,7 +57,7 @@ export default function npmPackageFactory(rootDir = '', quiet = true) {
     const runCommand = (npmNpx, command, spawnOptions = {}) => {
         return new Promise((resolve, reject) => {
             if (typeof command !== 'string') {
-                return reject(new TypeError(`Invalid argument type: ${typeof command} for ${npmNpx} (should be string)`));
+                return reject(new TypeError(`Invalid argument type: ${typeof command} for ${npmNpx}Command (should be string)`));
             }
             const opts = { ...getOptions(), ...spawnOptions };
             log.info(`${npmNpx} ${command}`, opts);

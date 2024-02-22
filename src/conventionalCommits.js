@@ -70,7 +70,7 @@ export default {
      * @param {String} lastTag
      * @returns {String}
      */
-    async getVersionFromTag(lastTag) {
+    getVersionFromTag(lastTag) {
         const lastVersionObject = semverCoerce(lastTag);
         if (!lastVersionObject) {
             throw new Error(`Unable to retrieve last version from tags or the last tag "${lastTag}" is not semver compliant`);
