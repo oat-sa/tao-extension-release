@@ -51,13 +51,15 @@ export default function npmPackageFactory(rootDir = '', quiet = true) {
 
     /**
      * Run any npm/npx command and wrap result in a Promise
-     * @param {String} command
+     * @param {String} npmNpx - `npm` or `npx`
+     * @param {String} command - command which `npm` or `npx` should invoke
+     * @param {Object?} spawnOptions - options for `crossSpawn`
      * @returns {Promise} - resolves if command ran without errors, with data returned by command if any
      */
     const runCommand = (npmNpx, command, spawnOptions = {}) => {
         return new Promise((resolve, reject) => {
-            if (typeof command !== 'string') {
-                return reject(new TypeError(`Invalid argument type: ${typeof command} for ${npmNpx}Command (should be string)`));
+            if (typeof npmNpx !== 'string' || typeof command !== 'string') {
+                return reject(new TypeError('Invalid argument type: npm/npx command: "npmNpx" and "command" arguments should be string'));
             }
             const opts = { ...getOptions(), ...spawnOptions };
             log.info(`${npmNpx} ${command}`, opts);
@@ -161,6 +163,7 @@ export default function npmPackageFactory(rootDir = '', quiet = true) {
         /**
          * Run any npx command and wrap result in a Promise
          * @param {String} command
+         * @param {Object?} spawnOptions
          * @returns {Promise<*>} - resolves if command ran without errors, with data returned by command if any
          */
         npxCommand(command, spawnOptions = {}) {

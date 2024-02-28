@@ -118,7 +118,7 @@ Commandline arguments to give you more control over the parameters of the releas
 | -------------------------- | -------------------------------------------------------------------------------------------------- | ----------------- |
 | `--release-tag`            | tag to be used for the release, if it's different from root package.json version                   |                   |
 | `--conventional-bump-type` | one of: `none`,`patch`, `minor`, `major`. If not specified, will be calculated from conventional commits on each package. If `none`, will not change package versions. |                   |
-| `--no-publish`         | do not publish packages to npm. Publishing is done as the last step. For no-interactive node.      |                   |
+| `--no-publish`         | do not publish packages to npm. Publishing is done as the last step. For no-interactive mode.      |                   |
 
 ## Development
 
