@@ -268,7 +268,7 @@ export default function npmPackageFactory(rootDir = '', quiet = true) {
           * @return {Promise<Object[]} - `[{ packageName: string, packagePath: string, lastVersion: string, dependencies: string[] }]`
           */
         async lernaGetPackagesList() {
-            const packageListStr = await this.npxCommand('lerna list --json', { stdio: 'pipe' });
+            const packageListStr = await this.npxCommand('lerna list --all --json', { stdio: 'pipe' });
 
             const packageListJson = JSON.parse(packageListStr);
             const packagesInfo = packageListJson.map(packageInfo => ({
@@ -277,7 +277,7 @@ export default function npmPackageFactory(rootDir = '', quiet = true) {
                 lastVersion: packageInfo.version
             }));
 
-            const packageGraphStr = await this.npxCommand('lerna list --graph', { stdio: 'pipe' });
+            const packageGraphStr = await this.npxCommand('lerna list --all --graph', { stdio: 'pipe' });
 
             const packageGraphJson = JSON.parse(packageGraphStr);
             for (const packageInfo of packagesInfo) {

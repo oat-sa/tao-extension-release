@@ -245,7 +245,7 @@ export default function taoExtensionReleaseFactory(params = {}) {
                 fullReleaseComment += [
                     '\n```',
                     data.monorepoPackages
-                        .map(i => `"${i.packageName}": ${i.lastVersion}`)
+                        .map(i => `"${i.packageName}": ${i.version}`)
                         .join('\n'),
                     '```'
                 ].join('\n');
