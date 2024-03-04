@@ -90,14 +90,14 @@ describe('src/npmPackage.js', () => {
         expect.assertions(2);
         expect(typeof npmPackage.npmCommand).toBe('function');
         expect(npmPackage.npmCommand()).rejects.toEqual(
-            TypeError('Invalid argument type: undefined for npmCommand (should be string)')
+            TypeError('Invalid argument type: npm/npx command: "npmNpx" and "command" arguments should be string')
         );
     });
 
     it('npmCommand should reject on invalid params', () => {
         expect.assertions(1);
         return expect(npmPackage.npmCommand(['my', 'command'])).rejects.toEqual(
-            TypeError('Invalid argument type: object for npmCommand (should be string)')
+            TypeError('Invalid argument type: npm/npx command: "npmNpx" and "command" arguments should be string')
         );
     });
 

@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2023 Open Assessment Technologies SA;
+ * Copyright (c) 2023-2024 Open Assessment Technologies SA;
  */
 jest.mock('../../../../src/log.js', () => ({
     error: jest.fn(() => ({
@@ -44,7 +44,7 @@ jest.mock('../../../../src/git.js', () => {
             push:  jest.fn(arg => arg),
             hasBranch:  jest.fn(),
             hasTag: jest.fn(),
-            getLastTag: jest.fn(),
+            getLastTag: jest.fn().mockResolvedValue('v1.2.3'),
             hasDiff:  jest.fn(() => true),
             mergeBack: jest.fn()
         }))
@@ -91,12 +91,12 @@ describe('src/release.js extractVersion', () => {
         const release = releaseFactory();
         expect(typeof release.extractVersion).toBe('function');
     });
-    
+
     test('should extract version from conventional commits', async () => {
         expect.assertions(5);
-    
+
+        jest.spyOn(conventionalCommits, 'getVersionFromTag').mockImplementationOnce(() => '1.2.3');
         jest.spyOn(conventionalCommits, 'getNextVersion').mockImplementationOnce(() => ({
-            lastVersion: '1.2.3',
             version: '1.3.0',
             recommendation: {
                 stats : {
@@ -113,7 +113,7 @@ describe('src/release.js extractVersion', () => {
         release.setData({ releasingBranch, token, extension: {} });
         await release.initialiseGitClient();
         await release.extractVersion();
-    
+
         const data = release.getData();
         expect(data.lastVersion).toBe('1.2.3');
         expect(data.lastTag).toBe('v1.2.3');
@@ -121,14 +121,14 @@ describe('src/release.js extractVersion', () => {
         expect(data.tag).toBe('v1.3.0');
         expect(data.releasingBranch).toBe('release-1.3.0');
     });
-    
+
     test('should extract version from given value', async () => {
         expect.assertions(5);
-    
+
         const release = releaseFactory({ branchPrefix, baseBranch, releaseBranch, releaseVersion : '2.0.1' });
         release.setData({ releasingBranch, token, extension: {} });
+        jest.spyOn(conventionalCommits, 'getVersionFromTag').mockImplementationOnce(() => '1.2.3');
         jest.spyOn(conventionalCommits, 'getNextVersion').mockImplementationOnce(() => ({
-            lastVersion: '1.2.3',
             version: '1.3.0',
             recommendation: {
                 stats : {
@@ -140,10 +140,10 @@ describe('src/release.js extractVersion', () => {
                 }
             }
         }));
-    
+
         await release.initialiseGitClient();
         await release.extractVersion();
-    
+
         const data = release.getData();
         expect(data.lastVersion).toBe('1.2.3');
         expect(data.lastTag).toBe('v1.2.3');
@@ -151,14 +151,14 @@ describe('src/release.js extractVersion', () => {
         expect(data.tag).toBe('v2.0.1');
         expect(data.releasingBranch).toBe('release-2.0.1');
     });
-    
+
     test('exit when trying to release from a version lower than the last version', async () => {
         expect.assertions(2);
-    
+
         const release = releaseFactory({ branchPrefix, baseBranch, releaseBranch, releaseVersion : '1.0.0' });
         release.setData({ releasingBranch, token, extension: {} });
+        jest.spyOn(conventionalCommits, 'getVersionFromTag').mockImplementationOnce(() => '1.2.3');
         jest.spyOn(conventionalCommits, 'getNextVersion').mockImplementationOnce(() => ({
-            lastVersion: '1.2.3',
             version: '1.3.0',
             recommendation: {
                 stats : {
@@ -177,22 +177,22 @@ describe('src/release.js extractVersion', () => {
         expect(log.exit).toBeCalledTimes(1);
         expect(log.exit).toBeCalledWith('The provided version is lesser than the latest version 1.2.3.');
     });
-    
+
     test('warn when no conventional commits are found', async () => {
         expect.assertions(4);
-    
+
         jest.spyOn(inquirer, 'prompt').mockImplementationOnce(({ type, name, message }) => {
             expect(type).toBe('confirm');
             expect(name).toBe('acceptDefaultVersion');
             expect(message).toBe('There are some non conventional commits. Are you sure you want to continue?');
-    
+
             return { acceptDefaultVersion: true };
         });
 
         const release = releaseFactory({ branchPrefix, baseBranch, releaseBranch });
         release.setData({ releasingBranch, token, extension: {} });
+        jest.spyOn(conventionalCommits, 'getVersionFromTag').mockImplementationOnce(() => '1.2.3');
         jest.spyOn(conventionalCommits, 'getNextVersion').mockImplementationOnce(() => ({
-            lastVersion: '1.2.3',
             version: '1.2.4',
             recommendation: {
                 stats : {
@@ -204,28 +204,28 @@ describe('src/release.js extractVersion', () => {
                 }
             }
         }));
-    
+
         await release.initialiseGitClient();
         await release.extractVersion();
-    
+
         expect(inquirer.prompt).toBeCalledTimes(1);
     });
-    
+
     test('warn when no new commits are found', async () => {
         expect.assertions(5);
-    
+
         jest.spyOn(inquirer, 'prompt').mockImplementationOnce(({ type, name, message }) => {
             expect(type).toBe('confirm');
             expect(name).toBe('releaseAgain');
             expect(message).toBe('There\'s no new commits, do you really want to release a new version?');
-    
+
             return { releaseAgain: false };
         });
 
         const release = releaseFactory({ branchPrefix, baseBranch, releaseBranch });
         release.setData({ releasingBranch, token, extension: {} });
+        jest.spyOn(conventionalCommits, 'getVersionFromTag').mockImplementationOnce(() => '1.2.3');
         jest.spyOn(conventionalCommits, 'getNextVersion').mockImplementationOnce(() => ({
-            lastVersion: '1.2.3',
             version: '1.2.4',
             recommendation: {
                 stats : {
@@ -237,10 +237,10 @@ describe('src/release.js extractVersion', () => {
                 }
             }
         }));
-    
+
         await release.initialiseGitClient();
         await release.extractVersion();
-    
+
         expect(inquirer.prompt).toBeCalledTimes(1);
         expect(log.exit).toBeCalledTimes(1);
     });

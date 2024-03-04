@@ -28,10 +28,13 @@ export default {
     branchPrefix: ['--branch-prefix <prefix>', 'the prefix of the branch created for releasing', 'release'],
     origin: ['--origin <remotename>', 'the name of the remote repo', 'origin'],
     releaseBranch: ['--release-branch <branch>', 'the target branch for the release PR', 'master'],
+    releaseTag: ['--release-tag <tag>', 'the tag to create for the release'],
     wwwUser: ['--www-user <user>', 'the user who runs php commands', 'www-data'],
     updateTranslations: ['--update-translations', 'indicates if we need to update translations. Only available in interactive mode.'],
     noInteractive: ['--no-interactive', 'non interactive mode, always off on non TTY env'],
     noWrite: ['--no-write', 'turns off writting data like the config'],
+    conventionalBumpType: ['--conventional-bump-type <bump>', 'none|patch|minor|major, if all packages should be bumped the same way. If not specified, then from conventional commits for the package'],
+    noPublish: ['--no-publish', 'do not publish packages to npm'],
 
     // options which fall back to user prompts if undefined
     pathToTao: ['--path-to-tao <path>', 'path to local TAO instance'],
