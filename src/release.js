@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2019-2021 Open Assessment Technologies SA;
+ * Copyright (c) 2019-2024 Open Assessment Technologies SA;
  */
 
 /**
@@ -30,7 +30,7 @@ import configFactory from './config.js';
 import github from './github.js';
 import gitClientFactory from './git.js';
 import log from './log.js';
-import conventionalCommits from './conventionalCommits.js';
+import conventionalCommits, { conventionalBumpTypes } from './conventionalCommits.js';
 import semverValid from 'semver/functions/valid.js';
 
 import extension from './release/extensionApi.js';
@@ -59,6 +59,9 @@ const config = configFactory();
  * @param {boolean} [params.interactive=true] - interactive mode
  * @param {boolean} [params.write=true] - allow to write data in host file system
  * @param {String} [params.subjectType='extension'] - extension or package
+ * @param {String} [params.releaseTag] - the tag to create for the release
+ * @param {String} [params.conventionalBumpType] - none|patch|minor|major
+ * @param {String} [params.publish=true] - publish packages to npm
  * @return {Object} - instance of taoExtensionRelease
  */
 export default function taoExtensionReleaseFactory(params = {}) {
@@ -165,11 +168,17 @@ export default function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
-         * Publish the released package
+         * Publish the released package(s)
          * @returns {Promise}
          */
         async publish() {
-            return await adaptee.publish();
+            if (params.publish) {
+                if (data.monorepoPackages) {
+                    return await adaptee.monorepoPublish();
+                } else {
+                    return await adaptee.publish();
+                }
+            }
         },
 
         /**
@@ -191,7 +200,14 @@ export default function taoExtensionReleaseFactory(params = {}) {
          * Prompt user to confirm release
          */
         async confirmRelease() {
-            const confirmMessage = `Let's release version ${data[subjectType].name}@${data.version} 🚀`;
+            let confirmMessage = `Let's release version ${data[subjectType].name}@${data.version} 🚀`;
+
+            if (data.monorepoPackages) {
+                for (const packageInfo of data.monorepoPackages.filter(i => !i.noChanges)) {
+                    confirmMessage += `\n  ${packageInfo.packageName} ${packageInfo.lastVersion} => ${packageInfo.version}`;
+                }
+            }
+
             if (interactive) {
                 const { go } = await inquirer.prompt({
                     type: 'confirm',
@@ -223,7 +239,17 @@ export default function taoExtensionReleaseFactory(params = {}) {
                     message: 'Any comment on the release ?'
                 }));
             }
-            const fullReleaseComment = `${comment}\n\n**Release notes :**\n${data.pr.notes}`;
+            let fullReleaseComment = `${comment}\n\n**Release notes :**\n${data.pr.notes}`;
+
+            if (data.monorepoPackages && params.conventionalBumpType !== conventionalBumpTypes.none) {
+                fullReleaseComment += [
+                    '\n```',
+                    data.monorepoPackages
+                        .map(i => `"${i.packageName}": ${i.version}`)
+                        .join('\n'),
+                    '```'
+                ].join('\n');
+            }
 
             await githubClient.release(data.tag, fullReleaseComment);
 
@@ -631,14 +657,32 @@ export default function taoExtensionReleaseFactory(params = {}) {
          * Extract the version from conventionalCommits or parameters
          */
         async extractVersion() {
+            if (params.conventionalBumpType && !Object.values(conventionalBumpTypes).includes(params.conventionalBumpType)) {
+                throw new TypeError(`Invalid value of conventional-bump-type. Should be one of: "${Object.values(conventionalBumpTypes).join(', ')}", or not specified`);
+            }
 
-            const lastTag = await gitClient.getLastTag();
+            let lastTag;
+            let lastVersion;
+            if (params.releaseTag) {
+                // if npm, tags don't have to be semver-compliant. `lastVersion` can be read from root package.json (of base branch)
+                const metadata = await this.getMetadata();
+                lastVersion = metadata.version;
+            }
+            if (!lastVersion) {
+                lastTag = await gitClient.getLastTag();
+                lastVersion = conventionalCommits.getVersionFromTag(lastTag);
+            }
 
-            let {
-                recommendation,
-                lastVersion,
-                version,
-            } = await conventionalCommits.getNextVersion(lastTag);
+            let recommendation;
+            let version;
+            if (params.conventionalBumpType && params.conventionalBumpType !== conventionalBumpTypes.none) {
+                version = conventionalCommits.incrementVersion(lastVersion, params.conventionalBumpType);
+                recommendation = { reason: `fixed bump to "${params.conventionalBumpType}"` };
+            } else {
+                const convNext = await conventionalCommits.getNextVersion(lastVersion);
+                version = convNext.version;
+                recommendation = convNext.recommendation;
+            }
 
             if (releaseVersion) {
                 if (!semverGt(releaseVersion, lastVersion)) {
@@ -683,11 +727,81 @@ export default function taoExtensionReleaseFactory(params = {}) {
             version = releaseVersion || version;
 
             data.lastVersion = `${lastVersion}`;
-            data.lastTag = `v${lastVersion}`;
+            data.lastTag = lastTag;
             data.version = `${version}`;
-            data.tag = `v${version}`;
+            data.tag = params.releaseTag || `v${version}`;
             data.releasingBranch = `${branchPrefix}-${version}`;
         },
+
+        /**
+         * For monorepo,
+         * extract the version of packages, from conventionalCommits or parameters
+         * @returns {Promise}
+         */
+        async extractMonorepoVersions() {
+            /**
+             * @typedef {Object} PackageInfo
+             * @property {Object} packageName
+             * @property {String} packagePath - path to the package, relative to repository root
+             * @property {String} lastVersion - current version
+             * @property {String} version - new version; will be calculated and added here
+             * @property {String[]} dependencies - list of related monorepo package names
+             */
+            /**
+             * @type {PackageInfo[]}
+             */
+            let packagesInfo = await adaptee.monorepoGetPackagesList();
+
+            //calculate next version for each package (own changes)
+            for (const packageInfo of packagesInfo) {
+                if (params.conventionalBumpType === conventionalBumpTypes.none) {
+                    //update versions manually once PR is opened
+                    packageInfo.noChanges = true;
+                    packageInfo.recommendation = { reason: 'no bump' };
+                    packageInfo.version = packageInfo.lastVersion;
+                } else if (params.conventionalBumpType) {
+                    //same fixed bump for all packages
+                    const version = conventionalCommits.incrementVersion(packageInfo.lastVersion, params.conventionalBumpType);
+                    packageInfo.recommendation = { reason: `fixed bump to "${params.conventionalBumpType}"` };
+                    packageInfo.version = version;
+                } else {
+                    //from conventional commits which change files in this package
+                    const { version, recommendation } = await conventionalCommits.getNextVersion(packageInfo.lastVersion, packageInfo.packagePath);
+                    if (recommendation.stats && recommendation.stats.commits === 0) {
+                        packageInfo.noChanges = true;
+                    }
+                    packageInfo.recommendation = recommendation;
+                    packageInfo.version = version;
+                }
+            }
+
+            //calculate next version for each package (no own changes, only dependency update = 'patch' bump)
+            for (const packageInfo of packagesInfo) {
+                if (packageInfo.noChanges && packageInfo.dependencies.some(i =>
+                    !packagesInfo.find(k => k.packageName === i).noChanges)
+                ) {
+                    packageInfo.recommendation = { reason: 'dependency update' };
+                    packageInfo.version = conventionalCommits.incrementVersion(packageInfo.lastVersion, 'patch');
+                    delete packageInfo.noChanges;
+                }
+            }
+
+            //log result
+            log.info('Monorepo package versions:');
+            for (const packageInfo of packagesInfo) {
+                log.info(`  Package: ${packageInfo.packageName}`);
+                log.info(`    Last version found: ${packageInfo.lastVersion}`);
+                if (packageInfo.noChanges) {
+                    log.info('    No changes');
+                } else {
+                    log.info(`    Recommended version from commits: ${packageInfo.version}`);
+                }
+                log.info(`    Reason: ${packageInfo.recommendation.reason}`);
+            }
+
+            data.monorepoPackages = packagesInfo;
+        },
+
 
         /**
          * Verify if local branch has no un-commtied changes
@@ -705,12 +819,16 @@ export default function taoExtensionReleaseFactory(params = {}) {
         },
 
         /**
-          * Update version in releasing repository
+          * Update version(s) in releasing repository
           */
         async updateVersion() {
-            await adaptee.updateVersion();
+            if (data.monorepoPackages) {
+                await adaptee.monorepoUpdateVersions(data.monorepoPackages.filter(i => !i.noChanges));
+            } else {
+                await adaptee.updateVersion();
+            }
 
             await gitClient.commitAndPush(data.releasingBranch, 'chore: bump version');
-        }
+        },
     };
 }

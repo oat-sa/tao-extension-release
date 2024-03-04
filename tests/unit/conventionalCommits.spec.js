@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2023 Open Assessment Technologies SA;
+ * Copyright (c) 2023-2024 Open Assessment Technologies SA;
  */
 
 import conventionalCommits from '../../src/conventionalCommits';
@@ -31,7 +31,7 @@ jest.mock('conventional-changelog-core', () => {
                 if (e === 'end') {
                     callback();
                 }
-        
+
                 return this;
             }
         }))
@@ -76,26 +76,33 @@ describe('src/conventionalCommits.js', () => {
     it('the conventional commits instance has a getNextVersion method', () => {
         expect(typeof conventionalCommits.getNextVersion).toBe('function');
     });
+    it('the conventional commits instance has a getVersionFromTag method', () => {
+        expect(typeof conventionalCommits.getVersionFromTag).toBe('function');
+    });
     it('should parse last tag and increment', async () => {
         const lastTag = '1.2.3';
-        const results = await conventionalCommits.getNextVersion(lastTag);
+        const lastVersion = conventionalCommits.getVersionFromTag(lastTag);
+        expect(lastVersion).toBe('1.2.3');
+        const results = await conventionalCommits.getNextVersion(lastVersion);
         expect(results.version).toBe('1.3.0');
-        expect(results.lastVersion).toBe('1.2.3');
     });
     it('should coerce and increment a bad tag', async () => {
         const lastTag = '3.2.5.8';
-        const results = await conventionalCommits.getNextVersion(lastTag);
+        const lastVersion = conventionalCommits.getVersionFromTag(lastTag);
+        expect(lastVersion).toBe('3.2.5');
+        const results = await conventionalCommits.getNextVersion(lastVersion);
         expect(results.version).toBe('3.3.0');
-        expect(results.lastVersion).toBe('3.2.5');
     });
     it('should coerce version with a pre-release', async () => {
         const lastTag = '4.12.13-8';
-        const results = await conventionalCommits.getNextVersion(lastTag);
+        const lastVersion = conventionalCommits.getVersionFromTag(lastTag);
+        expect(lastVersion).toBe('4.12.13');
+        const results = await conventionalCommits.getNextVersion(lastVersion);
         expect(results.version).toBe('4.13.0');
-        expect(results.lastVersion).toBe('4.12.13');
     });
     it('fails when the last cannot be parsed', async () => {
-        expect.assertions(1);
-        await expect(conventionalCommits.getNextVersion('foo')).rejects.toEqual(TypeError('Unable to retrieve last version from tags or the last tag is not semver compliant'));
+        expect.assertions(2);
+        expect(() => conventionalCommits.getVersionFromTag('foo')).toThrow(TypeError('Unable to retrieve last version from tags or the last tag "foo" is not semver compliant'));
+        await expect(conventionalCommits.getNextVersion('foo')).rejects.toEqual(Error('Last version "foo" is not semver compliant'));
     });
 });
