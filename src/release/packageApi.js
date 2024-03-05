@@ -91,7 +91,7 @@ export default function packageApiFactory(params = {}, data) {
         /**
          * Checkout master,
          * Prompt user whether he wants to publish packages
-         * @returns {Promise}
+         * @returns {Promise<Boolean>}
          */
         async beforePublish() {
             if (this.gitClient) {
@@ -164,7 +164,8 @@ export default function packageApiFactory(params = {}, data) {
          */
         async monorepoPublish() {
             const publishPackage = await this.beforePublish();
-            if (publishPackage)     {
+            if (publishPackage) {
+                log.doing('Publishing monorepo packages');
                 return this.npmPackage.lernaPublish();
             }
         }
