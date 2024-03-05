@@ -1,6 +1,6 @@
 {
   "name": "@oat-sa/tao-extension-release",
-  "version": "2.6.0",
+  "version": "2.6.1",
   "description": "Helps you to release TAO extensions",
   "engines": {
     "node": ">=14.0.0"
