@@ -89,11 +89,11 @@ export default function packageApiFactory(params = {}, data) {
         },
 
         /**
-         * Checkout master, show a prompt and then run `npm publish`
-         * TODO: checkout latest tag?
+         * Checkout master,
+         * Prompt user whether he wants to publish packages
          * @returns {Promise}
          */
-        async publish() {
+        async beforePublish() {
             if (this.gitClient) {
                 await this.gitClient.checkout(params.releaseBranch);
             }
@@ -113,6 +113,16 @@ export default function packageApiFactory(params = {}, data) {
                 });
                 publishPackage = confirmPublish;
             }
+            return publishPackage;
+        },
+
+        /**
+         * Checkout master, show a prompt and then run `npm publish`
+         * TODO: checkout latest tag?
+         * @returns {Promise}
+         */
+        async publish() {
+            const publishPackage = await this.beforePublish();
             if (publishPackage)     {
                 log.doing(`Publishing package ${this.npmPackage.name} @ ${this.npmPackage.version}`);
                 return this.npmPackage.publish();
@@ -153,7 +163,10 @@ export default function packageApiFactory(params = {}, data) {
          * @returns {Promise<void>}
          */
         async monorepoPublish() {
-            await this.npmPackage.lernaPublish();
+            const publishPackage = await this.beforePublish();
+            if (publishPackage)     {
+                return this.npmPackage.lernaPublish();
+            }
         }
     };
 }
