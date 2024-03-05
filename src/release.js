@@ -767,11 +767,13 @@ export default function taoExtensionReleaseFactory(params = {}) {
                 } else {
                     //from conventional commits which change files in this package
                     const { version, recommendation } = await conventionalCommits.getNextVersion(packageInfo.lastVersion, packageInfo.packagePath);
+                    packageInfo.recommendation = recommendation;
                     if (recommendation.stats && recommendation.stats.commits === 0) {
                         packageInfo.noChanges = true;
+                        packageInfo.version = packageInfo.lastVersion;
+                    } else {
+                        packageInfo.version = version;
                     }
-                    packageInfo.recommendation = recommendation;
-                    packageInfo.version = version;
                 }
             }
 
