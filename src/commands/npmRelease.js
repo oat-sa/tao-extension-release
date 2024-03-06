@@ -36,6 +36,7 @@ program
     .option(...cliOptions.releaseBranch)
     .option(...cliOptions.noInteractive)
     .option(...cliOptions.noWrite)
+    .option(...cliOptions.noPublish)
 
     // options which fall back to user prompts if undefined
     .option(...cliOptions.releaseComment)
