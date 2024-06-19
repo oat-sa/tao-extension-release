@@ -104,12 +104,10 @@ describe('src/release.js removeReleasingBranch', () => {
         const deleteBranch = jest.fn();
 
         deleteBranch.mockImplementationOnce(() => {
-            //Mock the default export
             throw new Error('remote ref does not exist');
         });
 
         git.mockImplementationOnce(() => {
-            //Mock the default export
             return {
                 deleteBranch
             };
@@ -129,12 +127,10 @@ describe('src/release.js removeReleasingBranch', () => {
         const deleteBranch = jest.fn();
 
         deleteBranch.mockImplementationOnce(() => {
-            //Mock the default export
             throw new Error('Some other error');
         });
 
         git.mockImplementationOnce(() => {
-            //Mock the default export
             return {
                 deleteBranch
             };
