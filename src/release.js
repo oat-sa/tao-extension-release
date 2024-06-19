@@ -615,11 +615,11 @@ export default function taoExtensionReleaseFactory(params = {}) {
 
             try {
                 await gitClient.deleteBranch(data.releasingBranch);   
-            } catch (e) {
-                if (e.message.contains('remote ref does not exist')) {
-                    log.warn(`Error deleting branch ${data.releasingBranch}: ${e} - ${e.stack}`);
+            } catch (error) {
+                if (error.message.includes('remote ref does not exist')) {
+                    log.warn(`Cannot delete branch ${data.releasingBranch}: ${error} - ${error.stack}`);
                 } else {
-                    throw e;
+                    throw error;
                 }
             }
 

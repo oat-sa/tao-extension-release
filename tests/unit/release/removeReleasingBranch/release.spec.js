@@ -98,4 +98,53 @@ describe('src/release.js removeReleasingBranch', () => {
         expect(deleteBranch).toBeCalledTimes(1);
         expect(deleteBranch).toBeCalledWith(`${branchPrefix}-${version}`);
     });
+    test('should bypass error deleting release branch when it does not exist', async () => {
+        expect.assertions(2);
+
+        const deleteBranch = jest.fn();
+
+        deleteBranch.mockImplementationOnce(() => {
+            //Mock the default export
+            throw new Error('remote ref does not exist');
+        });
+
+        git.mockImplementationOnce(() => {
+            //Mock the default export
+            return {
+                deleteBranch
+            };
+        });
+
+        const release = releaseFactory(branchPrefix);
+        release.setData({ releasingBranch, token, extension: {} });
+        await release.initialiseGitClient();
+        await release.removeReleasingBranch();
+
+        expect(deleteBranch).toBeCalledTimes(1);
+        expect(deleteBranch).toBeCalledWith(`${branchPrefix}-${version}`);
+    });
+    test('should not bypass error deleting release branch when another error', async () => {
+        expect.assertions(3);
+
+        const deleteBranch = jest.fn();
+
+        deleteBranch.mockImplementationOnce(() => {
+            //Mock the default export
+            throw new Error('Some other error');
+        });
+
+        git.mockImplementationOnce(() => {
+            //Mock the default export
+            return {
+                deleteBranch
+            };
+        });
+
+        const release = releaseFactory(branchPrefix);
+        release.setData({ releasingBranch, token, extension: {} });
+        await release.initialiseGitClient();
+        await expect(() => release.removeReleasingBranch()).rejects.toThrowError('Some other error');
+        expect(deleteBranch).toBeCalledTimes(1);
+        expect(deleteBranch).toBeCalledWith(`${branchPrefix}-${version}`);
+    });
 });
