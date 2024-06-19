@@ -142,6 +142,7 @@ So the command `taoRelease` will use the sources.
 Useful commands :
 
 - `npm test` runs the test suite
+- `npx jest -- my-test.spec.js` runs a single test
 - `npm run test:cov` runs the test suite with code coverage
 - `npm run test:dev` runs the test suite in watch mode
 - `npm run lint` verifies the sources complies with the code style guide
