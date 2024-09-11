@@ -614,9 +614,11 @@ export default function taoExtensionReleaseFactory(params = {}) {
             log.doing('Clean up the place');
 
             try {
-                await gitClient.deleteBranch(data.releasingBranch);   
+                await gitClient.deleteBranch(data.releasingBranch);
             } catch (error) {
-                if (error.message.includes('remote ref does not exist')) {
+                // If a github setting auto-deleted the closed PR branch on the remote before this step,
+                // these are some of the observed error messages
+                if (error.message.includes('remote ref does not exist') || error.message.includes('unable to resolve reference')) {
                     log.warn(`Cannot delete branch ${data.releasingBranch}: ${error} - ${error.stack}`);
                 } else {
                     throw error;
