@@ -99,15 +99,17 @@ describe('src/release.js removeReleasingBranch', () => {
         expect(deleteBranch).toBeCalledWith(`${branchPrefix}-${version}`);
     });
     test('should bypass error deleting release branch when it does not exist', async () => {
-        expect.assertions(2);
+        expect.assertions(4);
 
         const deleteBranch = jest.fn();
 
         deleteBranch.mockImplementationOnce(() => {
             throw new Error('remote ref does not exist');
+        }).mockImplementationOnce(() => {
+            throw new Error('[remote rejected] (cannot lock ref \'refs/heads/release-4.0.0\': unable to resolve reference \'refs/heads/release-4.0.0\'');
         });
 
-        git.mockImplementationOnce(() => {
+        git.mockImplementation(() => {
             return {
                 deleteBranch
             };
@@ -116,6 +118,13 @@ describe('src/release.js removeReleasingBranch', () => {
         const release = releaseFactory(branchPrefix);
         release.setData({ releasingBranch, token, extension: {} });
         await release.initialiseGitClient();
+        await release.removeReleasingBranch();
+
+        expect(deleteBranch).toBeCalledTimes(1);
+        expect(deleteBranch).toBeCalledWith(`${branchPrefix}-${version}`);
+
+        deleteBranch.mockClear();
+
         await release.removeReleasingBranch();
 
         expect(deleteBranch).toBeCalledTimes(1);
