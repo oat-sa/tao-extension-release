@@ -102,10 +102,11 @@ describe('src/release.js doesReleasingBranchExists', () => {
         expect(hasBranch).toBeCalledWith(`remotes/${origin}/${branchPrefix}-${version}`);
     });
 
-    test('should log exit if release branch exists', async () => {
-        expect.assertions(2);
+    test('should log warn and set flag if release branch exists', async () => {
+        expect.assertions(3);
 
         const hasBranch = jest.fn(() => true);
+        const findExistingPullRequest = jest.fn();
         git.mockImplementationOnce(() => {
             //Mock the default export
             return {
@@ -115,11 +116,13 @@ describe('src/release.js doesReleasingBranchExists', () => {
 
         const release = releaseFactory({ branchPrefix, origin });
         release.setData({ releasingBranch, version, tag, token, extension: {} });
+        release.findExistingPullRequest = findExistingPullRequest;
         await release.initialiseGitClient();
         await release.doesReleasingBranchExists();
 
-        expect(log.exit).toBeCalledTimes(1);
-        expect(log.exit).toBeCalledWith(`The remote branch remotes/${origin}/${branchPrefix}-${version} already exists.`);
+        expect(log.warn).toBeCalledWith(`The remote branch remotes/${origin}/${branchPrefix}-${version} already exists. Will try to reuse it.`);
+        expect(release.getData().releasingBranchExists).toBe(true);
+        expect(findExistingPullRequest).toBeCalledTimes(1);
     });
 
     test('should log done message', async () => {

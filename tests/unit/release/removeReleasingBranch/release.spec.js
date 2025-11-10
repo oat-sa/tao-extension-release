@@ -47,11 +47,13 @@ jest.mock('../../../../src/git.js', () => {
             merge: jest.fn(),
             mergePr: jest.fn(),
             getLocalBranches: jest.fn(() => []),
-            checkoutNonLocal: jest.fn()
+            checkoutNonLocal: jest.fn(),
+            deleteLocalBranch: jest.fn()
         }))
     };
 });
 
+import log from '../../../../src/log.js';
 import git from '../../../../src/git.js';
 import releaseFactory from '../../../../src/release.js';
 
@@ -99,9 +101,11 @@ describe('src/release.js removeReleasingBranch', () => {
         expect(deleteBranch).toBeCalledWith(`${branchPrefix}-${version}`);
     });
     test('should bypass error deleting release branch when it does not exist', async () => {
-        expect.assertions(4);
+        expect.assertions(6);
 
         const deleteBranch = jest.fn();
+        const getLocalBranches = jest.fn(() => []);
+        const deleteLocalBranch = jest.fn();
 
         deleteBranch.mockImplementationOnce(() => {
             throw new Error('remote ref does not exist');
@@ -111,7 +115,9 @@ describe('src/release.js removeReleasingBranch', () => {
 
         git.mockImplementation(() => {
             return {
-                deleteBranch
+                deleteBranch,
+                getLocalBranches,
+                deleteLocalBranch
             };
         });
 
@@ -122,13 +128,73 @@ describe('src/release.js removeReleasingBranch', () => {
 
         expect(deleteBranch).toBeCalledTimes(1);
         expect(deleteBranch).toBeCalledWith(`${branchPrefix}-${version}`);
+        expect(getLocalBranches).toBeCalledTimes(1);
+        expect(log.warn).toBeCalledWith(expect.stringContaining('Remote branch'));
 
         deleteBranch.mockClear();
+        getLocalBranches.mockClear();
 
         await release.removeReleasingBranch();
 
         expect(deleteBranch).toBeCalledTimes(1);
         expect(deleteBranch).toBeCalledWith(`${branchPrefix}-${version}`);
+    });
+
+    test('should delete local branch when remote branch was already deleted', async () => {
+        expect.assertions(4);
+
+        const deleteBranch = jest.fn(() => {
+            throw new Error('error: unable to delete \'release-1.1.1\': remote ref does not exist');
+        });
+        const getLocalBranches = jest.fn(() => ['release-1.1.1']);
+        const deleteLocalBranch = jest.fn(() => Promise.resolve({ success: true, branch: 'release-1.1.1' }));
+
+        git.mockImplementationOnce(() => {
+            return {
+                deleteBranch,
+                getLocalBranches,
+                deleteLocalBranch
+            };
+        });
+
+        const release = releaseFactory(branchPrefix);
+        release.setData({ releasingBranch, token, extension: {} });
+        await release.initialiseGitClient();
+        await release.removeReleasingBranch();
+
+        expect(deleteBranch).toBeCalledTimes(1);
+        expect(getLocalBranches).toBeCalledTimes(1);
+        expect(deleteLocalBranch).toBeCalledTimes(1);
+        expect(deleteLocalBranch).toBeCalledWith(`${branchPrefix}-${version}`);
+    });
+
+    test('should handle error when deleting local branch fails', async () => {
+        expect.assertions(3);
+
+        const deleteBranch = jest.fn(() => {
+            throw new Error('error: unable to delete \'release-1.1.1\': remote ref does not exist');
+        });
+        const getLocalBranches = jest.fn(() => ['release-1.1.1']);
+        const deleteLocalBranch = jest.fn(() => {
+            throw new Error('Local branch deletion failed');
+        });
+
+        git.mockImplementationOnce(() => {
+            return {
+                deleteBranch,
+                getLocalBranches,
+                deleteLocalBranch
+            };
+        });
+
+        const release = releaseFactory(branchPrefix);
+        release.setData({ releasingBranch, token, extension: {} });
+        await release.initialiseGitClient();
+        await release.removeReleasingBranch();
+
+        expect(deleteBranch).toBeCalledTimes(1);
+        expect(deleteLocalBranch).toBeCalledTimes(1);
+        expect(log.warn).toBeCalledWith(expect.stringContaining('Could not delete local branch'));
     });
     test('should not bypass error deleting release branch when another error', async () => {
         expect.assertions(3);
