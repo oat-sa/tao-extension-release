@@ -112,6 +112,21 @@ export default function gitFactory(repository = '', origin = 'origin') {
         },
 
         /**
+         * Delete a local branch only.
+         * @param {String} branchName - the branch name
+         * @returns {Promise}
+         */
+        deleteLocalBranch(branchName){
+            return git(repository).deleteLocalBranch(branchName)
+                .then( results => {
+                    if (results.success){
+                        results.branch = branchName;
+                    }
+                    return results;
+                });
+        },
+
+        /**
          * Create and checkout a local branch
          * @param {String} branchName - the branch name
          * @returns {Promise}

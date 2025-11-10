@@ -98,8 +98,8 @@ describe('src/release.js doesTagExists', () => {
         expect(hasTag).toBeCalledWith(`v${version}`);
     });
     
-    test('should log exit if tag exists', async () => {
-        expect.assertions(2);
+    test('should log warn and set flag if tag exists', async () => {
+        expect.assertions(3);
     
         const hasTag = jest.fn(() => true);
         git.mockImplementationOnce(() => {
@@ -114,8 +114,9 @@ describe('src/release.js doesTagExists', () => {
         await release.initialiseGitClient();
         await release.doesTagExists();
     
-        expect(log.exit).toBeCalledTimes(1);
-        expect(log.exit).toBeCalledWith(`The tag v${version} already exists`);
+        expect(log.warn).toBeCalledTimes(1);
+        expect(log.warn).toBeCalledWith(`The tag ${tag} already exists. Will skip tag creation.`);
+        expect(release.getData().tagExists).toBe(true);
     });
     
     test('should log done message', async () => {
