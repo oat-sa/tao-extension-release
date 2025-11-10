@@ -359,6 +359,15 @@ export default function githubFactory(token, repository) {
                 })
                 .map(this.formatReleaseNote)
                 .reduce((acc, note) => note ? `${acc} - ${note}\n` : acc, '');
+        },
+
+        /**
+         * Search for pull requests using GitHub GraphQL API
+         * @param {String} searchQuery - GitHub search query
+         * @returns {Promise<Object>} resolves with search results
+         */
+        searchPullRequests(searchQuery) {
+            return githubApiClient.searchPullRequests(searchQuery);
         }
     };
 }

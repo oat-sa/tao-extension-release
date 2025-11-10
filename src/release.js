@@ -251,15 +251,67 @@ export default function taoExtensionReleaseFactory(params = {}) {
                 ].join('\n');
             }
 
-            await githubClient.release(data.tag, fullReleaseComment);
+            try {
+                await githubClient.release(data.tag, fullReleaseComment);
+                log.done();
+            } catch (err) {
+                // If release already exists, log a warning and continue
+                if (err.message && (err.message.includes('already exists') || err.message.includes('Validation Failed'))) {
+                    log.warn(`GitHub release for tag ${data.tag} already exists. Skipping release creation.`);
+                    log.done();
+                } else {
+                    throw err;
+                }
+            }
+        },
 
-            log.done();
+        /**
+         * Find existing pull request for the release branch
+         */
+        async findExistingPullRequest() {
+            if (!githubClient || !data.releasingBranch) {
+                return false;
+            }
+
+            try {
+                const metadata = await this.getMetadata();
+                if (!metadata || !metadata.repoName) {
+                    return false;
+                }
+
+                const searchQuery = `repo:${metadata.repoName} head:${data.releasingBranch} base:${params.releaseBranch} type:pr state:open`;
+                
+                const result = await githubClient.searchPullRequests(searchQuery);
+                if (result && result.search && result.search.nodes && result.search.nodes.length > 0) {
+                    const pr = result.search.nodes[0];
+                    data.pr = {
+                        url: pr.url,
+                        apiUrl: pr.url,
+                        number: pr.number,
+                        id: pr.number,
+                        full_name: metadata.repoName,
+                    };
+                    log.info(`Found existing PR: ${pr.url}`);
+                    return true;
+                }
+            } catch (err) {
+                log.warn(`Could not search for existing PR: ${err.message}`);
+            }
+            return false;
         },
 
         /**
          * Create release pull request from releasing branch
          */
         async createPullRequest() {
+            // If PR already exists, skip creation
+            if (data.pr && data.pr.number) {
+                log.doing('Using existing pull request');
+                log.info(`${data.pr.url} already exists`);
+                log.done();
+                return;
+            }
+
             log.doing('Create the pull request');
 
             try {
@@ -286,6 +338,16 @@ export default function taoExtensionReleaseFactory(params = {}) {
                     log.exit('Unable to create the release pull request');
                 }
             } catch (err) {
+                // If PR already exists, try to find it
+                if (err.message && (err.message.includes('already exists') || err.message.includes('pull request already exists'))) {
+                    log.warn('Pull request might already exist, trying to find it...');
+                    const found = await this.findExistingPullRequest();
+                    if (found) {
+                        log.done();
+                        return;
+                    }
+                }
+                
                 log.error(
                     'There are errors on the pull request creation, things like: '
                     + 'the repository name and/or local changes that could prevent the PR '
@@ -303,6 +365,13 @@ export default function taoExtensionReleaseFactory(params = {}) {
          * Create and publish release tag
          */
         async createReleaseTag() {
+            // Skip if tag already exists
+            if (data.tagExists) {
+                log.doing(`Tag ${data.tag} already exists, skipping tag creation`);
+                log.done();
+                return;
+            }
+
             log.doing(`Add and push tag ${data.tag}`);
 
             await gitClient.tag(params.releaseBranch, data.tag, `version ${data.version}`);
@@ -314,12 +383,62 @@ export default function taoExtensionReleaseFactory(params = {}) {
          * Create releasing branch
          */
         async createReleasingBranch() {
-            log.doing('Create release branch');
+            if (data.releasingBranchExists) {
+                // Instead of reusing, create a new branch with retry suffix
+                log.doing(`Release branch ${data.releasingBranch} already exists. Creating a new branch with retry suffix.`);
+                
+                const retryNumber = await this.findNextRetryBranchNumber();
+                const originalBranch = data.releasingBranch;
+                data.releasingBranch = `${originalBranch}-retry-${retryNumber}`;
+                
+                log.info(`Creating new branch: ${data.releasingBranch}`);
+                
+                // Create the new branch from the base branch
+                // Ensure we're on the latest version of the base branch
+                await gitClient.checkout(baseBranch);
+                await gitClient.pull(baseBranch);
+                await gitClient.localBranch(data.releasingBranch);
+                await gitClient.push(origin, data.releasingBranch);
+                
+                log.done(`${data.releasingBranch} created`);
+            } else {
+                log.doing('Create release branch');
 
-            await gitClient.localBranch(data.releasingBranch);
-            await gitClient.push(origin, data.releasingBranch);
+                await gitClient.localBranch(data.releasingBranch);
+                await gitClient.push(origin, data.releasingBranch);
 
-            log.done(`${data.releasingBranch} created`);
+                log.done(`${data.releasingBranch} created`);
+            }
+        },
+
+        /**
+         * Find the next available retry branch number
+         * Checks for existing branches matching the pattern: ${branchPrefix}-${version}-retry-*
+         * @returns {Promise<Number>} the next available retry number
+         */
+        async findNextRetryBranchNumber() {
+            const allBranches = await gitClient.getLocalBranches();
+            const baseBranchName = `${branchPrefix}-${data.version}`;
+            // Escape special regex characters in the base branch name
+            // Use a regular string for the character class to avoid template literal interpretation
+            const escapedBaseBranchName = baseBranchName.replace(/[.*+?^$()|[\]\\]/g, '\\$&').replace(/{/g, '\\{').replace(/}/g, '\\}');
+            const retryPattern = new RegExp('^' + escapedBaseBranchName + '-retry-(\\d+)$');
+            
+            let maxRetryNumber = 0;
+            
+            for (const branch of allBranches) {
+                // Remove 'remotes/origin/' prefix if present for comparison
+                const branchName = branch.replace(/^remotes\/[^/]+\//, '');
+                const match = branchName.match(retryPattern);
+                if (match) {
+                    const retryNumber = parseInt(match[1], 10);
+                    if (retryNumber > maxRetryNumber) {
+                        maxRetryNumber = retryNumber;
+                    }
+                }
+            }
+            
+            return maxRetryNumber + 1;
         },
 
         /**
@@ -340,7 +459,10 @@ export default function taoExtensionReleaseFactory(params = {}) {
             log.doing(`Check if tag ${data.tag} exists`);
 
             if (await gitClient.hasTag(data.tag)) {
-                log.exit(`The tag ${data.tag} already exists`);
+                log.warn(`The tag ${data.tag} already exists. Will skip tag creation.`);
+                data.tagExists = true;
+            } else {
+                data.tagExists = false;
             }
 
             log.done();
@@ -353,7 +475,13 @@ export default function taoExtensionReleaseFactory(params = {}) {
             log.doing(`Check if branch remotes/${origin}/${data.releasingBranch} exists`);
 
             if (await gitClient.hasBranch(`remotes/${origin}/${data.releasingBranch}`)) {
-                log.exit(`The remote branch remotes/${origin}/${data.releasingBranch} already exists.`);
+                log.warn(`The remote branch remotes/${origin}/${data.releasingBranch} already exists. Will try to reuse it.`);
+                data.releasingBranchExists = true;
+                
+                // Try to find existing PR for this branch
+                await this.findExistingPullRequest();
+            } else {
+                data.releasingBranchExists = false;
             }
 
             log.done();
@@ -618,8 +746,23 @@ export default function taoExtensionReleaseFactory(params = {}) {
             } catch (error) {
                 // If a github setting auto-deleted the closed PR branch on the remote before this step,
                 // these are some of the observed error messages
-                if (error.message.includes('remote ref does not exist') || error.message.includes('unable to resolve reference')) {
-                    log.warn(`Cannot delete branch ${data.releasingBranch}: ${error} - ${error.stack}`);
+                const errorMessage = error.message || String(error);
+                if (errorMessage.includes('remote ref does not exist') || 
+                    errorMessage.includes('unable to resolve reference') ||
+                    (errorMessage.includes('unable to delete') && errorMessage.includes('remote ref does not exist'))) {
+                    log.warn(`Remote branch ${data.releasingBranch} was already deleted (likely by GitHub after PR merge).`);
+                    
+                    // Still try to delete the local branch if it exists
+                    try {
+                        const localBranches = await gitClient.getLocalBranches();
+                        if (localBranches.includes(data.releasingBranch)) {
+                            await gitClient.deleteLocalBranch(data.releasingBranch);
+                            log.info(`Local branch ${data.releasingBranch} deleted.`);
+                        }
+                    } catch (localError) {
+                        // If local branch deletion fails, it's not critical
+                        log.warn(`Could not delete local branch ${data.releasingBranch}: ${localError.message}`);
+                    }
                 } else {
                     throw error;
                 }
