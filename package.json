@@ -3,7 +3,8 @@
   "version": "2.6.4",
   "description": "Helps you to release TAO extensions",
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=16",
+    "npm": ">=8.3.0"
   },
   "scripts": {
     "test:dev": "nodemon -e js --watch tests --watch src --delay 1 --exec npm run test",
@@ -38,6 +39,7 @@
   "homepage": "https://github.com/oat-sa/tao-extension-release#readme",
   "dependencies": {
     "@oat-sa/conventional-changelog-tao": "^0.2.1",
+    "@octokit/rest": "^19.0.13",
     "chalk": "^2.1.0",
     "commander": "^3.0.1",
     "conventional-changelog-core": "^4.2.2",
@@ -49,17 +51,16 @@
     "graphql-request": "^6.0.0",
     "inquirer": "^7.3.0",
     "minimist": "^1.2.0",
-    "octonode": "^0.10.0",
     "open": "^7.4.0",
     "read-pkg": "^5.2.0",
     "semver": "^7.3.4",
-    "simple-git": "^3.17.0",
+    "simple-git": "^3.36.0",
     "update-notifier": "^6.0.2",
     "write-json-file": "^3.2.0",
     "write-pkg": "^4.0.0"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.21.5",
+    "@babel/preset-env": "^7.29.7",
     "@testing-library/jest-dom": "^5.16.5",
     "babel-jest": "^29.5.0",
     "eslint": "^8.38.0",
