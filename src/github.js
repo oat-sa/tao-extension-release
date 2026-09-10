@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2017 Open Assessment Technologies SA;
+ * Copyright (c) 2017-2026 Open Assessment Technologies SA;
  */
 
 /**
@@ -22,9 +22,9 @@
  * @author Bertrand Chevrier <bertrand@taotesting.com>
  */
 
+import { Octokit } from '@octokit/rest';
 import githubApiClientFactory from './githubApiClient.js';
 import validate from './validate.js';
-import octonode from 'octonode';
 
 /**
  * Creates a github client helper
@@ -39,14 +39,12 @@ export default function githubFactory(token, repository) {
         .githubToken(token)
         .githubRepository(repository);
 
-    /* TODO: Since github v4 api does not support all required functionality at the moment of integration,
-       currently mixed approach is used:
-            - Github v4 api is used to fetch data.
-            - octonode package is used for creating pull request and release.
-       Once github v4 api add support for missing functionality, the application should be fully migrated to the v4 api
+    /* Mixed approach:
+            - Github GraphQL api is used to fetch data (githubApiClient).
+            - @octokit/rest is used for creating pull requests, labels, and releases.
     */
-    const client = octonode.client(token);
-    const ghrepo = client.repo(repository);
+    const [owner, repo] = repository.split('/');
+    const octokit = new Octokit({ auth: token });
     const githubApiClient = githubApiClientFactory(token);
 
     /**
@@ -58,36 +56,26 @@ export default function githubFactory(token, repository) {
          * Verify the credentials for said repository by checking it's info
          * @returns {Promise<Object>} resolves with the repository data, if the credentials are valid
          */
-        verifyRepository() {
-            return new Promise((resolve, reject) => {
-                ghrepo.info((err, data) => {
-                    if (err) {
-                        return reject(err);
-                    }
-
-                    return resolve(data);
-                });
-            });
+        async verifyRepository() {
+            const { data } = await octokit.rest.repos.get({ owner, repo });
+            return data;
         },
         /**
-         * Create the release pull request
-         * @param {String} repo - owner and name of the repository
+         * Add labels to an issue or pull request
+         * @param {String} repoFullName - owner and name of the repository
          * @param {Number} number - issue number
          * @param {String[]} label - label name
          * @returns {Promise<Object>} - resolves with the add label data, if the label is added
          */
-        addLabel(repo, number, label) {
-            const ghpr = client.issue(repo, number);
-            return new Promise((resolve, reject) => {
-                ghpr.addLabels({
-                    labels: label
-                }, (err, data) => {
-                    if (err) {
-                        return reject(err);
-                    }
-                    return resolve(data);
-                });
+        async addLabel(repoFullName, number, label) {
+            const [labelOwner, labelRepo] = repoFullName.split('/');
+            const { data } = await octokit.rest.issues.addLabels({
+                owner: labelOwner,
+                repo: labelRepo,
+                issue_number: number,
+                labels: label
             });
+            return data;
         },
 
         /**
@@ -98,24 +86,21 @@ export default function githubFactory(token, repository) {
          * @param {String} fromVersion - the last version
          * @returns {Promise<Object>} resolves with the pull request data
          */
-        createReleasePR(releasingBranch, releaseBranch, version = '?.?.?', fromVersion = '?.?.?') {
+        async createReleasePR(releasingBranch, releaseBranch, version = '?.?.?', fromVersion = '?.?.?') {
 
             if (!releasingBranch || !releaseBranch) {
                 return Promise.reject(new TypeError('Unable to create a release pull request when the branches are not defined'));
             }
-            return new Promise((resolve, reject) => {
-                ghrepo.pr({
-                    title: `Release ${version}`,
-                    body: `Release ${version} from ${fromVersion}`,
-                    head: releasingBranch,
-                    base: releaseBranch
-                }, (err, data) => {
-                    if (err) {
-                        return reject(err);
-                    }
-                    return resolve(data);
-                });
+
+            const { data } = await octokit.rest.pulls.create({
+                owner,
+                repo,
+                title: `Release ${version}`,
+                body: `Release ${version} from ${fromVersion}`,
+                head: releasingBranch,
+                base: releaseBranch
             });
+            return data;
         },
 
         /**
@@ -124,39 +109,34 @@ export default function githubFactory(token, repository) {
          * @param {Boolean} [forceMerge = false] - do we merge the PR if not yet done ?
          * @returns {Promise}
          */
-        closePR(prNumber, forceMerge = false) {
-            return new Promise((resolve, reject) => {
+        async closePR(prNumber, forceMerge = false) {
+            validate.prNumber(prNumber);
 
-                validate.prNumber(prNumber);
-
-                const ghpr = client.pr(repository, prNumber);
-                const doClose = () => {
-                    ghpr.close(closeErr => {
-                        if (closeErr) {
-                            return reject(closeErr);
-                        }
-                        return resolve(true);
-                    });
-                };
-                ghpr.merged((err, merged) => {
-                    if (err) {
-                        return reject(err);
-                    }
-                    if (!merged) {
-                        if (forceMerge) {
-                            return ghpr.merge('Forced merged', mergeErr => {
-                                if (mergeErr) {
-                                    return reject(mergeErr);
-                                }
-                                return doClose();
-                            });
-                        } else {
-                            return reject(new Error('I do not close an open PR'));
-                        }
-                    }
-                    return doClose();
-                });
+            const { data: pullRequest } = await octokit.rest.pulls.get({
+                owner,
+                repo,
+                pull_number: prNumber
             });
+
+            if (!pullRequest.merged) {
+                if (!forceMerge) {
+                    throw new Error('I do not close an open PR');
+                }
+                await octokit.rest.pulls.merge({
+                    owner,
+                    repo,
+                    pull_number: prNumber,
+                    commit_title: 'Forced merged'
+                });
+            }
+
+            await octokit.rest.pulls.update({
+                owner,
+                repo,
+                pull_number: prNumber,
+                state: 'closed'
+            });
+            return true;
         },
 
         /**
@@ -165,19 +145,15 @@ export default function githubFactory(token, repository) {
          * @param {String} [comment] - comment the release
          * @returns {Promise}
          */
-        release(tag, comment = '') {
-            return new Promise((resolve, reject) => {
-                ghrepo.release({
-                    tag_name: tag,
-                    name: tag,
-                    body: comment
-                }, (err, released) => {
-                    if (err) {
-                        return reject(err);
-                    }
-                    return resolve(released);
-                });
+        async release(tag, comment = '') {
+            const { data } = await octokit.rest.repos.createRelease({
+                owner,
+                repo,
+                tag_name: tag,
+                name: tag,
+                body: comment
             });
+            return data;
         },
 
         /**
@@ -187,7 +163,6 @@ export default function githubFactory(token, repository) {
          */
         async getPRCommitShas(prNumber) {
             const commits = [];
-            const [owner, name] = repository.split('/');
 
             let hasNextPage = true;
             let nextPageCursor = '';
@@ -202,7 +177,7 @@ export default function githubFactory(token, repository) {
                             }
                         }
                     }
-                } = await githubApiClient.getPRCommits(prNumber, name, owner, nextPageCursor);
+                } = await githubApiClient.getPRCommits(prNumber, repo, owner, nextPageCursor);
 
                 commits.push(...nodes
                     .map(({ commit: { oid } }) => oid.slice(0, 8))

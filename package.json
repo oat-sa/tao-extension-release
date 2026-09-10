@@ -39,6 +39,7 @@
   "homepage": "https://github.com/oat-sa/tao-extension-release#readme",
   "dependencies": {
     "@oat-sa/conventional-changelog-tao": "^0.2.1",
+    "@octokit/rest": "^19.0.13",
     "chalk": "^2.1.0",
     "commander": "^3.0.1",
     "conventional-changelog-core": "^4.2.2",
@@ -50,7 +51,6 @@
     "graphql-request": "^6.0.0",
     "inquirer": "^7.3.0",
     "minimist": "^1.2.0",
-    "octonode": "^0.10.0",
     "open": "^7.4.0",
     "read-pkg": "^5.2.0",
     "semver": "^7.3.4",
@@ -71,8 +71,5 @@
     "nodemon": "^2.0.7",
     "open-cli": "^7.2.0",
     "replace-in-file": "^4.1.3"
-  },
-  "overrides": {
-    "form-data": "2.5.6"
   }
 }
