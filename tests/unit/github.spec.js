@@ -13,32 +13,25 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2023 Open Assessment Technologies SA;
+ * Copyright (c) 2023-2026 Open Assessment Technologies SA;
  */
 
 import github from '../../src/github.js';
 const token = 'ffaaffe5a8';
 const repo = 'foo-sa/bar-project';
 
-jest.mock('octonode', () => {
-    const originalModule = jest.requireActual('octonode');
-    //Mock the default export
-    return {
-        __esModule: true,
-        ...originalModule,
-        default: {
-            client: jest.fn(() => ({
-                repo() {
-                    return {
-                        pr(data, cb) {
-                            cb(null, { number: 12 });
-                        }
-                    };
-                }
-            }))
+const mockCreate = jest.fn(() => Promise.resolve({ data: { number: 12 } }));
+
+jest.mock('@octokit/rest', () => ({
+    Octokit: jest.fn().mockImplementation(() => ({
+        rest: {
+            pulls: {
+                create: mockCreate
+            }
         }
-    };
-});
+    }))
+}));
+
 const commits = {
     repository: {
         pullRequest: {
@@ -105,7 +98,7 @@ describe('src/github.js', () => {
         expect(typeof github(token, repo)).toBe('object');
     });
     it('the createReleasePR method', async () => {
-        expect.assertions(4);
+        expect.assertions(5);
         let ghclient = github(token, repo);
         expect(typeof ghclient.createReleasePR).toBe('function');
         await expect(ghclient.createReleasePR()).rejects.toEqual(
@@ -115,6 +108,14 @@ describe('src/github.js', () => {
             TypeError('Unable to create a release pull request when the branches are not defined')
         );
         const r = await ghclient.createReleasePR('release-1.2.3', 'master', '1.2.3', '1.2.0');
+        expect(mockCreate).toHaveBeenCalledWith({
+            owner: 'foo-sa',
+            repo: 'bar-project',
+            title: 'Release 1.2.3',
+            body: 'Release 1.2.3 from 1.2.0',
+            head: 'release-1.2.3',
+            base: 'master'
+        });
         expect(r).toStrictEqual({ number: 12 });
     });
     it('the method formatReleaseNote', () => {
